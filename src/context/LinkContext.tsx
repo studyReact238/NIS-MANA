@@ -15,10 +15,13 @@ interface LinkContextType {
   setSortBy: (val: SortOption) => void;
   selectedTags: string[];
   toggleTag: (tag: string) => void;
+  clearTags: () => void;
   selectedColors: LinkColor[];
   toggleColor: (color: LinkColor) => void;
+  clearColors: () => void;
   selectedIcons: string[];
   toggleIcon: (icon: string) => void;
+  clearIcons: () => void;
   
   addLink: (link: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => void;
   updateLink: (id: string, updates: Partial<LearningLink>) => void;
@@ -47,13 +50,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (saved) {
       setLinks(JSON.parse(saved));
     } else {
-      // Initial mock data
       const mock: LearningLink[] = [
         {
           id: '1',
           title: 'Next.js 15 Documentation',
           url: 'https://nextjs.org/docs',
-          description: 'Official Next.js documentation for version 15 App Router.',
+          description: 'Next.js 15 App Routerの公式ドキュメントです。最新の機能とベストプラクティスが紹介されています。',
           tags: ['Next.js', 'React', 'Frontend'],
           isCompleted: false,
           color: 'emerald',
@@ -119,13 +121,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   };
 
+  const clearTags = () => setSelectedTags([]);
+
   const toggleColor = (color: LinkColor) => {
     setSelectedColors(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]);
   };
 
+  const clearColors = () => setSelectedColors([]);
+
   const toggleIcon = (icon: string) => {
     setSelectedIcons(prev => prev.includes(icon) ? prev.filter(i => i !== icon) : [...prev, icon]);
   };
+
+  const clearIcons = () => setSelectedIcons([]);
 
   const allTags = useMemo(() => {
     const tagsSet = new Set<string>();
@@ -136,7 +144,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const filteredLinks = useMemo(() => {
     let result = [...links];
 
-    // Search
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(l => 
@@ -146,26 +153,21 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
     }
 
-    // Status
     if (statusFilter === 'learning') result = result.filter(l => !l.isCompleted);
     if (statusFilter === 'completed') result = result.filter(l => l.isCompleted);
 
-    // Tags
     if (selectedTags.length > 0) {
       result = result.filter(l => selectedTags.some(t => l.tags.includes(t)));
     }
 
-    // Colors
     if (selectedColors.length > 0) {
       result = result.filter(l => selectedColors.includes(l.color));
     }
 
-    // Icons
     if (selectedIcons.length > 0) {
       result = result.filter(l => selectedIcons.includes(l.icon));
     }
 
-    // Sorting
     result.sort((a, b) => {
       if (sortBy === 'title-asc') return a.title.localeCompare(b.title);
       if (sortBy === 'title-desc') return b.title.localeCompare(a.title);
@@ -180,9 +182,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <LinkContext.Provider value={{
       links, isAdmin, setIsAdmin, search, setSearch, statusFilter, setStatusFilter, 
-      sortBy, setSortBy, selectedTags, toggleTag, selectedColors, toggleColor, 
-      selectedIcons, toggleIcon, addLink, updateLink, deleteLink, duplicateLink, 
-      toggleComplete, filteredLinks, allTags
+      sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
+      clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
+      duplicateLink, toggleComplete, filteredLinks, allTags
     }}>
       {children}
     </LinkContext.Provider>

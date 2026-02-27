@@ -13,10 +13,10 @@ import { LinkColor } from '@/types/link';
 
 export const LINK_COLORS: { name: LinkColor; class: string; bg: string; text: string }[] = [
   { name: 'emerald', class: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
-  { name: 'blue', class: 'bg-blue-500', bg: 'bg-blue-50', text: 'text-blue-700' },
+  { name: 'blue', class: 'bg-sky-500', bg: 'bg-sky-50', text: 'text-sky-700' },
   { name: 'amber', class: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
   { name: 'rose', class: 'bg-rose-500', bg: 'bg-rose-50', text: 'text-rose-700' },
-  { name: 'slate', class: 'bg-slate-500', bg: 'bg-slate-50', text: 'text-slate-700' },
+  { name: 'violet', class: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-700' },
 ];
 
 export const LINK_ICONS: { name: string; icon: LucideIcon }[] = [
