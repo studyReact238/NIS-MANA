@@ -12,11 +12,11 @@ import {
 import { LinkColor } from '@/types/link';
 
 export const LINK_COLORS: { name: LinkColor; class: string; bg: string; text: string }[] = [
-  { name: 'emerald', class: 'bg-emerald-600', bg: 'bg-emerald-100', text: 'text-emerald-900' },
-  { name: 'blue', class: 'bg-blue-600', bg: 'bg-blue-100', text: 'text-blue-900' },
-  { name: 'amber', class: 'bg-amber-500', bg: 'bg-amber-100', text: 'text-amber-900' },
-  { name: 'rose', class: 'bg-rose-600', bg: 'bg-rose-100', text: 'text-rose-900' },
-  { name: 'violet', class: 'bg-violet-600', bg: 'bg-violet-100', text: 'text-violet-900' },
+  { name: 'emerald', class: 'bg-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-900' },
+  { name: 'blue', class: 'bg-blue-400', bg: 'bg-blue-50', text: 'text-blue-900' },
+  { name: 'amber', class: 'bg-amber-400', bg: 'bg-amber-50', text: 'text-amber-900' },
+  { name: 'rose', class: 'bg-rose-400', bg: 'bg-rose-50', text: 'text-rose-900' },
+  { name: 'slate', class: 'bg-slate-400', bg: 'bg-slate-50', text: 'text-slate-900' },
 ];
 
 export const LINK_ICONS: { name: string; icon: LucideIcon }[] = [

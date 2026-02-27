@@ -1,4 +1,4 @@
-export type LinkColor = 'emerald' | 'blue' | 'amber' | 'rose' | 'violet';
+export type LinkColor = 'emerald' | 'blue' | 'amber' | 'rose' | 'slate';
 
 export interface LearningLink {
   id: string;

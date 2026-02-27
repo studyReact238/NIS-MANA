@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
@@ -120,6 +119,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const toggleComplete = (id: string) => {
+    // 完了状態の切り替え時は、並び順を維持するため updatedAt を更新しない
     setLinks(prev => prev.map(l => l.id === id ? { ...l, isCompleted: !l.isCompleted } : l));
   };
 
