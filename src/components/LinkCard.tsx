@@ -68,29 +68,14 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
         "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 shadow-sm",
         cn(colorData.bg, colorData.border)
       )}>
-        {/* Sparkle Animation Overlay */}
-        {showSparkles && (
-          <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
-            <div className="relative">
-              <Sparkles className="w-16 h-16 text-yellow-400 animate-sparkle" />
-              {[...Array(6)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className="absolute w-2 h-2 bg-yellow-300 rounded-full animate-float-up"
-                  style={{ 
-                    top: '50%', 
-                    left: '50%', 
-                    margin: '-4px',
-                    animationDelay: `${i * 0.1}s`,
-                    transform: `rotate(${i * 60}deg) translateX(30px)`
-                  }}
-                />
-              ))}
-            </div>
+        {/* Large Watermark Checkmark in Center */}
+        {link.isCompleted && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none -z-10">
+            <CheckCircle2 className="w-48 h-48 text-emerald-600/40" />
           </div>
         )}
 
-        <CardContent className="p-8">
+        <CardContent className="p-8 relative z-10">
           <div className="flex justify-between items-start mb-6">
             <div className={cn(
               "w-14 h-14 rounded-2xl flex items-center justify-center shadow-md border border-black/5 bg-white"
@@ -98,7 +83,35 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               <Icon className={cn("w-7 h-7", colorData.text)} />
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative">
+              {/* Sparkle Animation centered over the button */}
+              {showSparkles && (
+                <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
+                  <div className="relative">
+                    <Sparkles className="w-10 h-10 text-yellow-400 animate-sparkle" />
+                    {[...Array(10)].map((_, i) => {
+                      const angle = (i * 36) * (Math.PI / 180);
+                      const x = Math.cos(angle) * 40;
+                      const y = Math.sin(angle) * 40;
+                      return (
+                        <div 
+                          key={i} 
+                          className="absolute w-2 h-2 bg-yellow-300 rounded-full animate-float-up"
+                          style={{ 
+                            top: '50%', 
+                            left: '50%', 
+                            margin: '-4px',
+                            '--tw-translate-x': `${x}px`,
+                            '--tw-translate-y': `${y}px`,
+                            animationDelay: `${i * 0.04}s`,
+                          } as any}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-full border-2 transition-all",
                 link.isCompleted 
@@ -205,12 +218,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               </a>
             </div>
           </div>
-
-          {link.isCompleted && (
-            <div className="absolute top-4 right-4 opacity-20 pointer-events-none">
-              <CheckCircle2 className="w-12 h-12 text-emerald-600" />
-            </div>
-          )}
         </CardContent>
       </Card>
 
