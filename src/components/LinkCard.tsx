@@ -55,19 +55,26 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   return (
     <>
       <Card className={cn(
-        "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-900/15 bg-white border-2",
-        link.isCompleted ? "border-slate-200 bg-slate-50/50" : "border-emerald-100"
+        "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 shadow-sm",
+        link.isCompleted 
+          ? "border-slate-200 bg-slate-100/50 grayscale-[0.5]" 
+          : cn(colorData.bg, colorData.border)
       )}>
         <CardContent className="p-8">
           <div className="flex justify-between items-start mb-6">
-            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-md", colorData.bg, "border border-black/5")}>
-              <Icon className={cn("w-7 h-7", colorData.text)} />
+            <div className={cn(
+              "w-14 h-14 rounded-2xl flex items-center justify-center shadow-md border border-black/5",
+              link.isCompleted ? "bg-slate-200" : "bg-white"
+            )}>
+              <Icon className={cn("w-7 h-7", link.isCompleted ? "text-slate-500" : colorData.text)} />
             </div>
             
             <div className="flex items-center gap-3">
               <div className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-full border-2 transition-colors",
-                link.isCompleted ? "bg-emerald-600 border-emerald-700 text-white" : "bg-emerald-50/80 border-emerald-200 text-emerald-900"
+                link.isCompleted 
+                  ? "bg-emerald-600 border-emerald-700 text-white" 
+                  : "bg-white/80 border-emerald-200 text-emerald-900"
               )}>
                 <span className="text-[10px] font-black uppercase tracking-wider">{link.isCompleted ? '受講済み' : '完了にする'}</span>
                 <Checkbox 
@@ -83,8 +90,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               {isAdmin && (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-emerald-100 border border-emerald-100">
-                      <MoreVertical className="w-5 h-5 text-emerald-800" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-white/50 border border-black/5">
+                      <MoreVertical className="w-5 h-5 text-slate-700" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-2xl border-2 border-emerald-100">
@@ -115,25 +122,41 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
           <div className="space-y-4">
             <h3 className={cn(
               "text-xl font-bold leading-snug line-clamp-2 transition-colors",
-              link.isCompleted ? "text-slate-600" : "text-slate-900 group-hover:text-emerald-700"
+              link.isCompleted ? "text-slate-500 line-through decoration-2" : colorData.darkText
             )}>
               {link.title}
             </h3>
             
-            <p className="text-slate-600 text-sm font-medium leading-relaxed line-clamp-3 h-14">
+            <p className={cn(
+              "text-sm font-medium leading-relaxed line-clamp-3 h-14",
+              link.isCompleted ? "text-slate-400" : "text-slate-700"
+            )}>
               {link.description || '概要の記載はありません。'}
             </p>
 
             <div className="flex flex-wrap gap-2 pt-2">
               {link.tags.map(tag => (
-                <Badge key={tag} variant="secondary" className="rounded-full px-3 py-1 text-[10px] font-black border-2 bg-emerald-100 text-emerald-800 border-emerald-200">
+                <Badge 
+                  key={tag} 
+                  variant="secondary" 
+                  className={cn(
+                    "rounded-full px-3 py-1 text-[10px] font-black border-2",
+                    link.isCompleted ? "bg-slate-200 text-slate-500 border-slate-300" : colorData.badge
+                  )}
+                >
                   #{tag}
                 </Badge>
               ))}
             </div>
 
-            <div className="flex flex-col gap-4 pt-6 mt-4 border-t-2 border-emerald-100/50">
-              <div className="flex items-center justify-between text-[11px] text-emerald-700/70 font-bold">
+            <div className={cn(
+              "flex flex-col gap-4 pt-6 mt-4 border-t-2",
+              link.isCompleted ? "border-slate-200" : "border-black/5"
+            )}>
+              <div className={cn(
+                "flex items-center justify-between text-[11px] font-bold",
+                link.isCompleted ? "text-slate-400" : colorData.text
+              )}>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
                   <span>最終更新日時: {format(link.updatedAt, 'yyyy/MM/dd HH:mm', { locale: ja })}</span>
@@ -147,7 +170,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 className={cn(
                   "w-full inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-2xl border-2 group/btn",
                   link.isCompleted 
-                    ? "bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300" 
+                    ? "bg-slate-200 border-slate-300 text-slate-500 hover:bg-slate-300" 
                     : "bg-emerald-700 border-emerald-800 text-white hover:bg-emerald-800 hover:shadow-lg shadow-emerald-200"
                 )}
               >
@@ -157,7 +180,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
           </div>
 
           {link.isCompleted && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
               <CheckCircle2 className="w-48 h-48 text-emerald-600" />
             </div>
           )}
