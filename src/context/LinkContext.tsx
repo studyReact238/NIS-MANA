@@ -1,7 +1,22 @@
+
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor } from '@/types/link';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  serverTimestamp,
+  query,
+  where,
+  orderBy
+} from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface LinkContextType {
   links: LearningLink[];
@@ -30,15 +45,17 @@ interface LinkContextType {
   toggleComplete: (id: string) => void;
   filteredLinks: LearningLink[];
   allTags: string[];
+  isLoading: boolean;
 }
 
 const LinkContext = createContext<LinkContextType | undefined>(undefined);
 
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [links, setLinks] = useState<LearningLink[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { firestore } = useFirestore();
+  const { user } = useUser();
   
+  // UI States
+  const [isAdminManual, setIsAdminManual] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-new');
@@ -46,81 +63,88 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
 
-  // Load from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('linkflow_links');
-    const savedAdmin = localStorage.getItem('linkflow_admin');
-    
-    if (saved) {
-      setLinks(JSON.parse(saved));
-    } else {
-      const mock: LearningLink[] = [
-        {
-          id: '1',
-          title: 'Next.js 15 Documentation',
-          url: 'https://nextjs.org/docs',
-          description: 'Next.js 15 App Routerの公式ドキュメントです。最新の機能とベストプラクティスが紹介されています。',
-          tags: ['Next.js', 'React', 'Frontend'],
-          isCompleted: false,
-          color: 'emerald',
-          icon: 'book',
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          userId: 'demo-user'
-        }
-      ];
-      setLinks(mock);
-    }
-    
-    if (savedAdmin) {
-      setIsAdmin(JSON.parse(savedAdmin));
-    }
-    setIsLoaded(true);
-  }, []);
+  // Firestore Queries
+  const linksQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'learningLinks');
+  }, [firestore, user]);
 
-  // Save to localStorage
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem('linkflow_links', JSON.stringify(links));
-    localStorage.setItem('linkflow_admin', JSON.stringify(isAdmin));
-  }, [links, isAdmin, isLoaded]);
+  const { data: firestoreLinks, isLoading: isLinksLoading } = useCollection<LearningLink>(linksQuery);
+
+  // Admin Check
+  const adminDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'admins', user.uid);
+  }, [firestore, user]);
+  const { data: adminDoc } = useDoc(adminDocRef);
+  const isServerAdmin = !!adminDoc;
+
+  const isAdmin = isAdminManual || isServerAdmin;
+
+  const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
 
   const addLink = (data: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
-    const newLink: LearningLink = {
+    if (!firestore || !user) return;
+    const colRef = collection(firestore, 'users', user.uid, 'learningLinks');
+    
+    addDoc(colRef, {
       ...data,
-      id: Math.random().toString(36).substr(2, 9),
+      userId: user.uid,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      userId: 'demo-user'
-    };
-    setLinks(prev => [newLink, ...prev]);
+    }).catch(e => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: colRef.path,
+        operation: 'create',
+        requestResourceData: data
+      }));
+    });
   };
 
   const updateLink = (id: string, updates: Partial<LearningLink>) => {
-    setLinks(prev => prev.map(l => l.id === id ? { ...l, ...updates, updatedAt: Date.now() } : l));
+    if (!firestore || !user) return;
+    const docRef = doc(firestore, 'users', user.uid, 'learningLinks', id);
+    
+    updateDoc(docRef, {
+      ...updates,
+      updatedAt: Date.now()
+    }).catch(e => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: updates
+      }));
+    });
   };
 
   const deleteLink = (id: string) => {
-    setLinks(prev => prev.filter(l => l.id !== id));
+    if (!firestore || !user) return;
+    const docRef = doc(firestore, 'users', user.uid, 'learningLinks', id);
+    
+    deleteDoc(docRef).catch(e => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete'
+      }));
+    });
   };
 
   const duplicateLink = (id: string) => {
     const original = links.find(l => l.id === id);
-    if (!original) return;
-    const copy: LearningLink = {
-      ...original,
-      id: Math.random().toString(36).substr(2, 9),
+    if (!original || !firestore || !user) return;
+    
+    const { id: _, ...data } = original;
+    addLink({
+      ...data,
       title: `${original.title} のコピー`,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
       isCompleted: false,
-    };
-    setLinks(prev => [copy, ...prev]);
+    });
   };
 
   const toggleComplete = (id: string) => {
-    // 完了状態の切り替え時は、並び順を維持するため updatedAt を更新しない
-    setLinks(prev => prev.map(l => l.id === id ? { ...l, isCompleted: !l.isCompleted } : l));
+    const link = links.find(l => l.id === id);
+    if (!link) return;
+    updateLink(id, { isCompleted: !link.isCompleted });
   };
 
   const toggleTag = (tag: string) => {
@@ -154,7 +178,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const s = search.toLowerCase();
       result = result.filter(l => 
         l.title.toLowerCase().includes(s) || 
-        l.description?.toLowerCase().includes(s) || 
+        (l.description && l.description.toLowerCase().includes(s)) || 
         l.tags.some(t => t.toLowerCase().includes(s))
       );
     }
@@ -187,10 +211,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <LinkContext.Provider value={{
-      links, isAdmin, setIsAdmin, search, setSearch, statusFilter, setStatusFilter, 
+      links, isAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, toggleComplete, filteredLinks, allTags
+      duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading
     }}>
       {children}
     </LinkContext.Provider>
