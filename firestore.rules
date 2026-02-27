@@ -7,51 +7,28 @@ service cloud.firestore {
      * This ruleset enforces a strict user-ownership model where private data is nested under 
      * user-specific paths. It prioritizes Authorization Independence by using denormalized 
      * ownership fields and a dedicated administration collection to avoid costly cross-document lookups.
-     *
-     * Data Structure:
-     * - /users/{userId}: Private user profiles.
-     * - /users/{userId}/learningLinks/{linkId}: Private, user-owned bookmarks/resources.
-     * - /tags/{tagId}: Global, shared categorization data.
-     * - /admins/{userId}: Role-based access control (RBAC) via document existence.
-     *
-     * Key Security Decisions:
-     * 1. Users can only access their own data tree.
-     * 2. Listing of the global 'users' collection is strictly prohibited.
-     * 3. Admin status is determined by the existence of a document in the /admins collection.
-     * 4. Relational integrity is enforced by ensuring the 'userId' field in documents matches the path.
      */
 
     // --- Helper Functions ---
 
-    /** @description Checks if the request is from an authenticated user. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the authenticated user's UID matches the provided userId. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the document exists and the authenticated user is the owner. */
     function isExistingOwner(userId) {
       return resource != null && isOwner(userId);
     }
 
-    /** @description Checks if the authenticated user has administrative privileges. */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
     // --- Collection Rules ---
 
-    /**
-     * @description Rules for the User profile documents. Allows self-management and admin access.
-     * @path /users/{userId}
-     * @allow (get) If the user is the owner or an admin.
-     * @deny (list) Listing all users is prohibited for privacy.
-     * @principle Ownership and Role-Based Access Control.
-     */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
@@ -60,13 +37,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Rules for the private collection of learning links owned by a user.
-     * @path /users/{userId}/learningLinks/{learningLinkId}
-     * @allow (create) If the user matches the path and sets their UID as the owner in the data.
-     * @deny (update) If the user tries to change the ownership field (userId).
-     * @principle Path-based authorization and Relational Integrity.
-     */
     match /users/{userId}/learningLinks/{learningLinkId} {
       allow get, list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.userId == userId;
@@ -74,27 +44,15 @@ service cloud.firestore {
       allow delete: if isExistingOwner(userId) || isAdmin();
     }
 
-    /**
-     * @description Global tags accessible to all signed-in users for organization and filtering.
-     * @path /tags/{tagId}
-     * @allow (list) All authenticated users can view tags.
-     * @deny (write) Only admins can modify the global tag set.
-     * @principle Public Read with Restricted Writes.
-     */
     match /tags/{tagId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Restricted collection used to define administrative users.
-     * @path /admins/{userId}
-     * @allow (read) Only existing admins can inspect the admin list.
-     * @deny (write) Admin roles cannot be granted via the client-side SDK.
-     * @principle Structural Segregation for Authorization.
-     */
     match /admins/{userId} {
-      allow read: if isAdmin();
+      // ユーザーが自分が管理者かどうかを確認できるように get を許可
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow write: if false;
     }
   }

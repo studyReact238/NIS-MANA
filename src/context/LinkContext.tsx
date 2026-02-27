@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor } from '@/types/link';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { 
@@ -21,6 +20,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 interface LinkContextType {
   links: LearningLink[];
   isAdmin: boolean;
+  isServerAdmin: boolean;
   setIsAdmin: (val: boolean) => void;
   search: string;
   setSearch: (val: string) => void;
@@ -55,7 +55,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useUser();
   
   // UI States
-  const [isAdminManual, setIsAdminManual] = useState(false);
+  const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-new');
@@ -79,7 +79,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: adminDoc } = useDoc(adminDocRef);
   const isServerAdmin = !!adminDoc;
 
-  const isAdmin = isAdminManual || isServerAdmin;
+  // 編集モードを有効にできるのはサーバーサイドで管理者として登録されているユーザーのみ
+  const isAdmin = isServerAdmin && isAdminManual;
 
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
 
@@ -211,7 +212,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <LinkContext.Provider value={{
-      links, isAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
+      links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading

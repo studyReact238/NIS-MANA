@@ -45,7 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export const Dashboard: React.FC = () => {
   const { 
-    filteredLinks, isAdmin, setIsAdmin, search, setSearch, statusFilter, 
+    filteredLinks, isAdmin, isServerAdmin, setIsAdmin, search, setSearch, statusFilter, 
     setStatusFilter, sortBy, setSortBy, selectedTags, toggleTag, clearTags,
     selectedColors, toggleColor, clearColors, selectedIcons, toggleIcon, 
     clearIcons, allTags, isLoading
@@ -97,15 +97,22 @@ export const Dashboard: React.FC = () => {
               </Button>
             )}
 
-            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
-              <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
-              <Switch checked={isAdmin} onCheckedChange={setIsAdmin} className="data-[state=checked]:bg-emerald-600" />
-            </div>
+            {/* 管理者のみ編集モードの切り替えを表示 */}
+            {isServerAdmin && (
+              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
+                <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
+                <Switch 
+                  checked={isAdmin} 
+                  onCheckedChange={setIsAdmin} 
+                  className="data-[state=checked]:bg-emerald-600" 
+                />
+              </div>
+            )}
 
             <div className="flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold leading-none text-emerald-950 truncate max-w-[150px]">{user?.email}</p>
-                <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">{isAdmin ? 'Administrator' : 'Learner'}</p>
+                <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">{isServerAdmin ? 'Administrator' : 'Learner'}</p>
               </div>
               
               <DropdownMenu modal={false}>
