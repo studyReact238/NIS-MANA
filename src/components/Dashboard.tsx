@@ -88,12 +88,14 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            <Button 
-              onClick={handleAdd} 
-              className="rounded-full h-10 px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-sm border-2 border-emerald-800 transition-all hover:-translate-y-0.5"
-            >
-              <Plus className="w-4 h-4 mr-2" /> 新規追加
-            </Button>
+            {isAdmin && (
+              <Button 
+                onClick={handleAdd} 
+                className="rounded-full h-10 px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-sm border-2 border-emerald-800 transition-all hover:-translate-y-0.5"
+              >
+                <Plus className="w-4 h-4 mr-2" /> 新規追加
+              </Button>
+            )}
 
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
               <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
