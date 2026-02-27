@@ -5,46 +5,46 @@
 @layer base {
   :root {
     --background: 160 20% 98%;
-    --foreground: 160 50% 10%;
+    --foreground: 160 50% 5%;
     --card: 0 0% 100%;
-    --card-foreground: 160 50% 10%;
+    --card-foreground: 160 50% 5%;
     --popover: 0 0% 100%;
-    --popover-foreground: 160 50% 10%;
-    --primary: 158 64% 45%;
+    --popover-foreground: 160 50% 5%;
+    --primary: 158 75% 35%; /* より濃いエメラルド */
     --primary-foreground: 160 20% 98%;
-    --secondary: 160 30% 92%;
-    --secondary-foreground: 158 64% 15%;
-    --muted: 160 20% 92%;
-    --muted-foreground: 160 10% 45%;
-    --accent: 158 64% 94%;
-    --accent-foreground: 158 64% 15%;
-    --destructive: 0 84% 60%;
+    --secondary: 160 30% 90%;
+    --secondary-foreground: 158 64% 10%;
+    --muted: 160 20% 88%;
+    --muted-foreground: 160 20% 35%;
+    --accent: 158 64% 90%;
+    --accent-foreground: 158 64% 10%;
+    --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 160 20% 90%;
-    --input: 160 20% 90%;
-    --ring: 158 64% 45%;
+    --border: 160 20% 85%; /* 境界線をより明確に */
+    --input: 160 20% 85%;
+    --ring: 158 75% 35%;
     --radius: 1.5rem;
   }
   .dark {
-    --background: 160 40% 5%;
+    --background: 160 40% 3%;
     --foreground: 160 20% 98%;
-    --card: 160 40% 8%;
+    --card: 160 40% 6%;
     --card-foreground: 160 20% 98%;
-    --popover: 160 40% 8%;
+    --popover: 160 40% 6%;
     --popover-foreground: 160 20% 98%;
-    --primary: 158 64% 50%;
+    --primary: 158 75% 45%;
     --primary-foreground: 160 20% 98%;
-    --secondary: 160 30% 15%;
+    --secondary: 160 30% 12%;
     --secondary-foreground: 160 20% 98%;
-    --muted: 160 30% 15%;
-    --muted-foreground: 160 10% 65%;
-    --accent: 158 64% 20%;
+    --muted: 160 30% 12%;
+    --muted-foreground: 160 10% 60%;
+    --accent: 158 64% 18%;
     --accent-foreground: 160 20% 98%;
-    --destructive: 0 62% 30%;
+    --destructive: 0 62% 40%;
     --destructive-foreground: 0 0% 98%;
-    --border: 160 30% 18%;
-    --input: 160 30% 18%;
-    --ring: 158 64% 50%;
+    --border: 160 30% 15%;
+    --input: 160 30% 15%;
+    --ring: 158 75% 45%;
   }
 }
 
@@ -54,7 +54,6 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased selection:bg-emerald-200/50;
-    /* セーフガード: Radix UIのバグでクリックが無効化されたままになるのを防ぐ */
     pointer-events: auto !important;
   }
   h1, h2, h3, h4, h5, h6 {
@@ -62,17 +61,16 @@
   }
 }
 
-/* ダイアログが開いている間だけポインタイベントを制限したい場合は、Radixが自動で付与する属性を考慮する */
 body[data-radix-scroll-lock] {
   overflow: hidden;
 }
 
 .glass {
-  @apply backdrop-blur-md bg-white/60 border border-emerald-50/50 shadow-sm;
+  @apply backdrop-blur-md bg-white/70 border border-emerald-100 shadow-sm;
 }
 
 .dark .glass {
-  @apply backdrop-blur-md bg-emerald-950/20 border border-white/5 shadow-sm;
+  @apply backdrop-blur-md bg-emerald-950/30 border border-white/10 shadow-sm;
 }
 
 .card-hover {

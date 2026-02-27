@@ -55,48 +55,54 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   return (
     <>
       <Card className={cn(
-        "group relative overflow-hidden rounded-[2.5rem] border-none transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-900/10 bg-white border border-emerald-50",
-        link.isCompleted && "bg-slate-50 opacity-90"
+        "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-900/15 bg-white border-2",
+        link.isCompleted ? "border-slate-200 bg-slate-50/50" : "border-emerald-100"
       )}>
         <CardContent className="p-8">
           <div className="flex justify-between items-start mb-6">
-            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner", colorData.bg)}>
+            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-md", colorData.bg, "border border-black/5")}>
               <Icon className={cn("w-7 h-7", colorData.text)} />
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-emerald-50/50 px-3 py-1.5 rounded-full border border-emerald-100">
-                <span className="text-[10px] font-bold text-emerald-800">完了にする</span>
+              <div className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-full border-2 transition-colors",
+                link.isCompleted ? "bg-emerald-600 border-emerald-700 text-white" : "bg-emerald-50/80 border-emerald-200 text-emerald-900"
+              )}>
+                <span className="text-[10px] font-black uppercase tracking-wider">{link.isCompleted ? '受講済み' : '完了にする'}</span>
                 <Checkbox 
                   checked={link.isCompleted} 
                   onCheckedChange={() => toggleComplete(link.id)}
-                  className="w-5 h-5 rounded-full data-[state=checked]:bg-emerald-500 border-emerald-200"
+                  className={cn(
+                    "w-5 h-5 rounded-full border-2 transition-all",
+                    link.isCompleted ? "bg-white text-emerald-700 border-white" : "bg-white border-emerald-300"
+                  )}
                 />
               </div>
               
               {isAdmin && (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-emerald-50">
-                      <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-emerald-100 border border-emerald-100">
+                      <MoreVertical className="w-5 h-5 text-emerald-800" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-xl border-emerald-50">
+                  <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-2xl border-2 border-emerald-100">
                     <DropdownMenuItem 
                       onSelect={() => onEdit(link)} 
-                      className="rounded-xl cursor-pointer text-xs h-10"
+                      className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
                     >
                       <Edit3 className="w-4 h-4 mr-2 text-emerald-600" /> 編集
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onSelect={() => duplicateLink(link.id)} 
-                      className="rounded-xl cursor-pointer text-xs h-10"
+                      className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
                     >
                       <Copy className="w-4 h-4 mr-2 text-blue-600" /> 複製
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onSelect={() => setDeleteDialogOpen(true)} 
-                      className="rounded-xl cursor-pointer text-rose-600 text-xs h-10"
+                      className="rounded-xl cursor-pointer text-rose-600 text-xs h-11 font-bold focus:bg-rose-50"
                     >
                       <Trash2 className="w-4 h-4 mr-2" /> 削除
                     </DropdownMenuItem>
@@ -107,26 +113,29 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xl font-bold leading-snug line-clamp-2 text-slate-800 group-hover:text-emerald-700 transition-colors">
+            <h3 className={cn(
+              "text-xl font-bold leading-snug line-clamp-2 transition-colors",
+              link.isCompleted ? "text-slate-600" : "text-slate-900 group-hover:text-emerald-700"
+            )}>
               {link.title}
             </h3>
             
-            <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 h-14">
+            <p className="text-slate-600 text-sm font-medium leading-relaxed line-clamp-3 h-14">
               {link.description || '概要の記載はありません。'}
             </p>
 
             <div className="flex flex-wrap gap-2 pt-2">
               {link.tags.map(tag => (
-                <Badge key={tag} variant="secondary" className="rounded-full px-3 py-1 text-[10px] font-bold bg-emerald-50 text-emerald-700 border-none">
+                <Badge key={tag} variant="secondary" className="rounded-full px-3 py-1 text-[10px] font-black border-2 bg-emerald-100 text-emerald-800 border-emerald-200">
                   #{tag}
                 </Badge>
               ))}
             </div>
 
-            <div className="flex flex-col gap-4 pt-6 mt-4 border-t border-emerald-50/50">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
+            <div className="flex flex-col gap-4 pt-6 mt-4 border-t-2 border-emerald-100/50">
+              <div className="flex items-center justify-between text-[11px] text-emerald-700/70 font-bold">
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
+                  <Clock className="w-4 h-4" />
                   <span>最終更新日時: {format(link.updatedAt, 'yyyy/MM/dd HH:mm', { locale: ja })}</span>
                 </div>
               </div>
@@ -135,7 +144,12 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 href={link.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 text-sm font-bold text-emerald-700 hover:text-white transition-all bg-emerald-50 hover:bg-emerald-600 px-4 py-3 rounded-2xl border border-emerald-100/50 group/btn"
+                className={cn(
+                  "w-full inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-2xl border-2 group/btn",
+                  link.isCompleted 
+                    ? "bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300" 
+                    : "bg-emerald-700 border-emerald-800 text-white hover:bg-emerald-800 hover:shadow-lg shadow-emerald-200"
+                )}
               >
                 学習サイトを開く <ExternalLink className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
               </a>
@@ -143,29 +157,29 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
           </div>
 
           {link.isCompleted && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
-              <CheckCircle2 className="w-40 h-40 text-emerald-500" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none">
+              <CheckCircle2 className="w-48 h-48 text-emerald-600" />
             </div>
           )}
         </CardContent>
       </Card>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="rounded-3xl border-emerald-50">
+        <AlertDialogContent className="rounded-4xl border-2 border-emerald-100 p-8">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold">リンクを削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm">
+            <AlertDialogTitle className="text-2xl font-bold text-emerald-950">リンクを削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-emerald-800 font-medium">
               「{link.title}」を削除してもよろしいですか？この操作は取り消せません。
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl text-xs h-10 px-6 font-bold">キャンセル</AlertDialogCancel>
+          <AlertDialogFooter className="mt-8">
+            <AlertDialogCancel className="rounded-2xl text-sm h-12 px-8 font-bold border-2 border-emerald-200 hover:bg-emerald-50">キャンセル</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => {
                 deleteLink(link.id);
                 setDeleteDialogOpen(false);
               }} 
-              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs h-10 px-6 font-bold"
+              className="rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-sm h-12 px-8 font-bold border-2 border-rose-700 shadow-lg shadow-rose-200"
             >
               削除する
             </AlertDialogAction>

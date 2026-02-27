@@ -54,70 +54,70 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 bg-emerald-50/50 p-4 rounded-3xl border border-emerald-100/30">
+      <div className="flex items-center justify-between mb-8 bg-emerald-100/30 p-5 rounded-3xl border border-emerald-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-black text-xl">L</div>
-          <h1 className="text-2xl font-bold tracking-tight text-emerald-700">LinkFlow</h1>
+          <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-md">L</div>
+          <h1 className="text-2xl font-bold tracking-tight text-emerald-800">LinkFlow</h1>
         </div>
 
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3 bg-white/80 px-4 py-2 rounded-full border border-emerald-100 shadow-sm">
-            <span className="text-xs font-bold text-emerald-800">編集モード (管理者)</span>
-            <Switch checked={isAdmin} onCheckedChange={setIsAdmin} className="data-[state=checked]:bg-emerald-500" />
+          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
+            <span className="text-xs font-bold text-emerald-900">編集モード (管理者)</span>
+            <Switch checked={isAdmin} onCheckedChange={setIsAdmin} className="data-[state=checked]:bg-emerald-600" />
           </div>
 
-          <div className="flex items-center gap-3 bg-white/80 pl-4 pr-2 py-1.5 rounded-full border border-emerald-100 shadow-sm">
+          <div className="flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold leading-none">aaa@aaa</p>
-              <p className="text-[10px] text-muted-foreground font-medium">ADMIN ACCESS</p>
+              <p className="text-xs font-bold leading-none text-emerald-950">aaa@aaa</p>
+              <p className="text-[10px] text-emerald-600 font-bold tracking-wider">ADMIN ACCESS</p>
             </div>
-            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700">
               <User className="w-4 h-4" />
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-              <LogOut className="w-4 h-4 text-muted-foreground" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-emerald-50">
+              <LogOut className="w-4 h-4 text-emerald-700" />
             </Button>
           </div>
         </div>
       </div>
 
       {/* Main Filter Panel */}
-      <div className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 p-8 mb-10 space-y-8">
+      <div className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-8 mb-10 space-y-8">
         <div className="relative group max-w-3xl mx-auto">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-emerald-500 transition-colors" />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
           <Input 
             value={search} 
             onChange={e => setSearch(e.target.value)}
             placeholder="タイトルや説明、タグで検索..." 
-            className="pl-14 h-16 rounded-full bg-emerald-50/30 border-none focus:ring-2 focus:ring-emerald-500/20 text-lg transition-all"
+            className="pl-14 h-16 rounded-full bg-emerald-50/50 border-emerald-100 border-2 focus:border-emerald-500 focus:ring-0 text-lg transition-all"
           />
         </div>
 
         <div className="flex justify-center">
           <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full max-w-2xl">
-            <TabsList className="grid grid-cols-3 h-14 bg-emerald-50/50 rounded-2xl p-1 gap-1">
-              <TabsTrigger value="all" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-emerald-700 font-bold">すべて</TabsTrigger>
-              <TabsTrigger value="learning" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-emerald-700 font-bold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2" /> 学習中
+            <TabsList className="grid grid-cols-3 h-14 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
+              <TabsTrigger value="all" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-emerald-800 font-bold border border-transparent data-[state=active]:border-emerald-200">すべて</TabsTrigger>
+              <TabsTrigger value="learning" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-emerald-800 font-bold border border-transparent data-[state=active]:border-emerald-200">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2" /> 学習中
               </TabsTrigger>
-              <TabsTrigger value="completed" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-emerald-700 font-bold">
-                <span className="w-2 h-2 rounded-full bg-slate-300 mr-2" /> 受講済み
+              <TabsTrigger value="completed" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-emerald-800 font-bold border border-transparent data-[state=active]:border-emerald-200">
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-400 mr-2" /> 受講済み
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
-        <div className="space-y-6 pt-2 border-t border-emerald-50/50">
+        <div className="space-y-6 pt-6 border-t border-emerald-100">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-muted-foreground min-w-[120px]">
+            <div className="flex items-center gap-2 text-emerald-800 min-w-[120px]">
               <ArrowUpDown className="w-4 h-4" />
               <span className="text-sm font-bold">並べ替え:</span>
             </div>
             <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
-              <SelectTrigger className="w-[240px] border-none bg-emerald-50/30 rounded-xl h-10 font-medium">
+              <SelectTrigger className="w-[240px] border-emerald-200 bg-emerald-50/50 rounded-xl h-10 font-bold text-emerald-900">
                 <SelectValue placeholder="並べ替え" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl">
+              <SelectContent className="rounded-xl border-emerald-200">
                 <SelectItem value="date-new">更新日時が新しい順</SelectItem>
                 <SelectItem value="date-old">更新日時が古い順</SelectItem>
                 <SelectItem value="title-asc">タイトル昇順</SelectItem>
@@ -127,7 +127,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex items-start gap-4">
-            <div className="flex items-center gap-2 text-muted-foreground min-w-[120px] pt-2">
+            <div className="flex items-center gap-2 text-emerald-800 min-w-[120px] pt-2">
               <TagIcon className="w-4 h-4" />
               <span className="text-sm font-bold">タグ絞り込み:</span>
             </div>
@@ -137,17 +137,17 @@ export const Dashboard: React.FC = () => {
                   key={tag}
                   onClick={() => toggleTag(tag)}
                   className={cn(
-                    "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
+                    "px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
                     selectedTags.includes(tag) 
-                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" 
-                      : "bg-emerald-50/50 text-emerald-800 hover:bg-emerald-100"
+                      ? "bg-emerald-700 text-white border-emerald-800 shadow-md shadow-emerald-200" 
+                      : "bg-emerald-100/50 text-emerald-900 border-emerald-200 hover:bg-emerald-200 hover:border-emerald-300"
                   )}
                 >
                   {tag}
                 </button>
               ))}
               {selectedTags.length > 0 && (
-                <button onClick={clearTags} className="px-3 py-1.5 rounded-full text-xs font-bold text-rose-500 hover:bg-rose-50 flex items-center gap-1">
+                <button onClick={clearTags} className="px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 transition-colors">
                   <XCircle className="w-3 h-3" /> クリア
                 </button>
               )}
@@ -156,7 +156,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-muted-foreground min-w-[120px]">
+              <div className="flex items-center gap-2 text-emerald-800 min-w-[120px]">
                 <Palette className="w-4 h-4" />
                 <span className="text-sm font-bold">カラー絞り込み:</span>
               </div>
@@ -166,20 +166,20 @@ export const Dashboard: React.FC = () => {
                     key={c.name}
                     onClick={() => toggleColor(c.name)}
                     className={cn(
-                      "w-6 h-6 rounded-full border-2 transition-all",
+                      "w-7 h-7 rounded-full border-2 transition-all",
                       c.class,
-                      selectedColors.includes(c.name) ? "border-emerald-600 scale-125 ring-4 ring-emerald-100" : "border-white shadow-sm hover:scale-110"
+                      selectedColors.includes(c.name) ? "border-emerald-800 scale-125 ring-4 ring-emerald-200" : "border-white shadow-sm hover:scale-110"
                     )}
                   />
                 ))}
                 {selectedColors.length > 0 && (
-                  <button onClick={clearColors} className="text-[10px] font-bold text-rose-500 ml-2">クリア</button>
+                  <button onClick={clearColors} className="px-2 py-1 rounded-md text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 ml-2">クリア</button>
                 )}
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-emerald-800 min-w-[120px]">
                 <Layout className="w-4 h-4" />
                 <span className="text-sm font-bold">タイプ絞り込み:</span>
               </div>
@@ -192,10 +192,10 @@ export const Dashboard: React.FC = () => {
                       onClick={() => toggleIcon(i.name)}
                       title={i.name}
                       className={cn(
-                        "p-2 rounded-lg transition-all border",
+                        "p-2.5 rounded-lg transition-all border",
                         selectedIcons.includes(i.name) 
-                          ? "bg-emerald-100 text-emerald-700 border-emerald-200" 
-                          : "bg-white border-transparent text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600"
+                          ? "bg-emerald-200 text-emerald-900 border-emerald-400 shadow-sm" 
+                          : "bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300"
                       )}
                     >
                       <IconComp className="w-4 h-4" />
@@ -203,7 +203,7 @@ export const Dashboard: React.FC = () => {
                   );
                 })}
                 {selectedIcons.length > 0 && (
-                  <button onClick={clearIcons} className="text-[10px] font-bold text-rose-500 ml-2">クリア</button>
+                  <button onClick={clearIcons} className="px-2 py-1 rounded-md text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 ml-2">クリア</button>
                 )}
               </div>
             </div>
@@ -213,11 +213,11 @@ export const Dashboard: React.FC = () => {
 
       {/* Grid Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-emerald-900">
-          リンクライブラリ <span className="text-sm font-medium text-muted-foreground ml-2">({filteredLinks.length}件)</span>
+        <h2 className="text-xl font-bold text-emerald-950">
+          リンクライブラリ <span className="text-sm font-bold text-emerald-600 ml-2 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">({filteredLinks.length}件)</span>
         </h2>
         {isAdmin && (
-          <Button onClick={handleAdd} className="rounded-full h-11 px-8 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 font-bold">
+          <Button onClick={handleAdd} className="rounded-full h-11 px-8 bg-emerald-700 hover:bg-emerald-800 shadow-lg shadow-emerald-200 font-bold transition-all hover:-translate-y-0.5">
             <Plus className="w-5 h-5 mr-2" /> 新規追加
           </Button>
         )}
@@ -230,13 +230,13 @@ export const Dashboard: React.FC = () => {
         ))}
         
         {filteredLinks.length === 0 && (
-          <div className="col-span-full py-24 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-4xl border border-emerald-50">
-            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center">
-              <Search className="w-8 h-8 text-emerald-200" />
+          <div className="col-span-full py-24 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-4xl border-2 border-dashed border-emerald-200">
+            <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-100">
+              <Search className="w-10 h-10 text-emerald-300" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold">該当するリンクが見つかりません</h3>
-              <p className="text-muted-foreground text-sm">条件を変えて検索してみてください。</p>
+              <h3 className="text-xl font-bold text-emerald-900">該当するリンクが見つかりません</h3>
+              <p className="text-emerald-600 font-medium">条件を変えて検索してみてください。</p>
             </div>
           </div>
         )}
