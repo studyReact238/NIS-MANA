@@ -120,7 +120,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const toggleComplete = (id: string) => {
-    setLinks(prev => prev.map(l => l.id === id ? { ...l, isCompleted: !l.isCompleted, updatedAt: Date.now() } : l));
+    setLinks(prev => prev.map(l => l.id === id ? { ...l, isCompleted: !l.isCompleted } : l));
   };
 
   const toggleTag = (tag: string) => {
