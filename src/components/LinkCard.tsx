@@ -46,6 +46,8 @@ interface LinkCardProps {
   onEdit: (link: LearningLink) => void;
 }
 
+const SPARKLE_COLORS = ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#f43f5e', '#ffffff'];
+
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const { isAdmin, toggleComplete, deleteLink, duplicateLink } = useLinks();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -57,7 +59,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const handleToggleComplete = () => {
     if (!link.isCompleted) {
       setShowSparkles(true);
-      setTimeout(() => setShowSparkles(false), 1000);
+      setTimeout(() => setShowSparkles(false), 800);
     }
     toggleComplete(link.id);
   };
@@ -68,10 +70,10 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
         "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 shadow-sm",
         cn(colorData.bg, colorData.border)
       )}>
-        {/* Large Watermark Checkmark in Center - Improved Visibility */}
+        {/* Large Watermark Checkmark - Always visible when completed */}
         {link.isCompleted && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none -z-10">
-            <CheckCircle2 className="w-56 h-56 text-emerald-600/40" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none -z-10">
+            <CheckCircle2 className="w-64 h-64 text-emerald-600/40" />
           </div>
         )}
 
@@ -84,26 +86,33 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
             </div>
             
             <div className="flex items-center gap-3 relative">
-              {/* Sparkle Animation centered over the button */}
+              {/* Explosive Sparkle Animation from Button */}
               {showSparkles && (
                 <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
                   <div className="relative">
-                    <Sparkles className="w-10 h-10 text-yellow-400 animate-sparkle" />
-                    {[...Array(10)].map((_, i) => {
-                      const angle = (i * 36) * (Math.PI / 180);
-                      const x = Math.cos(angle) * 40;
-                      const y = Math.sin(angle) * 40;
+                    {/* Center burst icon */}
+                    <Sparkles className="w-8 h-8 text-yellow-400 animate-sparkle absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    
+                    {/* Small colorful particles bursting out */}
+                    {[...Array(12)].map((_, i) => {
+                      const angle = (i * 30) * (Math.PI / 180);
+                      const distance = 50 + Math.random() * 40;
+                      const x = Math.cos(angle) * distance;
+                      const y = Math.sin(angle) * distance;
+                      const color = SPARKLE_COLORS[i % SPARKLE_COLORS.length];
+                      
                       return (
                         <div 
                           key={i} 
-                          className="absolute w-2 h-2 bg-yellow-300 rounded-full animate-float-up"
+                          className="absolute w-2 h-2 rounded-full animate-float-up"
                           style={{ 
+                            backgroundColor: color,
                             top: '50%', 
                             left: '50%', 
                             margin: '-4px',
                             '--tw-translate-x': `${x}px`,
                             '--tw-translate-y': `${y}px`,
-                            animationDelay: `${i * 0.04}s`,
+                            animationDelay: `${Math.random() * 0.1}s`,
                           } as any}
                         />
                       );
