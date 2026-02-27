@@ -21,7 +21,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 interface LinkContextType {
   links: LearningLink[];
   isAdmin: boolean;
-  isServerAdmin: boolean;
+  isServerAdmin: boolean | null; // null: loading, boolean: loaded
   setIsAdmin: (val: boolean) => void;
   search: string;
   setSearch: (val: string) => void;
@@ -68,23 +68,27 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const linksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'learningLinks');
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: firestoreLinks, isLoading: isLinksLoading } = useCollection<LearningLink>(linksQuery);
 
   // Admin Check
   const adminDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return doc(firestore, 'admins', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
   
   const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminDocRef);
   
-  // 管理者かどうかを判定。ドキュメントが存在すれば管理者とみなす。
-  const isServerAdmin = !!adminDoc;
+  // 管理者かどうかを判定。
+  // adminDoc が undefined (loading) の間は null を返し、取得できたら boolean を返す
+  const isServerAdmin = useMemo(() => {
+    if (isAdminLoading) return null;
+    return !!adminDoc;
+  }, [adminDoc, isAdminLoading]);
 
   // 編集モードを有効にできるのはサーバーサイドで管理者として登録されているユーザーのみ
-  const isAdmin = isServerAdmin && isAdminManual;
+  const isAdmin = !!isServerAdmin && isAdminManual;
 
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
 
@@ -219,7 +223,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || isAdminLoading
+      duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
       {children}
     </LinkContext.Provider>
