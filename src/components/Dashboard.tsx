@@ -1,10 +1,10 @@
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { LinkCard } from '@/components/LinkCard';
 import { LinkDialog } from '@/components/LinkDialog';
+import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth, useUser } from '@/firebase';
@@ -19,7 +19,8 @@ import {
   XCircle,
   User,
   LogOut,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -29,6 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from '@/components/ui/switch';
 import { StatusFilter, SortOption, LearningLink } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
@@ -47,6 +55,7 @@ export const Dashboard: React.FC = () => {
   const { user } = useUser();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
 
   const handleEdit = useCallback((link: LearningLink) => {
@@ -96,17 +105,29 @@ export const Dashboard: React.FC = () => {
                 <p className="text-xs font-bold leading-none text-emerald-950 truncate max-w-[150px]">{user?.email}</p>
                 <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">{isAdmin ? 'Administrator' : 'Learner'}</p>
               </div>
-              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700">
-                <User className="w-4 h-4" />
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 rounded-full hover:bg-emerald-50"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-4 h-4 text-emerald-700" />
-              </Button>
+              
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
+                    <User className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[180px] shadow-2xl border-2 border-emerald-100">
+                  <DropdownMenuItem 
+                    onSelect={() => setPasswordDialogOpen(true)}
+                    className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
+                  >
+                    <Lock className="w-4 h-4 mr-2 text-emerald-600" /> パスワード変更
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-emerald-100" />
+                  <DropdownMenuItem 
+                    onSelect={handleLogout} 
+                    className="rounded-xl cursor-pointer text-rose-600 text-xs h-11 font-bold focus:bg-rose-50"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> ログアウト
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -277,6 +298,11 @@ export const Dashboard: React.FC = () => {
           }
         }} 
         editLink={editingLink} 
+      />
+
+      <PasswordChangeDialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
       />
     </div>
   );
