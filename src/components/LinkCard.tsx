@@ -83,14 +83,30 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-xl border-emerald-50">
-                    <DropdownMenuItem onClick={() => onEdit(link)} className="rounded-xl cursor-pointer text-xs h-10">
+                    <DropdownMenuItem 
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        // メニューが閉じるのを待ってからダイアログを開く
+                        setTimeout(() => onEdit(link), 0);
+                      }} 
+                      className="rounded-xl cursor-pointer text-xs h-10"
+                    >
                       <Edit3 className="w-4 h-4 mr-2 text-emerald-600" /> 編集
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => duplicateLink(link.id)} className="rounded-xl cursor-pointer text-xs h-10">
+                    <DropdownMenuItem 
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        duplicateLink(link.id);
+                      }} 
+                      className="rounded-xl cursor-pointer text-xs h-10"
+                    >
                       <Copy className="w-4 h-4 mr-2 text-blue-600" /> 複製
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => setDeleteDialogOpen(true)} 
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setDeleteDialogOpen(true);
+                      }} 
                       className="rounded-xl cursor-pointer text-rose-600 text-xs h-10"
                     >
                       <Trash2 className="w-4 h-4 mr-2" /> 削除
@@ -145,7 +161,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
         </CardContent>
       </Card>
 
-      {/* AlertDialog moved outside DropdownMenu to prevent Portal conflicts */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="rounded-3xl border-emerald-50">
           <AlertDialogHeader>

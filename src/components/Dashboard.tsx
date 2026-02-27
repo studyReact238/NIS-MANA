@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from '@/components/ui/switch';
-import { StatusFilter, SortOption } from '@/types/link';
+import { StatusFilter, SortOption, LearningLink } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
@@ -40,9 +40,9 @@ export const Dashboard: React.FC = () => {
   } = useLinks();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingLink, setEditingLink] = useState<any>(null);
+  const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
 
-  const handleEdit = useCallback((link: any) => {
+  const handleEdit = useCallback((link: LearningLink) => {
     setEditingLink(link);
     setDialogOpen(true);
   }, []);
@@ -55,10 +55,9 @@ export const Dashboard: React.FC = () => {
   const handleOpenChange = (open: boolean) => {
     setDialogOpen(open);
     if (!open) {
-      // ダイアログを閉じる際に編集中のデータをクリア
-      // わずかな遅延を入れることで、ダイアログの終了アニメーション中に
-      // 状態が切り替わるのを防ぎ、UIロックアップを回避します
-      setTimeout(() => setEditingLink(null), 100);
+      // ダイアログのアニメーションが完了するのを待ってから状態をクリア
+      // これにより、不完全なクリーンアップによるUIロックを防ぎます
+      setTimeout(() => setEditingLink(null), 300);
     }
   };
 
@@ -253,7 +252,6 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Dialogs at top level for stability */}
       <LinkDialog 
         open={dialogOpen} 
         onOpenChange={handleOpenChange} 
