@@ -17,8 +17,7 @@ import {
   Edit3, 
   ExternalLink,
   CheckCircle2,
-  Clock,
-  Sparkles
+  Clock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -46,7 +45,7 @@ interface LinkCardProps {
   onEdit: (link: LearningLink) => void;
 }
 
-const SPARKLE_COLORS = ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#f43f5e', '#ffffff'];
+const SPARKLE_COLORS = ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#f43f5e', '#ffffff', '#a855f7', '#ec4899'];
 
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const { isAdmin, toggleComplete, deleteLink, duplicateLink } = useLinks();
@@ -72,8 +71,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
       )}>
         {/* Large Watermark Checkmark - Always visible when completed */}
         {link.isCompleted && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none -z-10">
-            <CheckCircle2 className="w-64 h-64 text-emerald-600/40" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none -z-10">
+            <CheckCircle2 className="w-64 h-64 text-emerald-600/50" />
           </div>
         )}
 
@@ -86,17 +85,14 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
             </div>
             
             <div className="flex items-center gap-3 relative">
-              {/* Explosive Sparkle Animation from Button */}
+              {/* Explosive Sparkle Animation from Button (Cracker Style) */}
               {showSparkles && (
                 <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
                   <div className="relative">
-                    {/* Center burst icon */}
-                    <Sparkles className="w-8 h-8 text-yellow-400 animate-sparkle absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-                    
                     {/* Small colorful particles bursting out */}
-                    {[...Array(12)].map((_, i) => {
-                      const angle = (i * 30) * (Math.PI / 180);
-                      const distance = 50 + Math.random() * 40;
+                    {[...Array(16)].map((_, i) => {
+                      const angle = (i * 22.5) * (Math.PI / 180);
+                      const distance = 40 + Math.random() * 60;
                       const x = Math.cos(angle) * distance;
                       const y = Math.sin(angle) * distance;
                       const color = SPARKLE_COLORS[i % SPARKLE_COLORS.length];
@@ -112,7 +108,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                             margin: '-4px',
                             '--tw-translate-x': `${x}px`,
                             '--tw-translate-y': `${y}px`,
-                            animationDelay: `${Math.random() * 0.1}s`,
+                            animationDelay: `${Math.random() * 0.05}s`,
                           } as any}
                         />
                       );
