@@ -75,6 +75,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin Check
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
+    // ドキュメントIDがユーザーのUIDと一致するかチェック
     return doc(firestore, 'admins', user.uid);
   }, [firestore, user?.uid]);
   
@@ -83,8 +84,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 管理者かどうかを判定
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    return adminDoc !== null;
+    // ドキュメントが存在する場合（adminDocがnullでない場合）のみ管理者とみなす
+    return !!adminDoc;
   }, [adminDoc, isAdminLoading]);
+
+  // デバッグ用ログ（開発中のみ）
+  useEffect(() => {
+    if (user && isServerAdmin !== null) {
+      console.log(`Current User UID: ${user.uid}`);
+      console.log(`Is Server Admin: ${isServerAdmin}`);
+    }
+  }, [user, isServerAdmin]);
 
   // 編集モードを有効にできるのはサーバーサイドで管理者として登録されているユーザーのみ
   const isAdmin = isServerAdmin === true && isAdminManual;
