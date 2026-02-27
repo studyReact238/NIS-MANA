@@ -1,3 +1,14 @@
+"use client";
+
+import { LinkProvider } from '@/context/LinkContext';
+import { Dashboard } from '@/components/Dashboard';
+
 export default function Home() {
-  return <></>;
+  return (
+    <LinkProvider>
+      <main className="min-h-screen">
+        <Dashboard />
+      </main>
+    </LinkProvider>
+  );
 }
