@@ -6,6 +6,8 @@ import { LinkCard } from '@/components/LinkCard';
 import { LinkDialog } from '@/components/LinkDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
 import { 
   Search, 
   Plus, 
@@ -29,6 +31,7 @@ import { Switch } from '@/components/ui/switch';
 import { StatusFilter, SortOption, LearningLink } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export const Dashboard: React.FC = () => {
   const { 
@@ -38,6 +41,9 @@ export const Dashboard: React.FC = () => {
     clearIcons, allTags
   } = useLinks();
 
+  const auth = useAuth();
+  const { user } = useUser();
+  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
 
@@ -50,6 +56,15 @@ export const Dashboard: React.FC = () => {
     setEditingLink(null);
     setDialogOpen(true);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: "ログアウトしました", description: "またのご利用をお待ちしております。" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "エラー", description: "ログアウトに失敗しました。" });
+    }
+  };
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 pb-20">
@@ -78,13 +93,18 @@ export const Dashboard: React.FC = () => {
 
             <div className="flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold leading-none text-emerald-950">admin@linkflow</p>
-                <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">Administrator</p>
+                <p className="text-xs font-bold leading-none text-emerald-950 truncate max-w-[150px]">{user?.email}</p>
+                <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">{isAdmin ? 'Administrator' : 'Learner'}</p>
               </div>
               <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700">
                 <User className="w-4 h-4" />
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-emerald-50">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full hover:bg-emerald-50"
+                onClick={handleLogout}
+              >
                 <LogOut className="w-4 h-4 text-emerald-700" />
               </Button>
             </div>
