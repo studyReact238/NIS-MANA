@@ -54,10 +54,17 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased selection:bg-emerald-200/50;
+    /* セーフガード: Radix UIのバグでクリックが無効化されたままになるのを防ぐ */
+    pointer-events: auto !important;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline tracking-tight;
   }
+}
+
+/* ダイアログが開いている間だけポインタイベントを制限したい場合は、Radixが自動で付与する属性を考慮する */
+body[data-radix-scroll-lock] {
+  overflow: hidden;
 }
 
 .glass {

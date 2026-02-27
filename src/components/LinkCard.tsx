@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -76,7 +75,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               </div>
               
               {isAdmin && (
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-emerald-50">
                       <MoreVertical className="w-4 h-4 text-muted-foreground" />
@@ -84,29 +83,19 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-xl border-emerald-50">
                     <DropdownMenuItem 
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        // メニューが閉じるのを待ってからダイアログを開く
-                        setTimeout(() => onEdit(link), 0);
-                      }} 
+                      onSelect={() => onEdit(link)} 
                       className="rounded-xl cursor-pointer text-xs h-10"
                     >
                       <Edit3 className="w-4 h-4 mr-2 text-emerald-600" /> 編集
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        duplicateLink(link.id);
-                      }} 
+                      onSelect={() => duplicateLink(link.id)} 
                       className="rounded-xl cursor-pointer text-xs h-10"
                     >
                       <Copy className="w-4 h-4 mr-2 text-blue-600" /> 複製
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setDeleteDialogOpen(true);
-                      }} 
+                      onSelect={() => setDeleteDialogOpen(true)} 
                       className="rounded-xl cursor-pointer text-rose-600 text-xs h-10"
                     >
                       <Trash2 className="w-4 h-4 mr-2" /> 削除

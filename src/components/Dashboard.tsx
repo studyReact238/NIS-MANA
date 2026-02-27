@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -51,15 +50,6 @@ export const Dashboard: React.FC = () => {
     setEditingLink(null);
     setDialogOpen(true);
   }, []);
-
-  const handleOpenChange = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) {
-      // ダイアログのアニメーションが完了するのを待ってから状態をクリア
-      // これにより、不完全なクリーンアップによるUIロックを防ぎます
-      setTimeout(() => setEditingLink(null), 300);
-    }
-  };
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-8">
@@ -254,7 +244,10 @@ export const Dashboard: React.FC = () => {
 
       <LinkDialog 
         open={dialogOpen} 
-        onOpenChange={handleOpenChange} 
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setEditingLink(null);
+        }} 
         editLink={editingLink} 
       />
     </div>
