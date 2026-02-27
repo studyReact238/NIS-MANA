@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
@@ -76,7 +77,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!firestore || !user) return null;
     return doc(firestore, 'admins', user.uid);
   }, [firestore, user]);
-  const { data: adminDoc } = useDoc(adminDocRef);
+  
+  const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminDocRef);
+  
+  // 管理者かどうかを判定。ドキュメントが存在すれば管理者とみなす。
   const isServerAdmin = !!adminDoc;
 
   // 編集モードを有効にできるのはサーバーサイドで管理者として登録されているユーザーのみ
@@ -215,7 +219,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading
+      duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || isAdminLoading
     }}>
       {children}
     </LinkContext.Provider>
