@@ -52,40 +52,42 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 bg-emerald-100/30 p-5 rounded-3xl border border-emerald-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-md">L</div>
-          <h1 className="text-2xl font-bold tracking-tight text-emerald-800">LinkFlow</h1>
-        </div>
-
-        <div className="flex items-center gap-6">
-          {isAdmin && (
-            <Button 
-              onClick={handleAdd} 
-              className="rounded-full h-10 px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-sm border-2 border-emerald-800 transition-all hover:-translate-y-0.5"
-            >
-              <Plus className="w-4 h-4 mr-2" /> 新規追加
-            </Button>
-          )}
-
-          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
-            <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
-            <Switch checked={isAdmin} onCheckedChange={setIsAdmin} className="data-[state=checked]:bg-emerald-600" />
+    <div className="max-w-[1200px] mx-auto px-6 pb-20">
+      {/* Fixed Header Section */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 -mx-6 px-6 mb-4">
+        <div className="flex items-center justify-between bg-emerald-100/30 p-5 rounded-3xl border border-emerald-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-md">L</div>
+            <h1 className="text-2xl font-bold tracking-tight text-emerald-800">LinkFlow</h1>
           </div>
 
-          <div className="flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold leading-none text-emerald-950">admin@linkflow</p>
-              <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">Administrator</p>
+          <div className="flex items-center gap-6">
+            {isAdmin && (
+              <Button 
+                onClick={handleAdd} 
+                className="rounded-full h-10 px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-sm border-2 border-emerald-800 transition-all hover:-translate-y-0.5"
+              >
+                <Plus className="w-4 h-4 mr-2" /> 新規追加
+              </Button>
+            )}
+
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
+              <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
+              <Switch checked={isAdmin} onCheckedChange={setIsAdmin} className="data-[state=checked]:bg-emerald-600" />
             </div>
-            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700">
-              <User className="w-4 h-4" />
+
+            <div className="flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold leading-none text-emerald-950">admin@linkflow</p>
+                <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">Administrator</p>
+              </div>
+              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700">
+                <User className="w-4 h-4" />
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-emerald-50">
+                <LogOut className="w-4 h-4 text-emerald-700" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-emerald-50">
-              <LogOut className="w-4 h-4 text-emerald-700" />
-            </Button>
           </div>
         </div>
       </div>
@@ -244,7 +246,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredLinks.map(link => (
           <LinkCard key={link.id} link={link} onEdit={handleEdit} />
         ))}
