@@ -166,14 +166,17 @@ export const Dashboard: React.FC = () => {
                     key={c.name}
                     onClick={() => toggleColor(c.name)}
                     className={cn(
-                      "w-7 h-7 rounded-full border-2 transition-all",
+                      "w-8 h-8 rounded-full border-2 transition-all",
                       c.class,
                       selectedColors.includes(c.name) ? "border-emerald-800 scale-125 ring-4 ring-emerald-200" : "border-white shadow-sm hover:scale-110"
                     )}
+                    aria-label={`Filter by ${c.name}`}
                   />
                 ))}
                 {selectedColors.length > 0 && (
-                  <button onClick={clearColors} className="px-2 py-1 rounded-md text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 ml-2">クリア</button>
+                  <button onClick={clearColors} className="px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 transition-colors">
+                    <XCircle className="w-3 h-3" /> クリア
+                  </button>
                 )}
               </div>
             </div>
@@ -203,7 +206,9 @@ export const Dashboard: React.FC = () => {
                   );
                 })}
                 {selectedIcons.length > 0 && (
-                  <button onClick={clearIcons} className="px-2 py-1 rounded-md text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 ml-2">クリア</button>
+                  <button onClick={clearIcons} className="px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 transition-colors">
+                    <XCircle className="w-3 h-3" /> クリア
+                  </button>
                 )}
               </div>
             </div>
