@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -17,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLinks } from '@/context/LinkContext';
 import { LearningLink, LinkColor } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
-import { X, Sparkles, Plus, Loader2 } from 'lucide-react';
+import { X, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { summarizeLink } from '@/ai/flows/summarize-link';
 import { suggestAITagsForLink } from '@/ai/flows/suggest-ai-tags-for-link';
@@ -45,24 +46,26 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
   const [loadingAI, setLoadingAI] = useState(false);
 
   useEffect(() => {
-    if (editLink) {
-      setFormData({
-        title: editLink.title,
-        url: editLink.url,
-        description: editLink.description || '',
-        tags: editLink.tags,
-        color: editLink.color,
-        icon: editLink.icon,
-      });
-    } else {
-      setFormData({
-        title: '',
-        url: '',
-        description: '',
-        tags: [],
-        color: 'emerald',
-        icon: 'book',
-      });
+    if (open) {
+      if (editLink) {
+        setFormData({
+          title: editLink.title,
+          url: editLink.url,
+          description: editLink.description || '',
+          tags: editLink.tags,
+          color: editLink.color,
+          icon: editLink.icon,
+        });
+      } else {
+        setFormData({
+          title: '',
+          url: '',
+          description: '',
+          tags: [],
+          color: 'emerald',
+          icon: 'book',
+        });
+      }
     }
   }, [editLink, open]);
 
@@ -71,10 +74,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
     if (!formData.title || !formData.url) return;
 
     if (editLink) {
-      updateLink(editLink.id, { ...formData, updatedAt: Date.now() });
+      updateLink(editLink.id, { ...formData });
     } else {
       addLink({ ...formData, isCompleted: false });
     }
+    // 親の状態を更新してダイアログを閉じる
     onOpenChange(false);
   };
 
@@ -192,7 +196,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
               
               <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-muted/30 rounded-2xl">
                 {formData.tags.map(tag => (
-                  <Badge key={tag} className="rounded-full px-3 py-1 flex items-center gap-1 bg-white shadow-sm text-foreground hover:bg-white">
+                  <Badge key={tag} className="rounded-full px-3 py-1 flex items-center gap-1 bg-white shadow-sm text-foreground hover:bg-white border-none">
                     {tag}
                     <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
                       <X className="w-3 h-3" />
@@ -210,7 +214,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                   placeholder="タグ名を入力..." 
                   className="rounded-2xl"
                 />
-                <Button type="button" onClick={() => addTag(tagInput)} className="rounded-2xl">
+                <Button type="button" onClick={() => addTag(tagInput)} className="rounded-2xl bg-emerald-600 hover:bg-emerald-700">
                   追加
                 </Button>
               </div>
@@ -222,7 +226,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                     key={t} 
                     type="button" 
                     onClick={() => addTag(t)}
-                    className="text-xs px-2 py-1 rounded-md border border-muted hover:bg-accent transition-colors"
+                    className="text-xs px-2 py-1 rounded-md border border-muted hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
                   >
                     + {t}
                   </button>
@@ -244,7 +248,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                         className={cn(
                           "w-8 h-8 rounded-full border-4 transition-all",
                           c.class,
-                          formData.color === c.name ? "border-foreground scale-110" : "border-transparent opacity-60 hover:opacity-100"
+                          formData.color === c.name ? "border-foreground scale-110 shadow-lg" : "border-transparent opacity-60 hover:opacity-100"
                         )}
                       />
                     ))}
@@ -265,7 +269,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                           onClick={() => setFormData(prev => ({ ...prev, icon: i.name }))}
                           className={cn(
                             "p-2 rounded-xl transition-all",
-                            formData.icon === i.name ? "bg-primary text-primary-foreground scale-110 shadow-lg" : "bg-muted hover:bg-accent"
+                            formData.icon === i.name ? "bg-emerald-600 text-white scale-110 shadow-lg" : "bg-muted hover:bg-emerald-50"
                           )}
                         >
                           <IconComp className="w-5 h-5" />
@@ -278,11 +282,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             </div>
           </div>
 
-          <DialogFooter className="pt-6 sm:justify-between items-center border-t">
+          <DialogFooter className="pt-6 sm:justify-between items-center border-t border-emerald-50/50">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-2xl">
               キャンセル
             </Button>
-            <Button type="submit" className="rounded-2xl px-10 h-12 text-lg shadow-lg">
+            <Button type="submit" className="rounded-2xl px-10 h-12 text-lg shadow-lg bg-emerald-600 hover:bg-emerald-700">
               {editLink ? '更新する' : '保存する'}
             </Button>
           </DialogFooter>

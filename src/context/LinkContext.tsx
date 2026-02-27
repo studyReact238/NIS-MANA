@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
@@ -37,6 +38,8 @@ const LinkContext = createContext<LinkContextType | undefined>(undefined);
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [links, setLinks] = useState<LearningLink[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-new');
@@ -47,6 +50,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('linkflow_links');
+    const savedAdmin = localStorage.getItem('linkflow_admin');
+    
     if (saved) {
       setLinks(JSON.parse(saved));
     } else {
@@ -68,17 +73,18 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLinks(mock);
     }
     
-    const savedAdmin = localStorage.getItem('linkflow_admin');
-    if (savedAdmin) setIsAdmin(JSON.parse(savedAdmin));
+    if (savedAdmin) {
+      setIsAdmin(JSON.parse(savedAdmin));
+    }
+    setIsLoaded(true);
   }, []);
 
   // Save to localStorage
   useEffect(() => {
-    if (links.length > 0) {
-      localStorage.setItem('linkflow_links', JSON.stringify(links));
-    }
+    if (!isLoaded) return;
+    localStorage.setItem('linkflow_links', JSON.stringify(links));
     localStorage.setItem('linkflow_admin', JSON.stringify(isAdmin));
-  }, [links, isAdmin]);
+  }, [links, isAdmin, isLoaded]);
 
   const addLink = (data: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     const newLink: LearningLink = {
@@ -88,15 +94,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: Date.now(),
       userId: 'demo-user'
     };
-    setLinks([newLink, ...links]);
+    setLinks(prev => [newLink, ...prev]);
   };
 
   const updateLink = (id: string, updates: Partial<LearningLink>) => {
-    setLinks(links.map(l => l.id === id ? { ...l, ...updates, updatedAt: Date.now() } : l));
+    setLinks(prev => prev.map(l => l.id === id ? { ...l, ...updates, updatedAt: Date.now() } : l));
   };
 
   const deleteLink = (id: string) => {
-    setLinks(links.filter(l => l.id !== id));
+    setLinks(prev => prev.filter(l => l.id !== id));
   };
 
   const duplicateLink = (id: string) => {
@@ -110,11 +116,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: Date.now(),
       isCompleted: false,
     };
-    setLinks([copy, ...links]);
+    setLinks(prev => [copy, ...prev]);
   };
 
   const toggleComplete = (id: string) => {
-    setLinks(links.map(l => l.id === id ? { ...l, isCompleted: !l.isCompleted, updatedAt: Date.now() } : l));
+    setLinks(prev => prev.map(l => l.id === id ? { ...l, isCompleted: !l.isCompleted, updatedAt: Date.now() } : l));
   };
 
   const toggleTag = (tag: string) => {

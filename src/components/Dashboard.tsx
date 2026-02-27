@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { LinkCard } from '@/components/LinkCard';
 import { LinkDialog } from '@/components/LinkDialog';
@@ -10,7 +11,6 @@ import {
   Search, 
   Plus, 
   ArrowUpDown, 
-  ShieldCheck,
   Tag as TagIcon,
   Palette,
   Layout,
@@ -42,19 +42,29 @@ export const Dashboard: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<any>(null);
 
-  const handleEdit = (link: any) => {
+  const handleEdit = useCallback((link: any) => {
     setEditingLink(link);
     setDialogOpen(true);
-  };
+  }, []);
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingLink(null);
     setDialogOpen(true);
+  }, []);
+
+  const handleOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      // ダイアログを閉じる際に編集中のデータをクリア
+      // わずかな遅延を入れることで、ダイアログの終了アニメーション中に
+      // 状態が切り替わるのを防ぎ、UIロックアップを回避します
+      setTimeout(() => setEditingLink(null), 100);
+    }
   };
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-8">
-      {/* Header - Horizontal matching screenshot */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-8 bg-emerald-50/50 p-4 rounded-3xl border border-emerald-100/30">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-black text-xl">L</div>
@@ -82,9 +92,8 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Filter Panel - Centered card */}
+      {/* Main Filter Panel */}
       <div className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 p-8 mb-10 space-y-8">
-        {/* Search Row */}
         <div className="relative group max-w-3xl mx-auto">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-emerald-500 transition-colors" />
           <Input 
@@ -95,7 +104,6 @@ export const Dashboard: React.FC = () => {
           />
         </div>
 
-        {/* Status Tabs */}
         <div className="flex justify-center">
           <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full max-w-2xl">
             <TabsList className="grid grid-cols-3 h-14 bg-emerald-50/50 rounded-2xl p-1 gap-1">
@@ -111,7 +119,6 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="space-y-6 pt-2 border-t border-emerald-50/50">
-          {/* Sort Option */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-muted-foreground min-w-[120px]">
               <ArrowUpDown className="w-4 h-4" />
@@ -130,7 +137,6 @@ export const Dashboard: React.FC = () => {
             </Select>
           </div>
 
-          {/* Tags Filter */}
           <div className="flex items-start gap-4">
             <div className="flex items-center gap-2 text-muted-foreground min-w-[120px] pt-2">
               <TagIcon className="w-4 h-4" />
@@ -159,7 +165,6 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Color & Type Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-muted-foreground min-w-[120px]">
@@ -229,7 +234,7 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Grid of cards */}
+      {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredLinks.map(link => (
           <LinkCard key={link.id} link={link} onEdit={handleEdit} />
@@ -248,9 +253,10 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
+      {/* Dialogs at top level for stability */}
       <LinkDialog 
         open={dialogOpen} 
-        onOpenChange={setDialogOpen} 
+        onOpenChange={handleOpenChange} 
         editLink={editingLink} 
       />
     </div>
