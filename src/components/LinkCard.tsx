@@ -68,10 +68,10 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
         "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 shadow-sm",
         cn(colorData.bg, colorData.border)
       )}>
-        {/* Large Watermark Checkmark in Center */}
+        {/* Large Watermark Checkmark in Center - Improved Visibility */}
         {link.isCompleted && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none -z-10">
-            <CheckCircle2 className="w-48 h-48 text-emerald-600/40" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none -z-10">
+            <CheckCircle2 className="w-56 h-56 text-emerald-600/40" />
           </div>
         )}
 
