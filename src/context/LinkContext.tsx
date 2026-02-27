@@ -80,15 +80,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminDocRef);
   
-  // 管理者かどうかを判定。
-  // adminDoc が undefined (loading) の間は null を返し、取得できたら boolean を返す
+  // 管理者かどうかを判定
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    return !!adminDoc;
+    return adminDoc !== null;
   }, [adminDoc, isAdminLoading]);
 
   // 編集モードを有効にできるのはサーバーサイドで管理者として登録されているユーザーのみ
-  const isAdmin = !!isServerAdmin && isAdminManual;
+  const isAdmin = isServerAdmin === true && isAdminManual;
 
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -98,7 +99,7 @@ export const Dashboard: React.FC = () => {
             )}
 
             {/* 管理者のみ編集モードの切り替えを表示 */}
-            {isServerAdmin && (
+            {isServerAdmin === true && (
               <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
                 <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
                 <Switch 
@@ -112,7 +113,8 @@ export const Dashboard: React.FC = () => {
             <div className="flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold leading-none text-emerald-950 truncate max-w-[150px]">{user?.email}</p>
-                <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">{isServerAdmin ? 'Administrator' : 'Learner'}</p>
+                <p className="text-[8px] text-emerald-400 font-mono mb-1">{user?.uid}</p>
+                <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">{isServerAdmin === true ? 'Administrator' : 'Learner'}</p>
               </div>
               
               <DropdownMenu modal={false}>

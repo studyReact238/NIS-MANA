@@ -6,8 +6,7 @@ service cloud.firestore {
     /**
      * Core Philosophy: 
      * This ruleset enforces a strict user-ownership model where private data is nested under 
-     * user-specific paths. It prioritizes Authorization Independence by using denormalized 
-     * ownership fields and a dedicated administration collection to avoid costly cross-document lookups.
+     * user-specific paths.
      */
 
     // --- Helper Functions ---
@@ -20,10 +19,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
@@ -34,15 +29,15 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId);
+      allow update: if isOwner(userId);
       allow delete: if isAdmin();
     }
 
     match /users/{userId}/learningLinks/{learningLinkId} {
       allow get, list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     match /tags/{tagId} {
@@ -51,9 +46,8 @@ service cloud.firestore {
     }
 
     match /admins/{userId} {
-      // ユーザーが自分が管理者かどうかを確認できるように get を許可
-      // ルールの再適用を確実にするためのコメント追加
-      allow get: if isOwner(userId) || isAdmin();
+      // ログイン中のユーザーが自身の管理者ドキュメントを確認することを許可
+      allow get: if isSignedIn() && request.auth.uid == userId;
       allow list: if isAdmin();
       allow write: if false;
     }
