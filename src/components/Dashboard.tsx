@@ -61,6 +61,15 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-6">
+          {isAdmin && (
+            <Button 
+              onClick={handleAdd} 
+              className="rounded-full h-10 px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-sm border-2 border-emerald-800 transition-all hover:-translate-y-0.5"
+            >
+              <Plus className="w-4 h-4 mr-2" /> 新規追加
+            </Button>
+          )}
+
           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
             <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
             <Switch checked={isAdmin} onCheckedChange={setIsAdmin} className="data-[state=checked]:bg-emerald-600" />
@@ -113,10 +122,10 @@ export const Dashboard: React.FC = () => {
             <div className="flex items-center gap-3 flex-1">
               <div className="flex items-center gap-1.5 text-emerald-800 min-w-[90px]">
                 <ArrowUpDown className="w-3.5 h-3.5" />
-                <span className="text-xs font-bold whitespace-nowrap">並べ替え:</span>
+                <span className="text-[11px] font-bold whitespace-nowrap">並べ替え:</span>
               </div>
               <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
-                <SelectTrigger className="w-full max-w-[200px] border-emerald-200 bg-emerald-50/50 rounded-xl h-9 text-xs font-bold text-emerald-900">
+                <SelectTrigger className="w-full max-w-[200px] border-emerald-200 bg-emerald-50/50 rounded-xl h-9 text-[11px] font-bold text-emerald-900">
                   <SelectValue placeholder="並べ替え" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-emerald-200">
@@ -131,7 +140,7 @@ export const Dashboard: React.FC = () => {
             <div className="flex items-center gap-3 flex-1">
               <div className="flex items-center gap-1.5 text-emerald-800 min-w-[90px]">
                 <Palette className="w-3.5 h-3.5" />
-                <span className="text-xs font-bold whitespace-nowrap">カラー絞り込み:</span>
+                <span className="text-[11px] font-bold whitespace-nowrap">カラー絞り込み:</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2">
@@ -161,7 +170,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-emerald-800 min-w-[90px]">
               <Layout className="w-3.5 h-3.5" />
-              <span className="text-xs font-bold whitespace-nowrap">タイプ絞り込み:</span>
+              <span className="text-[11px] font-bold whitespace-nowrap">タイプ絞り込み:</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {LINK_ICONS.map(i => {
@@ -194,7 +203,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-start gap-3">
             <div className="flex items-center gap-1.5 text-emerald-800 min-w-[90px] pt-1">
               <TagIcon className="w-3.5 h-3.5" />
-              <span className="text-xs font-bold whitespace-nowrap">タグ絞り込み:</span>
+              <span className="text-[11px] font-bold whitespace-nowrap">タグ絞り込み:</span>
             </div>
             <div className="flex flex-wrap gap-1.5 flex-1">
               {allTags.map(tag => (
@@ -232,11 +241,6 @@ export const Dashboard: React.FC = () => {
             {filteredLinks.length} items
           </span>
         </h2>
-        {isAdmin && (
-          <Button onClick={handleAdd} className="rounded-full h-11 px-8 bg-emerald-700 hover:bg-emerald-800 shadow-lg shadow-emerald-200 font-bold transition-all hover:-translate-y-0.5 border-2 border-emerald-800">
-            <Plus className="w-5 h-5 mr-2" /> 新規追加
-          </Button>
-        )}
       </div>
 
       {/* Grid */}
@@ -263,7 +267,6 @@ export const Dashboard: React.FC = () => {
         onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) {
-            // 操作不可問題対策として少し遅延させてクリア
             setTimeout(() => setEditingLink(null), 300);
           }
         }} 
