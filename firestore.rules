@@ -12,10 +12,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      // admins コレクションにログインユーザーのUIDが存在するかをチェック
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // グローバル共有リンク：全員閲覧可、追加・編集は管理者のみ
+    // グローバル共有リンク
     match /learningLinks/{linkId} {
       allow read: if isSignedIn();
       allow create, delete: if isAdmin();
@@ -28,13 +29,14 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // 管理者のみが確認できる受講者名簿
+    // 受講者名簿：管理者は全件閲覧可能、ユーザーは自分のデータのみ
     match /learningLinks/{linkId}/completions/{userId} {
-      allow read: if isAdmin();
+      allow list: if isAdmin();
+      allow get: if isAdmin() || isOwner(userId);
       allow write: if isOwner(userId);
     }
 
-    // ユーザー個別の進捗管理：本人だけが読み書き可能
+    // ユーザー個別の進捗管理
     match /users/{userId}/progress/{linkId} {
       allow read, write: if isOwner(userId);
     }
@@ -44,7 +46,7 @@ service cloud.firestore {
       allow get, list, create, update: if isOwner(userId);
     }
 
-    // 管理者名簿
+    // 管理者名簿（デバッグパネルや管理判定で使用）
     match /admins/{userId} {
       allow read: if isSignedIn();
       allow write: if false;
