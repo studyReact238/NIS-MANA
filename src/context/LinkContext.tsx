@@ -69,22 +69,35 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: firestoreLinks, isLoading: isLinksLoading } = useCollection<LearningLink>(linksQuery);
 
   const adminDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    // UIDを直接使用し、トリムも念のため適用
+    if (!firestore || !user?.uid) {
+      console.log("--- ADMIN CHECK: Firestore or User not ready ---");
+      return null;
+    }
+    const path = `admins/${user.uid.trim()}`;
+    console.log(`--- ADMIN CHECK STEP 1: Target Path Created ---`);
+    console.log(`Path: ${path}`);
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
   const { data: adminDoc, isLoading: isAdminLoading, error: adminError } = useDoc(adminDocRef);
   
-  const isServerAdmin = useMemo(() => {
-    if (isAdminLoading) return null;
-    if (adminError) {
-      console.error("Admin Check Error:", adminError);
-      return false;
-    }
-    // ドキュメントが存在すれば管理者とみなす
-    return adminDoc !== null;
+  useEffect(() => {
+    console.log("--- ADMIN CHECK STEP 3: useDoc status change ---");
+    console.log("Loading:", isAdminLoading);
+    console.log("Error:", adminError);
+    console.log("Doc Data (Result):", adminDoc);
   }, [adminDoc, isAdminLoading, adminError]);
+
+  const isServerAdmin = useMemo(() => {
+    if (isAdminLoading) {
+      console.log("--- ADMIN CHECK: Still Loading... ---");
+      return null;
+    }
+    const found = adminDoc !== null;
+    console.log(`--- ADMIN CHECK STEP 4: Final Decision ---`);
+    console.log(`Is Admin Found: ${found}`);
+    return found;
+  }, [adminDoc, isAdminLoading]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
