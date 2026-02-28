@@ -32,9 +32,10 @@ service cloud.firestore {
       allow delete: if isOwner(userId) || isAdmin();
     }
 
-    // 管理者チェック用のルール（極めてシンプルに）
+    // 管理者チェック用のルール
     match /admins/{userId} {
-      // ログイン中なら自分の権限有無を確認可能にする
+      // 誰でも（ログインしていれば）自分の管理者ドキュメントがあるか確認できるようにする
+      // これにより、 LinkContext での判定を確実にする
       allow get: if isSignedIn() && request.auth.uid == userId;
       allow list: if false;
       allow write: if false;

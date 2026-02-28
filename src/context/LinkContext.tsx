@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor } from '@/types/link';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, useFirebaseApp } from '@/firebase';
 import { firebaseConfig } from '@/firebase/config';
@@ -11,6 +11,7 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
+  getDoc
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -77,12 +78,39 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    if (adminError) return false;
+    if (adminError) {
+      console.error("Admin Check Permission Error:", adminError);
+      return false;
+    }
+    // ドキュメントが存在すれば (dataがnullでなければ) 管理者
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
+
+  // デバッグ用: 直接 getDoc を試みる
+  useEffect(() => {
+    if (user?.uid && firestore) {
+      const checkAdmin = async () => {
+        const ref = doc(firestore, 'admins', user.uid.trim());
+        try {
+          const snap = await getDoc(ref);
+          console.log("--- ADMIN CHECK DEBUG ---");
+          console.log("Connected Project:", firestore.app.options.projectId || firebaseConfig.projectId);
+          console.log("Checking Path:", ref.path);
+          console.log("Doc Exists:", snap.exists());
+          if (snap.exists()) {
+            console.log("Doc Data:", snap.data());
+          }
+          console.log("-------------------------");
+        } catch (e) {
+          console.error("Manual Admin Check Failed:", e);
+        }
+      };
+      checkAdmin();
+    }
+  }, [user?.uid, firestore]);
 
   const addLink = (data: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!firestore || !user) return;
@@ -158,7 +186,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
-      {/* デバッグパネル */}
+      {/* Admin Debug Panel */}
       <div 
         style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#111', color: 'white', padding: '20px', borderRadius: '20px', border: '2px solid red', fontSize: '12px', minWidth: '300px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}
       >
@@ -172,7 +200,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           onClick={() => {
             if(user?.uid) {
               navigator.clipboard.writeText(user.uid);
-              alert("UIDをコピーしました。");
+              alert("UIDをコピーしました。FirestoreのadminsコレクションのドキュメントIDに貼り付けてください。");
             }
           }}
           style={{ width: '100%', background: '#333', color: 'white', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '10px' }}
