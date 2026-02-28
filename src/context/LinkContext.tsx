@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor } from '@/types/link';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, useFirebaseApp } from '@/firebase';
+import { firebaseConfig } from '@/firebase/config';
 import { 
   collection, 
   doc, 
@@ -157,28 +158,33 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
-      {/* 緊急デバッグパネル: 何があっても最前面に表示 */}
+      {/* デバッグパネル */}
       <div 
-        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: 'rgba(0,0,0,0.9)', color: 'white', padding: '15px', borderRadius: '15px', border: '2px solid red', fontSize: '12px', minWidth: '250px' }}
+        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#111', color: 'white', padding: '20px', borderRadius: '20px', border: '2px solid red', fontSize: '12px', minWidth: '300px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}
       >
-        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #444', marginBottom: '10px' }}>Admin Debug Panel</div>
-        <div>Project: {firebaseApp?.options.projectId}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px' }}>
-          UID: <span style={{ color: '#4ade80' }}>{user?.uid}</span>
-        </div>
-        <div>Path: admins/{user?.uid}</div>
-        <div>Admin Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
-        {adminError && <div style={{ color: '#fb923c' }}>Error: {adminError.message}</div>}
+        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #333', marginBottom: '12px', paddingBottom: '8px' }}>Admin Debug Panel</div>
+        <div style={{ marginBottom: '6px' }}>Project: <span style={{ color: '#4ade80' }}>{firebaseApp?.options.projectId || firebaseConfig.projectId}</span></div>
+        <div style={{ marginBottom: '6px' }}>UID: <span style={{ color: '#4ade80' }}>{user?.uid}</span></div>
+        <div style={{ marginBottom: '6px' }}>Path: <span style={{ color: '#60a5fa' }}>admins/{user?.uid}</span></div>
+        <div style={{ marginBottom: '12px' }}>Admin Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
+        
         <button 
           onClick={() => {
             if(user?.uid) {
               navigator.clipboard.writeText(user.uid);
-              alert("UIDをコピーしました。FirestoreのドキュメントIDとして使用してください。");
+              alert("UIDをコピーしました。");
             }
           }}
-          style={{ width: '100%', marginTop: '10px', background: '#444', color: 'white', border: 'none', padding: '5px', borderRadius: '5px', cursor: 'pointer' }}
+          style={{ width: '100%', background: '#333', color: 'white', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '10px' }}
         >
           UIDをコピー
+        </button>
+
+        <button 
+          onClick={() => window.location.reload()}
+          style={{ width: '100%', background: '#444', color: 'white', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer' }}
+        >
+          ページを再読み込み
         </button>
       </div>
       
