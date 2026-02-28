@@ -70,6 +70,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
+    // UIDを直接使用し、トリムも念のため適用
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
@@ -77,13 +78,18 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    if (adminError) return false;
+    if (adminError) {
+      console.error("Admin Check Error:", adminError);
+      return false;
+    }
+    // ドキュメントが存在すれば管理者とみなす
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
 
+  // Firestore operations
   const addLink = (data: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!firestore || !user) return;
     const colRef = collection(firestore, 'users', user.uid, 'learningLinks');
@@ -117,6 +123,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateLink(id, { isCompleted: !link.isCompleted });
   };
 
+  // Filter handlers
   const toggleTag = (tag: string) => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   const clearTags = () => setSelectedTags([]);
   const toggleColor = (color: LinkColor) => setSelectedColors(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]);
@@ -126,7 +133,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const allTags = useMemo(() => {
     const tagsSet = new Set<string>();
-    links.forEach(l => l.tags.forEach(t => tagsSet.add(t)));
+    links.forEach(l => (l.tags || []).forEach(t => tagsSet.add(t)));
     return Array.from(tagsSet).sort();
   }, [links]);
 
@@ -134,18 +141,23 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let result = [...links];
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(l => l.title.toLowerCase().includes(s) || (l.description && l.description.toLowerCase().includes(s)) || l.tags.some(t => t.toLowerCase().includes(s)));
+      result = result.filter(l => 
+        l.title?.toLowerCase().includes(s) || 
+        (l.description && l.description.toLowerCase().includes(s)) || 
+        (l.tags || []).some(t => t.toLowerCase().includes(s))
+      );
     }
     if (statusFilter === 'learning') result = result.filter(l => !l.isCompleted);
     if (statusFilter === 'completed') result = result.filter(l => l.isCompleted);
-    if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => l.tags.includes(t)));
+    if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => (l.tags || []).includes(t)));
     if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
     if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
+    
     result.sort((a, b) => {
-      if (sortBy === 'title-asc') return a.title.localeCompare(b.title);
-      if (sortBy === 'title-desc') return b.title.localeCompare(a.title);
-      if (sortBy === 'date-new') return b.updatedAt - a.updatedAt;
-      if (sortBy === 'date-old') return a.updatedAt - b.updatedAt;
+      if (sortBy === 'title-asc') return (a.title || "").localeCompare(b.title || "");
+      if (sortBy === 'title-desc') return (b.title || "").localeCompare(a.title || "");
+      if (sortBy === 'date-new') return (b.updatedAt || 0) - (a.updatedAt || 0);
+      if (sortBy === 'date-old') return (a.updatedAt || 0) - (b.updatedAt || 0);
       return 0;
     });
     return result;
@@ -158,31 +170,36 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
-      {/* Admin Debug Panel (Force Visible) */}
+      {/* Admin Debug Panel */}
       <div 
-        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#111', color: 'white', padding: '16px', borderRadius: '16px', border: '2px solid #f87171', fontSize: '11px', minWidth: '260px', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', fontFamily: 'monospace' }}
+        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#0f172a', color: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '2px solid #10b981', fontSize: '11px', minWidth: '280px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', fontFamily: 'monospace' }}
       >
-        <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#f87171', borderBottom: '1px solid #333', pb: '4px' }}>ADMIN STATUS DEBUG</div>
-        <div style={{ marginBottom: '4px' }}>Project: <span style={{ color: '#60a5fa' }}>{firebaseApp?.options.projectId || firebaseConfig.projectId}</span></div>
-        <div style={{ marginBottom: '4px' }}>My UID: <span style={{ color: '#4ade80' }}>{user?.uid || 'Not Login'}</span></div>
-        <div style={{ marginBottom: '8px' }}>Admin Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
+        <div style={{ fontWeight: 'bold', marginBottom: '1rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isServerAdmin ? '#10b981' : '#ef4444' }}></div>
+          ADMIN STATUS DEBUG
+        </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1rem' }}>
+          <div>Project: <span style={{ color: '#94a3b8' }}>{firebaseApp?.options.projectId || firebaseConfig.projectId}</span></div>
+          <div>My UID: <span style={{ color: '#4ade80' }}>{user?.uid}</span></div>
+          <div>Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#ef4444', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button 
             onClick={() => {
               if(user?.uid) {
                 navigator.clipboard.writeText(user.uid);
-                alert("UIDをコピーしました。Firebaseコンソールの 'admins' コレクションに、このUIDをドキュメントIDとして登録してください。");
+                alert("UIDをコピーしました。Firestoreの 'admins' コレクションのドキュメントIDに貼り付けてください。");
               }
             }}
-            style={{ background: '#333', color: 'white', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            style={{ background: '#1e293b', color: 'white', border: '1px solid #334155', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             UIDをコピー
           </button>
-
           <button 
             onClick={() => window.location.reload()}
-            style={{ background: '#222', color: '#888', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}
+            style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}
           >
             ページを再読み込み
           </button>
