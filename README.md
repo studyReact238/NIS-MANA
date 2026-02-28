@@ -7,10 +7,17 @@ AI機能を無効化し、クレジットカード登録不要の **Firebase Hos
 この手順を完了すると、あなたのアプリが `https://<プロジェクトID>.web.app` で世界中に公開されます。
 
 ### 1. アプリのルートディレクトリを確認
-「ルートディレクトリ」とは、この `README.md` や `package.json` ファイルが直接置かれている**一番上のフォルダ**のことです。ターミナル（コマンドプロンプト）でこのフォルダを開いて以下の操作を行います。
+この環境におけるルートディレクトリの絶対パスは以下です：
+**`/home/user/app`**
+
+ターミナル（画面下の「Terminal」タブ）を開き、以下のコマンドを打つことで現在地を確認できます：
+```bash
+pwd
+```
+`/home/user/app` と表示されれば、そこがルートディレクトリです。`ls` コマンドで `package.json` が見えることを確認してください。
 
 ### 2. Firebase CLI のインストール
-ターミナルを開き、Firebase を操作するためのツールをインストールします（まだの場合）。
+ターミナルで以下を実行します（まだの場合）。
 ```bash
 npm install -g firebase-tools
 ```
@@ -18,11 +25,12 @@ npm install -g firebase-tools
 ### 3. ログイン
 Google アカウントでログインします。
 ```bash
-firebase login
+firebase login --no-localhost
 ```
+※ブラウザが開けない環境の場合は、表示されるURLをコピーして手元のブラウザで開き、認証コードを貼り付けてください。
 
 ### 4. プロジェクトの初期化
-ルートディレクトリで実行します。
+ルートディレクトリ（`/home/user/app`）で実行します。
 ```bash
 firebase init hosting
 ```
@@ -35,7 +43,7 @@ firebase init hosting
 *   `File out/index.html already exists. Overwrite?`: **No**
 
 ### 5. ビルドの実行
-Next.js を静的ファイル（HTML/JS/CSS）に変換します。これにより `out` フォルダが自動生成されます。
+Next.js を静的ファイル（HTML/JS/CSS）に変換します。
 ```bash
 npm run build
 ```
