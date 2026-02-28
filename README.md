@@ -1,5 +1,20 @@
-# Firebase Studio
+# にすまな - Learning Knowledge Base
 
-This is a NextJS starter in Firebase Studio.
+AI を活用したスマートな学習リンク管理ツールです。
 
-To get started, take a look at src/app/page.tsx.
+## 運用と課金に関するアドバイス
+
+このアプリは Firebase App Hosting を利用してデプロイすることを想定しています。
+
+### 無料で運用するために
+Firebase の **Blaze（従量課金）プラン** へのアップグレードが必要ですが、適切な設定を行えば実質 0円 で運用可能です。
+
+1. **予算アラートの設定**: Google Cloud Console の「お支払い」から、予算を 1円 や 100円 に設定してください。無料枠を超えそうになったら通知が来ます。
+2. **Firestore の無料枠**: 読み取り 50,000回/日、書き込み 20,000回/日 までは無料です。このアプリは詳細ダイアログを開いた時だけデータを読み取るように最適化されています。
+3. **Gemini API**: Google AI Studio の API キーを使用しているため、無料枠の範囲内で AI 機能を利用できます。
+
+### クレジットカード登録を避けたい場合
+AI 機能を無効化し、Next.js を `output: 'export'` モードに設定することで、標準の Firebase Hosting（Spark プラン）での公開が可能になります。ただし、その場合は `src/ai/flows` 配下の AI 処理は動作しなくなります。
+
+---
+&copy; 2024 にすまな
