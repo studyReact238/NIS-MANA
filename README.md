@@ -1,25 +1,55 @@
 # にすまな - Learning Knowledge Base
 
-AI機能を無効化し、完全に無料で運用可能なスマート学習リンク管理ツールです。
+AI機能を無効化し、クレジットカード登録不要の **Firebase Hosting (Sparkプラン)** で完全に無料で運用するためのガイドです。
 
-## 無料で公開・運用する方法
+## 🚀 無料で公開・デプロイする具体的手順
 
-このアプリは、クレジットカードを登録せずに **Firebase Hosting (Sparkプラン)** で世界中に無料公開できます。
+この手順を完了すると、あなたのアプリが `https://<プロジェクトID>.web.app` で世界中に公開されます。
 
-### 公開手順
-1.  **Firebase CLI のインストール**: `npm install -g firebase-tools`
-2.  **ログイン**: `firebase login`
-3.  **初期化**: `firebase init hosting`
-    *   `What do you want to use as your public directory?` には `out` と入力。
-    *   `Configure as a single-page app?` は `Yes` を選択。
-    *   `Set up automatic builds and deploys with GitHub?` は任意。
-4.  **ビルド**: `npm run build` (Next.js が `out` フォルダに静的ファイルを生成します)
-5.  **デプロイ**: `firebase deploy`
+### 1. 準備：Firebase CLI のインストール
+ターミナル（コマンドプロンプト）を開き、Firebase を操作するためのツールをインストールします。
+```bash
+npm install -g firebase-tools
+```
 
-### 運用のポイント
-*   **Firestore の無料枠**: 読み取り 50,000回/日、書き込み 20,000回/日 までは無料です。
-*   **AI機能**: Sparkプラン（静的サイト）では AI 要約機能は動作しないため、ボタンを非表示にしています。
-*   **画像**: `next/image` は静的サイト用に最適化なし（unoptimized）の設定になっています。
+### 2. ログイン
+Google アカウントでログインします。
+```bash
+firebase login
+```
+
+### 3. プロジェクトの初期化
+アプリのルートディレクトリ（この README がある場所）で実行します。
+```bash
+firebase init hosting
+```
+**対話形式での回答例:**
+*   `Are you ready to proceed?`: **Yes**
+*   `Project Setup`: **Use an existing project** を選択し、自分のプロジェクトを選ぶ
+*   `What do you want to use as your public directory?`: **out** （⚠️重要：デフォルトの `public` ではなく `out` と入力してください）
+*   `Configure as a single-page app?`: **Yes**
+*   `Set up automatic builds and deploys with GitHub?`: **No** (後で設定可能です)
+*   `File out/index.html already exists. Overwrite?`: **No**
+
+### 4. ビルドの実行
+Next.js を静的ファイル（HTML/JS/CSS）に変換します。これにより `out` フォルダが自動生成されます。
+```bash
+npm run build
+```
+
+### 5. デプロイ（公開）
+生成された `out` フォルダの内容を Firebase にアップロードします。
+```bash
+firebase deploy
+```
+
+---
+
+## 💡 運用のポイント（完全無料を維持するために）
+
+*   **クレジットカードは不要**: `firebase init hosting` で標準の Hosting を選んでいる限り、Sparkプラン（無料）のまま公開できます。
+*   **Firestore の制限**: 読み取り 50,000回/日、書き込み 20,000回/日 までは無料です。個人や少人数での利用ならまず超えることはありません。
+*   **再デプロイ**: リンクを追加したり、コードを変更したりした後は、再度 **手順 4 と 5** を実行するだけで更新が反映されます。
 
 ---
 &copy; 2024 にすまな
