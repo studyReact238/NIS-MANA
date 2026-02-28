@@ -72,15 +72,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin Check
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
+    // 空白などを防ぐために念のため trim
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
   const { data: adminDoc, isLoading: isAdminLoading, error: adminError } = useDoc(adminDocRef);
   
-  // 管理者かどうかを判定
+  // 管理者かどうかを判定 (ドキュメントが存在すれば管理者)
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    if (adminError) return false;
+    if (adminError) {
+      console.error("Admin Check Error:", adminError);
+      return false;
+    }
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
