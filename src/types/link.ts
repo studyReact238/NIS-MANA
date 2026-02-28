@@ -1,3 +1,4 @@
+
 export type LinkColor = 'emerald' | 'blue' | 'amber' | 'rose' | 'slate';
 
 export interface LearningLink {
@@ -6,12 +7,12 @@ export interface LearningLink {
   url: string;
   description?: string;
   tags: string[];
-  isCompleted: boolean;
+  isCompleted: boolean; // UI上でマージされる項目
   color: LinkColor;
   icon: string;
   createdAt: number;
   updatedAt: number;
-  userId: string;
+  createdBy: string;
 }
 
 export type SortOption = 'title-asc' | 'title-desc' | 'date-new' | 'date-old';

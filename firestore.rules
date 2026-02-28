@@ -11,26 +11,28 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // 暫定的な管理者判定：ドキュメントの存在チェック
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    match /users/{userId} {
-      allow get, list, create, update, delete: if isOwner(userId);
-
-      match /learningLinks/{learningLinkId} {
-        allow get, list, create, update, delete: if isOwner(userId);
-      }
-    }
-
-    match /tags/{tagId} {
-      allow get, list: if true;
+    // グローバル共有リンク：全員閲覧可、追加・編集は管理者のみ
+    match /learningLinks/{linkId} {
+      allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
+    // ユーザー個別の進捗管理：本人だけが読み書き可能
+    match /users/{userId}/progress/{linkId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ユーザープロファイル
+    match /users/{userId} {
+      allow get, list, create, update: if isOwner(userId);
+    }
+
+    // 管理者名簿
     match /admins/{userId} {
-      // 開発中のトラブル回避のため、ログイン済みであれば自分の管理者情報の読み取りを許可
       allow read: if isSignedIn();
       allow write: if false;
     }

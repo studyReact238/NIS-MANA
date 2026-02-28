@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the LinkFlow application, primarily for linking learning resources.",
+      "description": "Represents a user within the LinkFlow application.",
       "properties": {
         "id": {
           "type": "string",
@@ -28,7 +28,7 @@
         },
         "name": {
           "type": "string",
-          "description": "The textual name of the tag (e.g., 'Programming', 'AI', 'Video')."
+          "description": "The textual name of the tag."
         }
       },
       "required": [
@@ -40,7 +40,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "LearningLink",
       "type": "object",
-      "description": "Represents a single learning resource (e.g., article, video) managed by the LinkFlow application.",
+      "description": "A shared learning resource managed by admins.",
       "properties": {
         "id": {
           "type": "string",
@@ -57,67 +57,55 @@
         },
         "description": {
           "type": "string",
-          "description": "A summary or description of the learning link, potentially AI-generated."
+          "description": "Summary or description."
         },
-        "tagIds": {
+        "tags": {
           "type": "array",
-          "description": "References to Tag entities associated with this learning link. (Relationship: LearningLink N:N Tag)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "isCompleted": {
-          "type": "boolean",
-          "description": "Indicates whether the user has marked this learning link as completed."
+          "items": { "type": "string" }
         },
         "color": {
           "type": "string",
-          "description": "The visual theme color chosen for the link card.",
-          "format": "color-name",
-          "items": {
-            "type": "string"
-          }
+          "description": "Theme color name."
         },
         "icon": {
           "type": "string",
-          "description": "The icon representing the type of learning resource (e.g., Book, Video, Globe).",
-          "format": "icon-name",
-          "items": {
-            "type": "string"
-          }
+          "description": "Icon name."
         },
         "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the learning link was created.",
-          "format": "date-time"
+          "type": "number"
         },
         "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the learning link was last updated.",
-          "format": "date-time"
+          "type": "number"
         },
-        "userId": {
+        "createdBy": {
           "type": "string",
-          "description": "Reference to the User who owns this learning link. (Relationship: User 1:N LearningLink)"
+          "description": "UID of the admin who created this link."
         }
       },
       "required": [
         "id",
         "title",
         "url",
-        "isCompleted",
         "color",
         "icon",
         "createdAt",
         "updatedAt",
-        "userId"
+        "createdBy"
       ]
+    },
+    "UserProgress": {
+      "title": "UserProgress",
+      "type": "object",
+      "description": "Individual user's progress on a link.",
+      "properties": {
+        "isCompleted": { "type": "boolean" },
+        "updatedAt": { "type": "number" }
+      }
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
@@ -126,71 +114,34 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores individual user profiles.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "User profiles."
         }
       },
       {
-        "path": "/users/{userId}/learningLinks/{learningLinkId}",
+        "path": "/learningLinks/{linkId}",
         "definition": {
           "entityName": "LearningLink",
-          "schema": {
-            "$ref": "#/backend/entities/LearningLink"
-          },
-          "description": "Stores learning links owned by the user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Owner UID."
-            },
-            {
-              "name": "learningLinkId",
-              "description": "Link ID."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/LearningLink" },
+          "description": "Global shared learning links managed by admins."
         }
       },
       {
-        "path": "/tags/{tagId}",
+        "path": "/users/{userId}/progress/{linkId}",
         "definition": {
-          "entityName": "Tag",
-          "schema": {
-            "$ref": "#/backend/entities/Tag"
-          },
-          "description": "Global tags.",
-          "params": [
-            {
-              "name": "tagId",
-              "description": "Tag ID."
-            }
-          ]
+          "entityName": "UserProgress",
+          "schema": { "$ref": "#/backend/entities/UserProgress" },
+          "description": "User-specific completion status."
         }
       },
       {
         "path": "/admins/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Identification of global administrators.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The UID of the administrator."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "Admin identification."
         }
       }
-    ],
-    "reasoning": "Standard LinkFlow structure using /admins/{userId} for role management."
+    ]
   }
 }
