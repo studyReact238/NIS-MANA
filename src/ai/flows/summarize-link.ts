@@ -9,6 +9,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 const SummarizeLinkInputSchema = z.object({
   url: z.string().url().describe('The URL of the webpage to summarize.'),
@@ -24,13 +26,39 @@ export async function summarizeLink(input: SummarizeLinkInput): Promise<Summariz
   return summarizeLinkFlow(input);
 }
 
+// Helper function to fetch and parse webpage content (reused from tags flow)
+async function fetchWebpageContent(url: string): Promise<string> {
+  try {
+    const { data } = await axios.get(url);
+    const $ = cheerio.load(data);
+
+    let content = '';
+    content += $('title').text() + '\n';
+    content += $('meta[name="description"]').attr('content') + '\n';
+    content += $('h1').text() + '\n';
+    $('p').each((_i, el) => {
+      content += $(el).text() + '\n';
+    });
+
+    return content.trim().substring(0, 5000); // Limit to first 5000 characters
+  } catch (error) {
+    console.error(`Failed to fetch or parse URL: ${url}`, error);
+    throw new Error('Failed to fetch or parse webpage content.');
+  }
+}
+
 const summarizeLinkPrompt = ai.definePrompt({
   name: 'summarizeLinkPrompt',
-  input: {schema: SummarizeLinkInputSchema},
-  output: {schema: SummarizeLinkOutputSchema},
-  prompt: `次のURLのウェブページの内容を読み込み、その内容を簡潔な日本語で要約してください。要約は、ウェブページの主要なポイントを網羅し、理解しやすいものにしてください。
+  input: {
+    schema: z.object({ webpageContent: z.string() })
+  },
+  output: {
+    schema: SummarizeLinkOutputSchema
+  },
+  prompt: `次のウェブページの内容を読み、その内容を簡潔な日本語で要約してください。要約は、主要なポイントを網羅し、理解しやすいものにしてください。
 
-URL: {{media url=url}}`,
+内容:
+{{{webpageContent}}}`,
 });
 
 const summarizeLinkFlow = ai.defineFlow(
@@ -40,7 +68,11 @@ const summarizeLinkFlow = ai.defineFlow(
     outputSchema: SummarizeLinkOutputSchema,
   },
   async input => {
-    const {output} = await summarizeLinkPrompt(input);
+    const webpageContent = await fetchWebpageContent(input.url);
+    if (!webpageContent) {
+      throw new Error('Could not extract content from the provided URL.');
+    }
+    const {output} = await summarizeLinkPrompt({ webpageContent });
     return output!;
   }
 );
