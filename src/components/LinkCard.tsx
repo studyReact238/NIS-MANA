@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -65,7 +64,7 @@ interface LinkCardProps {
 const SPARKLE_COLORS = ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#f43f5e', '#ffffff', '#a855f7', '#ec4899'];
 
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
-  const { isAdmin, toggleComplete, deleteLink, duplicateLink } = useLinks();
+  const { isAdmin, isServerAdmin, toggleComplete, deleteLink, duplicateLink } = useLinks();
   const { user } = useUser();
   const firestore = useFirestore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -82,10 +81,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const userVote = voteData?.type as 'up' | 'down' | undefined;
 
   // 管理者向け：受講者リストの取得（詳細ダイアログが開いている時のみ実行してコスト削減）
+  // 編集モード(isAdmin)ではなく、管理者権限(isServerAdmin)がある場合に取得するように変更
   const completionsRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin || !link.id || !detailOpen) return null;
+    if (!firestore || !isServerAdmin || !link.id || !detailOpen) return null;
     return collection(firestore, 'learningLinks', link.id, 'completions');
-  }, [firestore, isAdmin, link.id, detailOpen]);
+  }, [firestore, isServerAdmin, link.id, detailOpen]);
 
   const { data: completions, isLoading: isCompletionsLoading } = useCollection<any>(completionsRef);
 
@@ -389,8 +389,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               </div>
             </div>
 
-            {/* 管理者専用：受講者名簿セクション */}
-            {isAdmin && (
+            {/* 管理者専用：受講者名簿セクション - 編集モードに関わらず管理者であれば表示 */}
+            {isServerAdmin && (
               <div className="space-y-4 pt-6 border-t-2 border-dashed border-emerald-200">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest flex items-center gap-2">
