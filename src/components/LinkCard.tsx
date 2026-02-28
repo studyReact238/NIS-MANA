@@ -81,11 +81,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const { data: voteData } = useDoc<any>(voteDocRef);
   const userVote = voteData?.type as 'up' | 'down' | undefined;
 
-  // 管理者向け：受講者リストの取得
+  // 管理者向け：受講者リストの取得（詳細ダイアログが開いている時のみ実行してコスト削減）
   const completionsRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin || !link.id) return null;
+    if (!firestore || !isAdmin || !link.id || !detailOpen) return null;
     return collection(firestore, 'learningLinks', link.id, 'completions');
-  }, [firestore, isAdmin, link.id]);
+  }, [firestore, isAdmin, link.id, detailOpen]);
 
   const { data: completions, isLoading: isCompletionsLoading } = useCollection<any>(completionsRef);
 
