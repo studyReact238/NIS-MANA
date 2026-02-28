@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'LinkFlow - Learning Knowledge Base',
+  title: 'にすまな - Learning Knowledge Base',
   description: 'AI-powered knowledge base for your learning links',
 };
 

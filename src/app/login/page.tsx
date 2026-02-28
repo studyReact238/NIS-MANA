@@ -49,7 +49,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      toast({ title: "アカウント作成成功", description: "LinkFlowへようこそ！" });
+      toast({ title: "アカウント作成成功", description: "にすまなへようこそ！" });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -74,9 +74,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
           <div className="inline-flex w-16 h-16 bg-emerald-600 rounded-3xl items-center justify-center text-white font-black text-3xl shadow-xl transform rotate-3">
-            L
+            に
           </div>
-          <h1 className="text-4xl font-black text-emerald-950 tracking-tight">LinkFlow</h1>
+          <h1 className="text-4xl font-black text-emerald-950 tracking-tight">にすまな</h1>
           <p className="text-emerald-700 font-bold">あなたの学びを、もっとスマートに。</p>
         </div>
 
@@ -143,7 +143,7 @@ export default function LoginPage() {
               <form onSubmit={handleSignUp}>
                 <CardHeader>
                   <CardTitle className="text-2xl font-bold text-emerald-950">アカウント作成</CardTitle>
-                  <CardDescription>LinkFlowを始めるための情報を入力してください。</CardDescription>
+                  <CardDescription>にすまなを始めるための情報を入力してください。</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -192,7 +192,7 @@ export default function LoginPage() {
         </Tabs>
 
         <p className="text-center text-xs text-emerald-600/60 font-medium">
-          &copy; 2024 LinkFlow - All rights reserved.
+          &copy; 2024 にすまな - All rights reserved.
         </p>
       </div>
     </div>

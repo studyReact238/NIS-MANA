@@ -1,11 +1,10 @@
-
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the LinkFlow application.",
+      "description": "Represents a user within the にすまな application.",
       "properties": {
         "id": {
           "type": "string",

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -85,8 +84,8 @@ export const Dashboard: React.FC = () => {
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 -mx-6 px-6 mb-4 border-b border-emerald-100">
         <div className="flex items-center justify-between bg-emerald-100/30 p-5 rounded-3xl border border-emerald-200 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-md">L</div>
-            <h1 className="text-2xl font-bold tracking-tight text-emerald-800">LinkFlow</h1>
+            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-md">に</div>
+            <h1 className="text-2xl font-bold tracking-tight text-emerald-800">にすまな</h1>
           </div>
 
           <div className="flex items-center gap-6">
