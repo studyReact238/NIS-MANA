@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -5,6 +6,7 @@ import { useLinks } from '@/context/LinkContext';
 import { LinkCard } from '@/components/LinkCard';
 import { LinkDialog } from '@/components/LinkDialog';
 import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
+import { UserManagementDialog } from '@/components/UserManagementDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth, useUser } from '@/firebase';
@@ -21,7 +23,7 @@ import {
   LogOut,
   Loader2,
   Lock,
-  Star
+  Users
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -57,6 +59,7 @@ export const Dashboard: React.FC = () => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
 
   const handleEdit = useCallback((link: LearningLink) => {
@@ -71,7 +74,7 @@ export const Dashboard: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await signOut(auth!);
       toast({ title: "ログアウトしました", description: "またのご利用をお待ちしております。" });
     } catch (error) {
       toast({ variant: "destructive", title: "エラー", description: "ログアウトに失敗しました。" });
@@ -88,14 +91,23 @@ export const Dashboard: React.FC = () => {
             <h1 className="text-2xl font-bold tracking-tight text-emerald-800">にすまな</h1>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             {isAdmin && (
-              <Button 
-                onClick={handleAdd} 
-                className="rounded-full h-10 px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-sm border-2 border-emerald-800 transition-all hover:-translate-y-0.5"
-              >
-                <Plus className="w-4 h-4 mr-2" /> 新規追加
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => setUserManagementOpen(true)}
+                  variant="outline"
+                  className="rounded-full h-10 px-4 border-emerald-200 text-emerald-800 font-bold hover:bg-emerald-50"
+                >
+                  <Users className="w-4 h-4 mr-2" /> ユーザー管理
+                </Button>
+                <Button 
+                  onClick={handleAdd} 
+                  className="rounded-full h-10 px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-sm border-2 border-emerald-800 transition-all hover:-translate-y-0.5"
+                >
+                  <Plus className="w-4 h-4 mr-2" /> 新規追加
+                </Button>
+              </div>
             )}
 
             {isServerAdmin === true && (
@@ -314,6 +326,13 @@ export const Dashboard: React.FC = () => {
         open={passwordDialogOpen}
         onOpenChange={setPasswordDialogOpen}
       />
+
+      {isAdmin && (
+        <UserManagementDialog
+          open={userManagementOpen}
+          onOpenChange={setUserManagementOpen}
+        />
+      )}
     </div>
   );
 };

@@ -12,7 +12,6 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // admins コレクションにログインユーザーのUIDが存在するかをチェック
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
@@ -29,7 +28,7 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // 受講者名簿：管理者は全件閲覧可能、ユーザーは自分のデータのみ
+    // 受講者名簿
     match /learningLinks/{linkId}/completions/{userId} {
       allow list: if isAdmin();
       allow get: if isAdmin() || isOwner(userId);
@@ -43,10 +42,11 @@ service cloud.firestore {
 
     // ユーザープロファイル
     match /users/{userId} {
-      allow get, list, create, update: if isOwner(userId);
+      allow get, create, update: if isOwner(userId) || isAdmin();
+      allow list, delete: if isAdmin();
     }
 
-    // 管理者名簿（デバッグパネルや管理判定で使用）
+    // 管理者名簿
     match /admins/{userId} {
       allow read: if isSignedIn();
       allow write: if false;
