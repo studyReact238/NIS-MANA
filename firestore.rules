@@ -46,7 +46,7 @@ service cloud.firestore {
     }
 
     match /admins/{userId} {
-      // ログインユーザー自身が自分に関する管理者ドキュメントを読み取れるように許可
+      // 全てのログインユーザーが自分のステータスをチェックできるように緩和
       allow get: if isSignedIn() && request.auth.uid == userId;
       allow list: if false;
       allow write: if false;

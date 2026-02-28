@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor } from '@/types/link';
-import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, useFirebaseApp } from '@/firebase';
 import { 
   collection, 
   doc, 
@@ -50,6 +50,7 @@ const LinkContext = createContext<LinkContextType | undefined>(undefined);
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { firestore } = useFirestore();
   const { user } = useUser();
+  const { firebaseApp } = useFirebaseApp();
   
   // UI States
   const [isAdminManual, setIsAdminManual] = useState(true);
@@ -71,7 +72,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin Check
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    // 前後の空白を排除したUIDを使用
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
@@ -80,22 +80,26 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 管理者かどうかを判定
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    if (adminError) return false;
-    // ドキュメントが存在する場合のみ管理者
+    if (adminError) {
+      console.error('Admin Check Permission Error:', adminError);
+      return false;
+    }
+    // ドキュメントが存在すれば管理者（中身が空でもOK）
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
   // デバッグ用ログをさらに詳細に
   useEffect(() => {
-    if (user) {
+    if (user && firebaseApp) {
       console.log('--- ADMIN CHECK DEBUG ---');
-      console.log('Exact UID:', `[${user.uid}]`);
-      console.log('Admin Path:', `admins/[${user.uid}]`);
-      console.log('Result:', isServerAdmin);
-      if (adminDoc) console.log('Doc Content:', adminDoc);
+      console.log('Connected Project ID:', firebaseApp.options.projectId);
+      console.log('Exact User UID:', `[${user.uid}]`);
+      console.log('Checking Path:', `admins/[${user.uid}]`);
+      console.log('Admin Doc Found:', adminDoc !== null);
+      console.log('Is Server Admin:', isServerAdmin);
       console.log('-------------------------');
     }
-  }, [user, isServerAdmin, adminDoc]);
+  }, [user, isServerAdmin, adminDoc, firebaseApp]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
