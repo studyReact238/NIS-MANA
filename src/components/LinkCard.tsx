@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -6,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   getIcon, 
   getColorData 
@@ -17,7 +19,8 @@ import {
   Edit3, 
   ExternalLink,
   CheckCircle2,
-  Clock
+  Clock,
+  Info
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -25,6 +28,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from '@/components/ui/dialog';
 import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -50,6 +61,7 @@ const SPARKLE_COLORS = ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#f43f5e', '
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const { isAdmin, toggleComplete, deleteLink, duplicateLink } = useLinks();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [showSparkles, setShowSparkles] = useState(false);
   
   const Icon = getIcon(link.icon);
@@ -168,18 +180,23 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
           </div>
 
           <div className="space-y-4">
-            <h3 className={cn(
-              "text-xl font-bold leading-snug line-clamp-2 transition-colors",
-              colorData.darkText
-            )}>
+            <button 
+              onClick={() => setDetailOpen(true)}
+              className={cn(
+                "text-xl font-bold leading-snug line-clamp-2 transition-colors text-left hover:opacity-80",
+                colorData.darkText
+              )}
+            >
               {link.title}
-            </h3>
+            </button>
             
-            <p className={cn(
-              "text-sm font-medium leading-relaxed line-clamp-3 h-14 text-slate-700"
-            )}>
-              {link.description || '概要の記載はありません。'}
-            </p>
+            <ScrollArea className="h-24 pr-4 -mr-4">
+              <p className={cn(
+                "text-sm font-medium leading-relaxed text-slate-700"
+              )}>
+                {link.description || '概要の記載はありません。'}
+              </p>
+            </ScrollArea>
 
             <div className="flex flex-wrap gap-2 pt-2">
               {link.tags.map(tag => (
@@ -209,21 +226,92 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 </div>
               </div>
               
-              <a 
-                href={link.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className={cn(
-                  "w-full inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-2xl border-2 group/btn",
-                  "bg-emerald-700 border-emerald-800 text-white hover:bg-emerald-800 hover:shadow-lg shadow-emerald-200"
-                )}
-              >
-                学習サイトを開く <ExternalLink className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-              </a>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setDetailOpen(true)}
+                  variant="outline"
+                  className={cn(
+                    "flex-1 h-12 rounded-xl border-2 font-bold",
+                    colorData.border,
+                    colorData.text
+                  )}
+                >
+                  <Info className="w-4 h-4 mr-2" /> 詳細を見る
+                </Button>
+                <a 
+                  href={link.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "flex-[2] inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
+                    "bg-emerald-700 border-emerald-800 text-white hover:bg-emerald-800 hover:shadow-lg shadow-emerald-200"
+                  )}
+                >
+                  学習サイト <ExternalLink className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+                </a>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* 詳細ダイアログ */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-2xl rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="mb-6">
+            <div className={cn(
+              "w-16 h-16 rounded-2xl flex items-center justify-center shadow-md mb-4 bg-white border border-black/5"
+            )}>
+              <Icon className={cn("w-8 h-8", colorData.text)} />
+            </div>
+            <DialogTitle className={cn("text-3xl font-bold leading-tight", colorData.darkText)}>
+              {link.title}
+            </DialogTitle>
+            <DialogDescription className="flex items-center gap-2 pt-2 text-slate-500 font-bold">
+              <Clock className="w-4 h-4" />
+              最終更新: {format(link.updatedAt, 'yyyy年MM月dd日 HH:mm', { locale: ja })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">リソースの説明</h4>
+              <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100 min-h-[100px] whitespace-pre-wrap text-slate-800 leading-relaxed">
+                {link.description || '説明はありません。'}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">タグ</h4>
+              <div className="flex flex-wrap gap-2">
+                {link.tags.map(tag => (
+                  <Badge key={tag} className="px-4 py-1.5 rounded-full bg-white border-2 border-emerald-100 text-emerald-800 font-black">
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-emerald-100 flex flex-col sm:flex-row gap-4">
+              <a 
+                href={link.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex-1 inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-emerald-600 text-white font-black hover:bg-emerald-700 shadow-xl shadow-emerald-200 transition-all"
+              >
+                学習サイトを開く <ExternalLink className="w-5 h-5" />
+              </a>
+              <Button 
+                variant="ghost" 
+                onClick={() => setDetailOpen(false)}
+                className="h-14 rounded-2xl font-bold px-8"
+              >
+                閉じる
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="rounded-4xl border-2 border-emerald-100 p-8">
