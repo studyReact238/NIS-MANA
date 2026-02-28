@@ -1,148 +1,122 @@
-
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "LinkFlowアプリケーション内の登録ユーザーを表します。基本的なユーザー情報を保存します。",
+      "description": "Represents a user within the LinkFlow application, primarily for linking learning resources.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "ユーザーのユニークID。"
-        },
-        "email": {
-          "type": "string",
-          "description": "ユーザーのメールアドレス。",
-          "format": "email"
-        },
-        "name": {
-          "type": "string",
-          "description": "ユーザーの表示名。"
-        },
-        "isAdmin": {
-          "type": "boolean",
-          "description": "管理権限フラグ（UI制御用）。"
-        },
-        "createdAt": {
-          "type": "number",
-          "description": "作成日時のタイムスタンプ。"
-        },
-        "updatedAt": {
-          "type": "number",
-          "description": "更新日時のタイムスタンプ。"
+          "description": "Unique identifier for the User entity."
         }
       },
       "required": [
-        "id",
-        "email",
-        "isAdmin",
-        "createdAt",
-        "updatedAt"
+        "id"
       ]
     },
     "Tag": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Tag",
       "type": "object",
-      "description": "リンクを整理するためのタグ。",
+      "description": "Represents a reusable tag used for categorizing learning links.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "タグのID。"
+          "description": "Unique identifier for the Tag entity."
         },
         "name": {
           "type": "string",
-          "description": "タグ名。"
-        },
-        "createdAt": {
-          "type": "number",
-          "description": "作成日時。"
-        },
-        "updatedAt": {
-          "type": "number",
-          "description": "更新日時。"
+          "description": "The textual name of the tag (e.g., 'Programming', 'AI', 'Video')."
         }
       },
       "required": [
         "id",
-        "name",
-        "createdAt",
-        "updatedAt"
+        "name"
       ]
     },
     "LearningLink": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "LearningLink",
       "type": "object",
-      "description": "ユーザーが管理する学習リソースのリンク。",
+      "description": "Represents a single learning resource (e.g., article, video) managed by the LinkFlow application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "リンクのID。"
-        },
-        "userId": {
-          "type": "string",
-          "description": "所有者のUID。"
+          "description": "Unique identifier for the LearningLink entity."
         },
         "title": {
           "type": "string",
-          "description": "リンクのタイトル。"
+          "description": "The title of the learning link."
         },
         "url": {
           "type": "string",
-          "description": "リソースのURL。",
+          "description": "The URL of the learning resource.",
           "format": "uri"
         },
         "description": {
           "type": "string",
-          "description": "AIによる要約または説明。"
+          "description": "A summary or description of the learning link, potentially AI-generated."
         },
         "tagIds": {
           "type": "array",
-          "description": "関連タグのID配列。",
+          "description": "References to Tag entities associated with this learning link. (Relationship: LearningLink N:N Tag)",
           "items": {
             "type": "string"
           }
         },
         "isCompleted": {
           "type": "boolean",
-          "description": "受講済みフラグ。"
+          "description": "Indicates whether the user has marked this learning link as completed."
         },
         "color": {
           "type": "string",
-          "description": "カードのカラーテーマ。"
+          "description": "The visual theme color chosen for the link card.",
+          "format": "color-name",
+          "items": {
+            "type": "string"
+          }
         },
         "icon": {
           "type": "string",
-          "description": "カードのアイコン名。"
+          "description": "The icon representing the type of learning resource (e.g., Book, Video, Globe).",
+          "format": "icon-name",
+          "items": {
+            "type": "string"
+          }
         },
         "createdAt": {
-          "type": "number",
-          "description": "作成日時。"
+          "type": "string",
+          "description": "Timestamp when the learning link was created.",
+          "format": "date-time"
         },
         "updatedAt": {
-          "type": "number",
-          "description": "更新日時。"
+          "type": "string",
+          "description": "Timestamp when the learning link was last updated.",
+          "format": "date-time"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who owns this learning link. (Relationship: User 1:N LearningLink)"
         }
       },
       "required": [
         "id",
-        "userId",
         "title",
         "url",
-        "tagIds",
         "isCompleted",
         "color",
         "icon",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "userId"
       ]
     }
   },
   "auth": {
     "providers": [
-      "password"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
@@ -154,27 +128,11 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "ユーザープロフィール情報。",
+          "description": "Stores individual user profiles. The `userId` matches `request.auth.uid` for direct ownership and serves as the root for user-specific subcollections.",
           "params": [
             {
               "name": "userId",
-              "description": "ユーザーのUID。"
-            }
-          ]
-        }
-      },
-      {
-        "path": "/admins/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "管理者権限を付与されたユーザーのUIDを保持するコレクション。ここにドキュメントが存在するユーザーは管理者として振る舞います。",
-          "params": [
-            {
-              "name": "userId",
-              "description": "管理権限を持つユーザーのUID。"
+              "description": "The unique ID of the user, corresponding to Firebase Authentication UID."
             }
           ]
         }
@@ -186,19 +144,52 @@
           "schema": {
             "$ref": "#/backend/entities/LearningLink"
           },
-          "description": "ユーザーごとの学習リンク。所有者または管理者のみがアクセス可能です。",
+          "description": "Stores learning links created and owned by a specific user. Includes denormalized 'userId' field for authorization independence, matching the path 'userId'.",
           "params": [
             {
               "name": "userId",
-              "description": "所有者のUID。"
+              "description": "The unique ID of the user who owns this learning link."
             },
             {
               "name": "learningLinkId",
-              "description": "リンクのID。"
+              "description": "The unique ID of the learning link."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tags/{tagId}",
+        "definition": {
+          "entityName": "Tag",
+          "schema": {
+            "$ref": "#/backend/entities/Tag"
+          },
+          "description": "Stores globally available tags for categorizing learning links. These tags can be accessed and selected by all users. Write access can be restricted.",
+          "params": [
+            {
+              "name": "tagId",
+              "description": "The unique ID of the tag."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "A collection for Database Access Control (DBAC) to identify global administrators. The existence of a document for a specific `userId` in this collection grants admin privileges to that user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user designated as an administrator."
             }
           ]
         }
       }
-    ]
+    ],
+    "reasoning": "The Firestore structure for LinkFlow prioritizes Authorization Independence and Query-Aware Security Rules (QAPs) through systematic denormalization and structural segregation. \n\n**Authorization Independence:**\n1.  **User-Owned Learning Links:** Learning links are stored in a subcollection under each user's document at `/users/{userId}/learningLinks/{learningLinkId}`. Crucially, each `LearningLink` document also contains a `userId` field that explicitly references its owner. This design means that Firestore security rules can verify ownership by checking `request.auth.uid == userId` against the path parameter (e.g., `match /users/{userId}/learningLinks/{learningLinkId} { allow read, write: if request.auth.uid == userId; }`) or the document's `userId` field, **without** needing to perform an expensive and non-atomic `get()` operation on a parent user document. This makes rules simpler, more robust, and highly debuggable.\n2.  **Global Roles (Admin):** Administrative roles are managed via a dedicated top-level collection, `/roles_admin/{userId}`. The mere existence of a document at `/roles_admin/$(request.auth.uid)` indicates admin status. Checking admin status still involves a `get()` call (e.g., `get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).exists()`), but this is a sanctioned pattern for global role checks that are largely independent of specific data entities and can be cached by the rules engine.\n\n**QAPs (Rules are not Filters):**\n1.  **Secure Listing of Learning Links:** By segregating learning links into `/users/{userId}/learningLinks`, `list` operations become inherently secure and performant. A user can only `list` documents within their own `/users/$(request.auth.uid)/learningLinks` path. The security rules can then simply ensure that the `userId` in the path matches `request.auth.uid`, guaranteeing that all documents returned by a query satisfy the user's authorization without requiring client-side filtering.\n2.  **Global Tags:** Tags are stored in a top-level collection `/tags/{tagId}`. These are assumed to be globally readable, facilitating universal search and categorization. Write access might be limited to authenticated users (for creating new tags during link creation) or administrators. This global scope allows for efficient `list` operations for all users, as there are no user-specific authorization constraints on reading tags.\n3.  **Structural Segregation:** The separation of user-owned data (`/users/{userId}/learningLinks`) from global data (`/tags`) and authorization data (`/roles_admin`) ensures that each collection has a homogeneous security posture, simplifying security rule logic and enhancing debuggability. There's no mixing of public/private or owned/collaborative data within a single collection, adhering to the "
   }
 }

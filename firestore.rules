@@ -1,44 +1,127 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    /**
+     * LinkFlow Security Rules v2 (Prototyping Mode)
+     * 
+     * Core Philosophy:
+     * This ruleset implements a strict User-Ownership model. Data is primarily siloed 
+     * under individual user document paths to ensure privacy and query performance. 
+     * Administrative access is decoupled from data entities using a dedicated 
+     * role-based collection.
+     * 
+     * Data Structure:
+     * - /users/{userId}: Private user profiles.
+     * - /users/{userId}/learningLinks/{linkId}: Private, user-owned learning resources.
+     * - /tags/{tagId}: Publicly readable categorization metadata.
+     * - /roles_admin/{userId}: Global admin identifiers.
+     * 
+     * Key Security Decisions:
+     * 1. Authorization Independence: We enforce that sub-documents (LearningLinks) 
+     *    contain a 'userId' field matching their parent path. This allows for 
+     *    fast, non-relational security checks without calling get().
+     * 2. Structural Segregation: User-specific data is kept in subcollections 
+     *    to prevent accidental cross-user data leakage during listing operations.
+     * 3. Admin Roles: Global administrative power is determined by the existence 
+     *    of a document in the 'roles_admin' collection.
+     * 4. Prototyping Flexibility: We strictly control "WHO" can access data, 
+     *    but we do not enforce "WHAT" the data looks like (schema) to allow 
+     *    rapid iterations on the LearningLink and Tag properties.
+     */
+
+    // --- Helper Functions ---
+
+    /**
+     * @description Basic check to see if the request is from an authenticated user.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
+    /**
+     * @description Checks if the authenticated user matches the provided ID.
+     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    /**
+     * @description Checks ownership and ensures the document exists for state-changing operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Verifies if the authenticated user has global administrative privileges.
+     */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    // ユーザープロフィールのルール
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for user profiles. Only the owner can read or manage their profile.
+     * @path /users/{userId}
+     * @allow (create) if request.auth.uid matches userId.
+     * @deny (read) if requesting another user's profile.
+     * @principle Ownership and Self-Creation.
+     */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if false;
+      allow get, list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isAdmin();
+      allow update, delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for learning links. Access is restricted to the path owner.
+       * @path /users/{userId}/learningLinks/{learningLinkId}
+       * @allow (list) if request.auth.uid matches the path userId.
+       * @deny (create) if the internal 'userId' field doesn't match the path.
+       * @principle Ownership and Relational Integrity.
+       */
+      match /learningLinks/{learningLinkId} {
+        allow get, list: if isOwner(userId);
+        
+        // Enforce relational integrity: Internal userId must match the path userId on creation.
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        
+        // Enforce immutability: The owner cannot change the userId of an existing link.
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        
+        allow delete: if isExistingOwner(userId);
+      }
     }
 
-    // 学習リンクのルール
-    match /users/{userId}/learningLinks/{learningLinkId} {
-      allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId) || isAdmin();
+    /**
+     * @description Global tags for categorization. Readable by everyone, writable only by admins.
+     * @path /tags/{tagId}
+     * @allow (get) if any user (even unauthenticated) requests a tag.
+     * @deny (update) if a non-admin user attempts to modify a tag name.
+     * @principle Public Read with Admin-Only Writes.
+     */
+    match /tags/{tagId} {
+      allow get, list: if true;
+
+      // CRITICAL: Cannot implement owner-only writes. The 'Tag' entity is missing an 'ownerId' or 'authorId' field.
+      // Prototyping Decision: Defaulting to Admin-only writes to protect global metadata.
+      allow create, update, delete: if isAdmin(); // TODO: Add owner validation once the schema is updated with an ownership field.
     }
 
-    // 管理者チェック用のルール
-    match /admins/{userId} {
-      // 誰でも（ログインしていれば）自分の管理者ドキュメントがあるか確認できるようにする
-      // これにより、 LinkContext での判定を確実にする
-      allow get: if isSignedIn() && request.auth.uid == userId;
-      allow list: if false;
-      allow write: if false;
+    /**
+     * @description Global admin registry. Existence of a document here defines admin status.
+     * @path /roles_admin/{userId}
+     * @allow (get) for any signed-in user to check their own status.
+     * @deny (list) for non-admin users to prevent user enumeration.
+     * @principle Role-Based Access Control.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      
+      // Writes to the admin registry should typically be handled via a secure Admin SDK or CLI.
+      allow create, update, delete: if false;
     }
   }
 }
