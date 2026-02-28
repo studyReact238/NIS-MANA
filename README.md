@@ -1,20 +1,25 @@
 # にすまな - Learning Knowledge Base
 
-AI を活用したスマートな学習リンク管理ツールです。
+AI機能を無効化し、完全に無料で運用可能なスマート学習リンク管理ツールです。
 
-## 運用と課金に関するアドバイス
+## 無料で公開・運用する方法
 
-このアプリは Firebase App Hosting を利用してデプロイすることを想定しています。
+このアプリは、クレジットカードを登録せずに **Firebase Hosting (Sparkプラン)** で世界中に無料公開できます。
 
-### 無料で運用するために
-Firebase の **Blaze（従量課金）プラン** へのアップグレードが必要ですが、適切な設定を行えば実質 0円 で運用可能です。
+### 公開手順
+1.  **Firebase CLI のインストール**: `npm install -g firebase-tools`
+2.  **ログイン**: `firebase login`
+3.  **初期化**: `firebase init hosting`
+    *   `What do you want to use as your public directory?` には `out` と入力。
+    *   `Configure as a single-page app?` は `Yes` を選択。
+    *   `Set up automatic builds and deploys with GitHub?` は任意。
+4.  **ビルド**: `npm run build` (Next.js が `out` フォルダに静的ファイルを生成します)
+5.  **デプロイ**: `firebase deploy`
 
-1. **予算アラートの設定**: Google Cloud Console の「お支払い」から、予算を 1円 や 100円 に設定してください。無料枠を超えそうになったら通知が来ます。
-2. **Firestore の無料枠**: 読み取り 50,000回/日、書き込み 20,000回/日 までは無料です。このアプリは詳細ダイアログを開いた時だけデータを読み取るように最適化されています。
-3. **Gemini API**: Google AI Studio の API キーを使用しているため、無料枠の範囲内で AI 機能を利用できます。
-
-### クレジットカード登録を避けたい場合
-AI 機能を無効化し、Next.js を `output: 'export'` モードに設定することで、標準の Firebase Hosting（Spark プラン）での公開が可能になります。ただし、その場合は `src/ai/flows` 配下の AI 処理は動作しなくなります。
+### 運用のポイント
+*   **Firestore の無料枠**: 読み取り 50,000回/日、書き込み 20,000回/日 までは無料です。
+*   **AI機能**: Sparkプラン（静的サイト）では AI 要約機能は動作しないため、ボタンを非表示にしています。
+*   **画像**: `next/image` は静的サイト用に最適化なし（unoptimized）の設定になっています。
 
 ---
 &copy; 2024 にすまな

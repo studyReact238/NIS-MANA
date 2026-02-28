@@ -18,11 +18,8 @@ import { Badge } from '@/components/ui/badge';
 import { useLinks } from '@/context/LinkContext';
 import { LearningLink, LinkColor } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
-import { X, Sparkles, Loader2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { summarizeLink } from '@/ai/flows/summarize-link';
-import { suggestAITagsForLink } from '@/ai/flows/suggest-ai-tags-for-link';
-import { toast } from '@/hooks/use-toast';
 
 interface LinkDialogProps {
   open: boolean;
@@ -31,7 +28,7 @@ interface LinkDialogProps {
 }
 
 export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, editLink }) => {
-  const { addLink, updateLink, allTags } = useLinks();
+  const { addLink, updateLink } = useLinks();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -43,7 +40,6 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
   });
   
   const [tagInput, setTagInput] = useState('');
-  const [loadingAI, setLoadingAI] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -93,28 +89,6 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tagToRemove) }));
   };
 
-  const handleAIAction = async (action: 'summarize' | 'tags') => {
-    if (!formData.url) {
-      toast({ variant: "destructive", title: "URLを入力してください" });
-      return;
-    }
-    setLoadingAI(true);
-    try {
-      if (action === 'summarize') {
-        const result = await summarizeLink({ url: formData.url });
-        setFormData(prev => ({ ...prev, description: result.summary }));
-      } else {
-        const result = await suggestAITagsForLink({ url: formData.url });
-        const newTags = Array.from(new Set([...formData.tags, ...result]));
-        setFormData(prev => ({ ...prev, tags: newTags }));
-      }
-    } catch (err) {
-      toast({ variant: "destructive", title: "AI処理中にエラーが発生しました" });
-    } finally {
-      setLoadingAI(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-4xl p-8">
@@ -154,44 +128,18 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             </div>
 
             <div className="space-y-3 col-span-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="description" className="text-base font-semibold">説明・AI要約</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleAIAction('summarize')}
-                  disabled={loadingAI || !formData.url}
-                  className="rounded-full border-primary/20 hover:bg-primary/5 text-primary"
-                >
-                  {loadingAI ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Sparkles className="w-3 h-3 mr-2" />}
-                  AI要約を生成
-                </Button>
-              </div>
+              <Label htmlFor="description" className="text-base font-semibold">説明</Label>
               <Textarea 
                 id="description" 
                 value={formData.description} 
                 onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="内容のメモやAI要約がここに入ります" 
+                placeholder="内容のメモを入力してください" 
                 className="rounded-2xl min-h-[120px] resize-none"
               />
             </div>
 
             <div className="space-y-4 col-span-2">
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold">タグ管理</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleAIAction('tags')}
-                  disabled={loadingAI || !formData.url}
-                  className="rounded-full border-primary/20 hover:bg-primary/5 text-primary"
-                >
-                   {loadingAI ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Sparkles className="w-3 h-3 mr-2" />}
-                  AIタグ提案
-                </Button>
-              </div>
+              <Label className="text-base font-semibold">タグ管理</Label>
               
               <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-muted/30 rounded-2xl">
                 {formData.tags.map(tag => (
