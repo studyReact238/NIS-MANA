@@ -24,9 +24,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, deleteDoc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { firebaseConfig } from '@/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserPlus, Trash2, Mail, Lock } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -43,7 +45,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const [isRegistering, setIsRegistering] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
   const firestore = useFirestore();
-  const auth = useAuth();
   const { toast } = useToast();
 
   const usersRef = useMemoFirebase(() => {
@@ -78,24 +79,35 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
     console.log("--- [UserRegistration] EXECUTE START ---");
     setShowConfirmAlert(false);
     
-    if (!auth || !firestore) {
+    if (!firestore) {
       toast({
         variant: "destructive",
         title: "システムエラー",
-        description: "Firebaseが初期化されていません。"
+        description: "Firestoreが初期化されていません。"
       });
       return;
     }
 
     setIsRegistering(true);
+    let secondaryApp;
 
     try {
-      console.log("[UserRegistration] Calling createUserWithEmailAndPassword for:", email);
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // 管理者のセッションを維持するため、一時的なFirebaseアプリを作成してユーザー登録を行う
+      const secondaryAppName = `SecondaryApp-${Date.now()}`;
+      secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+      const secondaryAuth = getAuth(secondaryApp);
+
+      console.log("[UserRegistration] Creating user with secondary auth...");
+      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
       const newUser = userCredential.user;
       console.log("[UserRegistration] Auth success! UID:", newUser.uid);
 
-      console.log("[UserRegistration] Creating Firestore document...");
+      // 作成したユーザーをすぐにログアウトさせ、一時的なアプリを削除する
+      await signOut(secondaryAuth);
+      await deleteApp(secondaryApp);
+      secondaryApp = null;
+
+      console.log("[UserRegistration] Creating Firestore document via main firestore...");
       const userDocRef = doc(firestore, 'users', newUser.uid);
       const userData = {
         id: newUser.uid,
@@ -108,14 +120,15 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
       toast({
         title: "ユーザー登録完了",
-        description: `${email} を登録しました。自動ログインされます。`
+        description: `${email} を登録しました。`
       });
       
       setEmail('');
       setPassword('');
-      onOpenChange(false);
     } catch (error: any) {
       console.error("[UserRegistration] ERROR:", error);
+      if (secondaryApp) await deleteApp(secondaryApp);
+      
       let message = "登録中にエラーが発生しました。";
       if (error.code === 'auth/email-already-in-use') message = "このメールアドレスは既に登録されています。";
       else if (error.code === 'auth/invalid-email') message = "メールアドレスの形式が正しくありません。";
@@ -266,7 +279,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
           <AlertDialogHeader>
             <AlertDialogTitle>ユーザーを登録しますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              新規ユーザーを登録すると、現在のセッションが終了し、作成したユーザーで自動的にログインされます。よろしいですか？
+              新規ユーザーを登録します。よろしいですか？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
