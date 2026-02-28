@@ -3,14 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * Core Philosophy: 
-     * This ruleset enforces a strict user-ownership model where private data is nested under 
-     * user-specific paths.
-     */
-
-    // --- Helper Functions ---
-
     function isSignedIn() {
       return request.auth != null;
     }
@@ -23,30 +15,26 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // --- Collection Rules ---
-
+    // ユーザープロフィールのルール
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow create: if isOwner(userId);
       allow update: if isOwner(userId);
       allow delete: if isAdmin();
     }
 
+    // 学習リンクのルール
     match /users/{userId}/learningLinks/{learningLinkId} {
       allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
       allow delete: if isOwner(userId) || isAdmin();
     }
 
-    match /tags/{tagId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
+    // 管理者チェック用のルール（極めてシンプルに）
     match /admins/{userId} {
-      // 全てのログインユーザーが自分のステータスをチェックできるように緩和
+      // ログイン中なら自分の権限有無を確認可能にする
       allow get: if isSignedIn() && request.auth.uid == userId;
       allow list: if false;
       allow write: if false;

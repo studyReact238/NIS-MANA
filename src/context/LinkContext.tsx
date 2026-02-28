@@ -72,6 +72,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin Check
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
+    // 空白除去を徹底
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
@@ -81,25 +82,27 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
     if (adminError) {
-      console.error('Admin Check Permission Error:', adminError);
+      console.error('--- ADMIN CHECK ERROR ---', adminError);
       return false;
     }
-    // ドキュメントが存在すれば管理者（中身が空でもOK）
+    // ドキュメントが存在すれば管理者
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
-  // デバッグ用ログをさらに詳細に
+  // デバッグ用ログ出力をさらに強化
   useEffect(() => {
     if (user && firebaseApp) {
-      console.log('--- ADMIN CHECK DEBUG ---');
-      console.log('Connected Project ID:', firebaseApp.options.projectId);
-      console.log('Exact User UID:', `[${user.uid}]`);
-      console.log('Checking Path:', `admins/[${user.uid}]`);
+      console.group('--- Firebase Connection Debug ---');
+      console.log('Project ID (Config):', firebaseApp.options.projectId);
+      console.log('User UID:', user.uid);
+      console.log('Admin Path Attempted:', `admins/${user.uid.trim()}`);
+      console.log('Admin Doc Loading:', isAdminLoading);
       console.log('Admin Doc Found:', adminDoc !== null);
-      console.log('Is Server Admin:', isServerAdmin);
-      console.log('-------------------------');
+      console.log('Final isServerAdmin Result:', isServerAdmin);
+      if (adminError) console.log('Permission Error Details:', adminError);
+      console.groupEnd();
     }
-  }, [user, isServerAdmin, adminDoc, firebaseApp]);
+  }, [user, isServerAdmin, adminDoc, isAdminLoading, adminError, firebaseApp]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
