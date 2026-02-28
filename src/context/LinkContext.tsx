@@ -84,21 +84,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
-  // 強力なデバッグ出力
-  useEffect(() => {
-    if (user && firebaseApp) {
-      console.log('%c--- FIREBASE DEBUG START ---', 'background: #059669; color: white; padding: 4px; font-weight: bold;');
-      console.log('1. Connected Project ID:', firebaseApp.options.projectId);
-      console.log('2. Current User UID:', user.uid);
-      console.log('3. Searching Firestore Path:', `admins/${user.uid.trim()}`);
-      console.log('4. Admin Doc Found In Firestore:', adminDoc !== null);
-      if (adminError) {
-        console.log('5. Firestore Error:', adminError.message);
-      }
-      console.log('%c--- FIREBASE DEBUG END ---', 'background: #059669; color: white; padding: 4px; font-weight: bold;');
-    }
-  }, [user, isServerAdmin, adminDoc, isAdminLoading, adminError, firebaseApp]);
-
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
 
@@ -179,7 +164,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearColors = () => setSelectedColors([]);
 
   const toggleIcon = (icon: string) => {
-    setSelectedIcons(prev => prev.includes(icon) ? prev.filter(i => i !== icon) : [...prev, icon]);
+    setSelectedIcons(prev => prev.includes(icon) ? prev.filter(i => i !== icon) : [...prev, i]);
   };
 
   const clearIcons = () => setSelectedIcons([]);
@@ -236,6 +221,27 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
       {children}
+      
+      {/* 画面上に強制的に表示するデバッグパネル */}
+      <div className="fixed bottom-4 right-4 z-[9999] bg-black/90 text-white p-4 rounded-2xl text-[10px] font-mono border border-white/20 shadow-2xl backdrop-blur-md max-w-[300px]">
+        <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-2">
+          <div className={`w-2 h-2 rounded-full ${isServerAdmin ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+          <span className="font-bold uppercase tracking-widest">Admin Status Debug</span>
+        </div>
+        <div className="space-y-1">
+          <p><span className="text-gray-400">Project:</span> {firebaseApp?.options.projectId}</p>
+          <p><span className="text-gray-400">My UID:</span> {user?.uid}</p>
+          <p><span className="text-gray-400">Searching:</span> admins/{user?.uid}</p>
+          <p><span className="text-gray-400">Found:</span> <span className={isServerAdmin ? 'text-green-400 font-bold' : 'text-red-400'}>{String(isServerAdmin)}</span></p>
+          {adminError && <p className="text-orange-400">Error: {adminError.message}</p>}
+        </div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-3 w-full bg-white/10 hover:bg-white/20 py-1.5 rounded-lg transition-colors border border-white/5"
+        >
+          ページを再読み込み
+        </button>
+      </div>
     </LinkContext.Provider>
   );
 };
