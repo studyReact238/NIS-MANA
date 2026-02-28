@@ -75,26 +75,32 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin Check
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    // ドキュメントIDがユーザーのUIDと一致するかチェック
     return doc(firestore, 'admins', user.uid);
   }, [firestore, user?.uid]);
   
-  const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminDocRef);
+  const { data: adminDoc, isLoading: isAdminLoading, error: adminError } = useDoc(adminDocRef);
   
   // 管理者かどうかを判定
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
+    if (adminError) return false;
     // ドキュメントが存在する場合（adminDocがnullでない場合）のみ管理者とみなす
-    return !!adminDoc;
-  }, [adminDoc, isAdminLoading]);
+    // ドキュメントが空でも、snapshotが存在すれば adminDoc は null にならないはず
+    return adminDoc !== null;
+  }, [adminDoc, isAdminLoading, adminError]);
 
-  // デバッグ用ログ（開発中のみ）
+  // デバッグ用ログ：ブラウザのコンソールに出力されます
   useEffect(() => {
-    if (user && isServerAdmin !== null) {
-      console.log(`Current User UID: ${user.uid}`);
-      console.log(`Is Server Admin: ${isServerAdmin}`);
+    if (user) {
+      console.log('--- ADMIN CHECK DEBUG ---');
+      console.log('Current User UID:', user.uid);
+      console.log('Is Admin Loading:', isAdminLoading);
+      console.log('Admin Doc Data:', adminDoc);
+      console.log('Is Server Admin Result:', isServerAdmin);
+      if (adminError) console.error('Admin Check Error:', adminError);
+      console.log('-------------------------');
     }
-  }, [user, isServerAdmin]);
+  }, [user, isAdminLoading, adminDoc, isServerAdmin, adminError]);
 
   // 編集モードを有効にできるのはサーバーサイドで管理者として登録されているユーザーのみ
   const isAdmin = isServerAdmin === true && isAdminManual;

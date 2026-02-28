@@ -46,9 +46,9 @@ service cloud.firestore {
     }
 
     match /admins/{userId} {
-      // ログイン中のユーザーが自身の管理者ステータスを確認することを許可
-      // getだけでなくlistも許可することで判定を安定させる
-      allow read: if isSignedIn() && request.auth.uid == userId;
+      // ログイン中のユーザーが自身の管理者ステータスを確実に確認できるように調整
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if false;
       allow write: if false;
     }
   }
