@@ -47,11 +47,11 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
     console.log("--- [UserRegistration] START ---");
     
     if (!auth || !firestore) {
-      console.error("[UserRegistration] Auth or Firestore not initialized", { auth: !!auth, firestore: !!firestore });
+      console.error("[UserRegistration] Auth or Firestore not initialized");
       toast({
         variant: "destructive",
         title: "システムエラー",
-        description: "Firebaseの初期化が完了していません。ページをリロードしてください。"
+        description: "Firebaseが初期化されていません。リロードしてください。"
       });
       return;
     }
@@ -67,64 +67,72 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
     }
 
     if (password.length < 6) {
+      console.warn("[UserRegistration] Password too short");
       toast({
         variant: "destructive",
         title: "入力エラー",
-        description: "パスワードは6文字以上である必要があります。"
+        description: "パスワードは6文字以上で入力してください。"
       });
       return;
     }
 
     setIsRegistering(true);
-    console.log("[UserRegistration] Opening confirm dialog...");
 
     try {
+      console.log("[UserRegistration] Waiting for window.confirm...");
       const confirmResult = window.confirm(
-        "新規ユーザーを登録すると、現在の管理者セッションが終了し、作成したユーザーで自動的にログインされます。よろしいですか？\n\n(本来はサーバーサイドで行うべき処理ですが、プロトタイプ版ではこの挙動となります)"
+        "新規ユーザーを登録すると、現在のセッションが終了し、作成したユーザーで自動的にログインされます。よろしいですか？"
       );
       
+      console.log("[UserRegistration] confirmResult:", confirmResult);
       if (!confirmResult) {
         console.log("[UserRegistration] Canceled by user");
         setIsRegistering(false);
         return;
       }
 
-      console.log("[UserRegistration] Creating Auth account for:", email);
+      console.log("[UserRegistration] Calling createUserWithEmailAndPassword for:", email);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = userCredential.user;
-      console.log("[UserRegistration] Auth account created! UID:", newUser.uid);
+      console.log("[UserRegistration] Auth success! UID:", newUser.uid);
 
-      console.log("[UserRegistration] Saving user profile to Firestore...");
-      await setDoc(doc(firestore, 'users', newUser.uid), {
+      console.log("[UserRegistration] Attempting to create Firestore document...");
+      const userDocRef = doc(firestore, 'users', newUser.uid);
+      const userData = {
         id: newUser.uid,
         email: newUser.email,
         createdAt: Date.now()
-      });
-      console.log("[UserRegistration] Firestore profile saved.");
+      };
+      
+      await setDoc(userDocRef, userData);
+      console.log("[UserRegistration] Firestore success!");
 
       toast({
         title: "ユーザー登録完了",
-        description: `${email} を登録し、ログインしました。`
+        description: `${email} を登録しました。自動ログインされます。`
       });
       
       setEmail('');
       setPassword('');
       onOpenChange(false);
     } catch (error: any) {
-      console.error("[UserRegistration] FAILED:", error);
-      let message = "登録中にエラーが発生しました。";
+      console.error("[UserRegistration] ERROR OCCURRED:", error);
+      let message = "登録中に予期せぬエラーが発生しました。";
+      
       if (error.code === 'auth/email-already-in-use') {
         message = "このメールアドレスは既に登録されています。";
       } else if (error.code === 'auth/invalid-email') {
-        message = "無効なメールアドレス形式です。";
+        message = "メールアドレスの形式が正しくありません。";
       } else if (error.code === 'auth/weak-password') {
-        message = "パスワードが弱すぎます。";
+        message = "パスワードが短すぎます。";
+      } else if (error.message) {
+        message = error.message;
       }
       
       toast({
         variant: "destructive",
         title: "登録失敗",
-        description: error.message || message
+        description: message
       });
     } finally {
       setIsRegistering(false);
@@ -135,24 +143,25 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const handleDeleteUser = async (userId: string, userEmail: string) => {
     if (!firestore) return;
     
-    if (!window.confirm(`${userEmail} を削除しますか？\n(認証アカウントの削除は別途コンソールから行う必要があります)`)) {
+    if (!window.confirm(`${userEmail} を削除しますか？`)) {
       return;
     }
 
-    console.log("[UserDeletion] Deleting Firestore doc for:", userId);
+    console.log("[UserDeletion] Deleting UID:", userId);
     const docRef = doc(firestore, 'users', userId);
-    deleteDoc(docRef).catch(e => {
-      console.error("[UserDeletion] Permission Error:", e);
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'delete'
-      }));
-    });
-
-    toast({
-      title: "削除完了",
-      description: "Firestore上のユーザー情報を削除しました。"
-    });
+    
+    deleteDoc(docRef)
+      .then(() => {
+        console.log("[UserDeletion] Success!");
+        toast({ title: "削除完了", description: "ユーザー情報を削除しました。" });
+      })
+      .catch(e => {
+        console.error("[UserDeletion] Failed:", e);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete'
+        }));
+      });
   };
 
   return (
@@ -164,12 +173,11 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
             ユーザー管理
           </DialogTitle>
           <DialogDescription>
-            新規ユーザーの登録と、既存ユーザーの削除が行えます。
+            新規ユーザーの登録と管理を行います。
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* 登録フォーム */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-emerald-900 uppercase tracking-widest border-b pb-2">新規登録</h3>
             <form onSubmit={handleRegisterUser} className="space-y-4 pt-2">
@@ -184,6 +192,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-11 rounded-2xl h-11 border-emerald-100"
+                    disabled={isRegistering}
                     required
                   />
                 </div>
@@ -199,6 +208,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-11 rounded-2xl h-11 border-emerald-100"
+                    disabled={isRegistering}
                     required
                   />
                 </div>
@@ -218,7 +228,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
             </form>
           </div>
 
-          {/* ユーザー一覧 */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-emerald-900 uppercase tracking-widest border-b pb-2">
               登録済みユーザー ({users?.length || 0})
