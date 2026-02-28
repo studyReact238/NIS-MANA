@@ -22,7 +22,8 @@ import {
   Clock,
   ThumbsUp,
   ThumbsDown,
-  Users
+  Users,
+  Calendar
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -51,8 +52,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, updateDoc, increment, deleteDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, setDoc, updateDoc, increment, deleteDoc, collection } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -80,6 +81,14 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const { data: voteData } = useDoc<any>(voteDocRef);
   const userVote = voteData?.type as 'up' | 'down' | undefined;
 
+  // 管理者向け：受講者リストの取得
+  const completionsRef = useMemoFirebase(() => {
+    if (!firestore || !isAdmin || !link.id) return null;
+    return collection(firestore, 'learningLinks', link.id, 'completions');
+  }, [firestore, isAdmin, link.id]);
+
+  const { data: completions, isLoading: isCompletionsLoading } = useCollection<any>(completionsRef);
+
   const Icon = getIcon(link.icon);
   const colorData = getColorData(link.color);
 
@@ -97,7 +106,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
     const linkRef = doc(firestore, 'learningLinks', link.id);
 
     if (userVote === type) {
-      // 投票取り消し
       deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
       
       const currentVoteCount = (link as any)[`${type}voteCount`] || 0;
@@ -107,7 +115,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
         }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
       }
     } else {
-      // 新規投票または投票変更
       const oldVote = userVote;
       setDoc(voteRef, { type, updatedAt: Date.now() }, { merge: true })
         .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: { type } })));
@@ -381,6 +388,49 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 ))}
               </div>
             </div>
+
+            {/* 管理者専用：受講者名簿セクション */}
+            {isAdmin && (
+              <div className="space-y-4 pt-6 border-t-2 border-dashed border-emerald-200">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest flex items-center gap-2">
+                    <Users className="w-4 h-4" /> 受講者リスト（管理者のみ）
+                  </h4>
+                  <Badge variant="outline" className="text-[10px] font-bold border-emerald-200">
+                    {completions?.length || 0} 名
+                  </Badge>
+                </div>
+                
+                <div className="bg-emerald-50/30 rounded-3xl border-2 border-emerald-100/50 overflow-hidden">
+                  <ScrollArea className="h-48">
+                    <div className="p-4 space-y-2">
+                      {isCompletionsLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Users className="w-6 h-6 text-emerald-200 animate-pulse" />
+                        </div>
+                      ) : completions && completions.length > 0 ? (
+                        completions.map((c: any) => (
+                          <div key={c.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-emerald-50 shadow-sm">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-emerald-900">{c.email}</span>
+                              <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
+                                <Calendar className="w-3 h-3" />
+                                {format(c.completedAt, 'yyyy/MM/dd HH:mm', { locale: ja })}
+                              </div>
+                            </div>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-10">
+                          <p className="text-xs text-slate-400 font-bold italic">受講者はまだいません</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            )}
 
             <div className="pt-6 border-t border-emerald-100 flex flex-col sm:flex-row gap-4">
               <a 

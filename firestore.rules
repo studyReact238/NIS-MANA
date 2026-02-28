@@ -19,13 +19,18 @@ service cloud.firestore {
     match /learningLinks/{linkId} {
       allow read: if isSignedIn();
       allow create, delete: if isAdmin();
-      // カウントの更新は一般ユーザーも行う可能性があるため、updateを許可
       allow update: if isSignedIn();
     }
 
     // リンクへの投票
     match /learningLinks/{linkId}/votes/{userId} {
       allow read: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+
+    // 管理者のみが確認できる受講者名簿
+    match /learningLinks/{linkId}/completions/{userId} {
+      allow read: if isAdmin();
       allow write: if isOwner(userId);
     }
 

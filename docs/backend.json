@@ -10,6 +10,10 @@
         "id": {
           "type": "string",
           "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
         }
       },
       "required": [
@@ -125,6 +129,15 @@
         "type": { "type": "string", "enum": ["up", "down"] },
         "updatedAt": { "type": "number" }
       }
+    },
+    "Completion": {
+      "title": "Completion",
+      "type": "object",
+      "description": "Record of a specific user completing a link.",
+      "properties": {
+        "email": { "type": "string" },
+        "completedAt": { "type": "number" }
+      }
     }
   },
   "auth": {
@@ -156,6 +169,14 @@
           "entityName": "Vote",
           "schema": { "$ref": "#/backend/entities/Vote" },
           "description": "User votes on a link."
+        }
+      },
+      {
+        "path": "/learningLinks/{linkId}/completions/{userId}",
+        "definition": {
+          "entityName": "Completion",
+          "schema": { "$ref": "#/backend/entities/Completion" },
+          "description": "Detailed completion record for admins."
         }
       },
       {

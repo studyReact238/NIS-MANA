@@ -62,7 +62,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
 
-  // 管理者判定
   const { data: adminDocs } = useCollection(useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'admins');
@@ -73,19 +72,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return adminDocs.some(admin => admin.id === user.uid);
   }, [user, adminDocs]);
 
-  // 全共有リンクを取得
   const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'learningLinks');
   }, [firestore]));
 
-  // ユーザー個別の進捗を取得
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'progress');
   }, [firestore, user?.uid]));
 
-  // リンクデータと個別進捗をマージ
   const links = useMemo(() => {
     if (!rawLinks) return [];
     const progressMap = new Map(userProgress?.map(p => [p.id, p.isCompleted]) || []);
@@ -143,6 +139,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentStatus = link?.isCompleted || false;
     const progressRef = doc(firestore, 'users', user.uid, 'progress', id);
     const linkRef = doc(firestore, 'learningLinks', id);
+    const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     
     const nextStatus = !currentStatus;
 
@@ -152,8 +149,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
 
+    // 管理者向け名簿への記録
+    if (nextStatus) {
+      setDoc(completionRef, {
+        email: user.email,
+        completedAt: Date.now()
+      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
+    } else {
+      deleteDoc(completionRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'delete' })));
+    }
+
     // 全体カウントを更新
-    // 負の数にならないようにデクリメント値を調整
     const currentCount = link?.completedCount || 0;
     const incValue = nextStatus ? 1 : (currentCount > 0 ? -1 : 0);
 
@@ -164,9 +170,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const toggleVote = async (id: string, type: 'up' | 'down') => {
-    // Note: LinkCard.tsx 側で直接 handleVote を実装しているため、ここではプレースホルダーのみ
-  };
+  const toggleVote = async (id: string, type: 'up' | 'down') => {};
 
   const toggleTag = (tag: string) => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   const clearTags = () => setSelectedTags([]);
