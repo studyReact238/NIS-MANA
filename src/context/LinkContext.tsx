@@ -72,7 +72,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin Check
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    // 空白除去を徹底
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
@@ -81,26 +80,22 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 管理者かどうかを判定
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    if (adminError) {
-      console.error('--- ADMIN CHECK ERROR ---', adminError);
-      return false;
-    }
-    // ドキュメントが存在すれば管理者
+    if (adminError) return false;
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
-  // デバッグ用ログ出力をさらに強化
+  // 強力なデバッグ出力
   useEffect(() => {
     if (user && firebaseApp) {
-      console.group('--- Firebase Connection Debug ---');
-      console.log('Project ID (Config):', firebaseApp.options.projectId);
-      console.log('User UID:', user.uid);
-      console.log('Admin Path Attempted:', `admins/${user.uid.trim()}`);
-      console.log('Admin Doc Loading:', isAdminLoading);
-      console.log('Admin Doc Found:', adminDoc !== null);
-      console.log('Final isServerAdmin Result:', isServerAdmin);
-      if (adminError) console.log('Permission Error Details:', adminError);
-      console.groupEnd();
+      console.log('%c--- FIREBASE DEBUG START ---', 'background: #059669; color: white; padding: 4px; font-weight: bold;');
+      console.log('1. Connected Project ID:', firebaseApp.options.projectId);
+      console.log('2. Current User UID:', user.uid);
+      console.log('3. Searching Firestore Path:', `admins/${user.uid.trim()}`);
+      console.log('4. Admin Doc Found In Firestore:', adminDoc !== null);
+      if (adminError) {
+        console.log('5. Firestore Error:', adminError.message);
+      }
+      console.log('%c--- FIREBASE DEBUG END ---', 'background: #059669; color: white; padding: 4px; font-weight: bold;');
     }
   }, [user, isServerAdmin, adminDoc, isAdminLoading, adminError, firebaseApp]);
 
