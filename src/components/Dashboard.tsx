@@ -21,8 +21,7 @@ import {
   User,
   LogOut,
   Loader2,
-  Lock,
-  Copy
+  Lock
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -79,13 +78,6 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const copyUid = () => {
-    if (user?.uid) {
-      navigator.clipboard.writeText(user.uid);
-      toast({ title: "UIDをコピーしました", description: "FirestoreのドキュメントIDに貼り付けてください。" });
-    }
-  };
-
   return (
     <div className="max-w-[1200px] mx-auto px-6 pb-20">
       {/* Fixed Header Section */}
@@ -120,15 +112,7 @@ export const Dashboard: React.FC = () => {
 
             <div className="flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold leading-none text-emerald-950 truncate max-w-[150px]">{user?.email}</p>
-                <button 
-                  onClick={copyUid}
-                  className="group flex items-center justify-end gap-1 ml-auto text-[8px] text-emerald-400 font-mono hover:text-emerald-600 transition-colors"
-                  title="クリックしてUIDをコピー"
-                >
-                  <span className="mb-0.5">{user?.uid}</span>
-                  <Copy className="w-2 h-2 opacity-0 group-hover:opacity-100" />
-                </button>
+                <p className="text-xs font-bold leading-none text-emerald-950 truncate max-w-[150px] mb-1">{user?.email}</p>
                 <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">{isServerAdmin === true ? 'Administrator' : 'Learner'}</p>
               </div>
               
