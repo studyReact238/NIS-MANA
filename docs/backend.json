@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -137,6 +138,18 @@
         "email": { "type": "string" },
         "completedAt": { "type": "number" }
       }
+    },
+    "Activity": {
+      "title": "Activity",
+      "type": "object",
+      "description": "Log of learning activities for the timeline.",
+      "properties": {
+        "userEmail": { "type": "string" },
+        "linkTitle": { "type": "string" },
+        "linkId": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "type": { "type": "string", "enum": ["completion"] }
+      }
     }
   },
   "auth": {
@@ -192,6 +205,14 @@
           "entityName": "User",
           "schema": { "$ref": "#/backend/entities/User" },
           "description": "Admin identification."
+        }
+      },
+      {
+        "path": "/activities/{activityId}",
+        "definition": {
+          "entityName": "Activity",
+          "schema": { "$ref": "#/backend/entities/Activity" },
+          "description": "Public timeline logs."
         }
       }
     ]

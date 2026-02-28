@@ -51,5 +51,12 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
+
+    // タイムライン
+    match /activities/{activityId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow delete, update: if isAdmin();
+    }
   }
 }

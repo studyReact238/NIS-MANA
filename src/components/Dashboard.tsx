@@ -7,6 +7,7 @@ import { LinkCard } from '@/components/LinkCard';
 import { LinkDialog } from '@/components/LinkDialog';
 import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
 import { UserManagementDialog } from '@/components/UserManagementDialog';
+import { Timeline } from '@/components/Timeline';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth, useUser } from '@/firebase';
@@ -295,20 +296,25 @@ export const Dashboard: React.FC = () => {
           <p className="text-emerald-800 font-bold">データを取得中...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredLinks.map(link => (
-            <LinkCard key={link.id} link={link} onEdit={handleEdit} />
-          ))}
-          
-          {filteredLinks.length === 0 && (
-            <div className="col-span-full py-32 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-4xl border-4 border-dashed border-emerald-100/50">
-              <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-100/50">
-                <Search className="w-10 h-10 text-emerald-200" />
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredLinks.map(link => (
+              <LinkCard key={link.id} link={link} onEdit={handleEdit} />
+            ))}
+            
+            {filteredLinks.length === 0 && (
+              <div className="col-span-full py-32 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-4xl border-4 border-dashed border-emerald-100/50">
+                <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-100/50">
+                  <Search className="w-10 h-10 text-emerald-200" />
+                </div>
+                <h3 className="text-xl font-bold text-emerald-900">該当するリンクが見つかりません</h3>
               </div>
-              <h3 className="text-xl font-bold text-emerald-900">該当するリンクが見つかりません</h3>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+
+          {/* Activity Timeline Section */}
+          <Timeline />
+        </>
       )}
 
       <LinkDialog 

@@ -11,7 +11,11 @@ import {
   updateDoc, 
   deleteDoc,
   setDoc,
-  increment
+  increment,
+  query,
+  where,
+  limit,
+  orderBy
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -46,6 +50,7 @@ interface LinkContextType {
   filteredLinks: LearningLink[];
   allTags: string[];
   isLoading: boolean;
+  activities: any[];
 }
 
 const LinkContext = createContext<LinkContextType | undefined>(undefined);
@@ -81,6 +86,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'progress');
   }, [firestore, user?.uid]));
+
+  const { data: activities } = useCollection<any>(useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'activities'),
+      orderBy('timestamp', 'desc'),
+      limit(10)
+    );
+  }, [firestore]));
 
   const links = useMemo(() => {
     if (!rawLinks) return [];
@@ -136,10 +150,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const toggleComplete = (id: string) => {
     if (!firestore || !user) return;
     const link = links.find(l => l.id === id);
-    const currentStatus = link?.isCompleted || false;
+    if (!link) return;
+
+    const currentStatus = link.isCompleted || false;
     const progressRef = doc(firestore, 'users', user.uid, 'progress', id);
     const linkRef = doc(firestore, 'learningLinks', id);
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
+    const activityRef = collection(firestore, 'activities');
     
     const nextStatus = !currentStatus;
 
@@ -149,12 +166,21 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
 
-    // 管理者向け名簿への記録
+    // 管理者向け名簿への記録 & タイムラインへの記録
     if (nextStatus) {
       setDoc(completionRef, {
         email: user.email,
         completedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
+
+      // タイムラインへの記録
+      addDoc(activityRef, {
+        userEmail: user.email,
+        linkTitle: link.title,
+        linkId: link.id,
+        timestamp: Date.now(),
+        type: 'completion'
+      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: activityRef.path, operation: 'create' })));
     } else {
       deleteDoc(completionRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'delete' })));
     }
@@ -221,7 +247,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, toggleComplete, toggleVote, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading
+      duplicateLink, toggleComplete, toggleVote, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
+      activities: activities || []
     }}>
       {children}
     </LinkContext.Provider>
