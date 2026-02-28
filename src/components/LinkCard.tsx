@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -19,8 +18,7 @@ import {
   Edit3, 
   ExternalLink,
   CheckCircle2,
-  Clock,
-  Info
+  Clock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,7 +31,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
 import { useLinks } from '@/context/LinkContext';
@@ -226,24 +223,13 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 </div>
               </div>
               
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => setDetailOpen(true)}
-                  variant="outline"
-                  className={cn(
-                    "flex-1 h-12 rounded-xl border-2 font-bold",
-                    colorData.border,
-                    colorData.text
-                  )}
-                >
-                  <Info className="w-4 h-4 mr-2" /> 詳細を見る
-                </Button>
+              <div className="flex">
                 <a 
                   href={link.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className={cn(
-                    "flex-[2] inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
+                    "flex-1 inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
                     "bg-emerald-700 border-emerald-800 text-white hover:bg-emerald-800 hover:shadow-lg shadow-emerald-200"
                   )}
                 >
