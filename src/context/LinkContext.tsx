@@ -10,10 +10,6 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  serverTimestamp,
-  query,
-  where,
-  orderBy
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -75,7 +71,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin Check
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'admins', user.uid);
+    // 前後の空白を排除したUIDを使用
+    return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
   const { data: adminDoc, isLoading: isAdminLoading, error: adminError } = useDoc(adminDocRef);
@@ -84,27 +81,23 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
     if (adminError) return false;
-    // ドキュメントが存在する場合（adminDocがnullでない場合）のみ管理者とみなす
+    // ドキュメントが存在する場合のみ管理者
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
-  // デバッグ用ログ
+  // デバッグ用ログをさらに詳細に
   useEffect(() => {
     if (user) {
       console.log('--- ADMIN CHECK DEBUG ---');
-      console.log('Current User UID:', user.uid);
-      console.log('Query Path:', `admins/${user.uid}`);
-      console.log('Is Admin Loading:', isAdminLoading);
-      console.log('Admin Doc Data:', adminDoc);
-      console.log('Is Server Admin Result:', isServerAdmin);
-      if (adminError) console.error('Admin Check Error:', adminError);
+      console.log('Exact UID:', `[${user.uid}]`);
+      console.log('Admin Path:', `admins/[${user.uid}]`);
+      console.log('Result:', isServerAdmin);
+      if (adminDoc) console.log('Doc Content:', adminDoc);
       console.log('-------------------------');
     }
-  }, [user, isAdminLoading, adminDoc, isServerAdmin, adminError]);
+  }, [user, isServerAdmin, adminDoc]);
 
-  // 編集モードを有効にできるのはサーバーサイドで管理者として登録されているユーザーのみ
   const isAdmin = isServerAdmin === true && isAdminManual;
-
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
 
   const addLink = (data: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
