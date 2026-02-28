@@ -1,10 +1,7 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * LinkFlow Security Rules v2 (Prototyping Mode)
-     */
 
     function isSignedIn() {
       return request.auth != null;
@@ -14,27 +11,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
     function isAdmin() {
       // ログイン中のユーザーが /admins/{uid} に存在するかチェック
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // --- Collection Rules ---
-
     match /users/{userId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update, delete: if isExistingOwner(userId);
+      allow get, list, create, update, delete: if isOwner(userId);
 
       match /learningLinks/{learningLinkId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-        allow delete: if isExistingOwner(userId);
+        allow get, list, create, update, delete: if isOwner(userId);
       }
     }
 
@@ -43,18 +29,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // 管理者情報コレクション名を 'admins' に統一
     match /admins/{userId} {
-      // ログインしていれば、自分自身の管理者ドキュメントがあるか確認（get）することを許可
-      allow get: if isSignedIn() && request.auth.uid == userId;
-      // リスト表示は管理者のみ許可
+      // 自分の管理者ステータスを誰でも（本人は）確認できるようにする
+      allow get: if isOwner(userId);
+      // 管理者リストの取得は管理者のみ
       allow list: if isAdmin();
       allow create, update, delete: if false;
-    }
-    
-    // 互換性のための古いパス（roles_admin）へのアクセスも許可（任意）
-    match /roles_admin/{userId} {
-      allow get: if isSignedIn() && request.auth.uid == userId;
     }
   }
 }

@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -128,11 +129,11 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores individual user profiles. The `userId` matches `request.auth.uid` for direct ownership and serves as the root for user-specific subcollections.",
+          "description": "Stores individual user profiles.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique ID of the user, corresponding to Firebase Authentication UID."
+              "description": "The unique ID of the user."
             }
           ]
         }
@@ -144,15 +145,15 @@
           "schema": {
             "$ref": "#/backend/entities/LearningLink"
           },
-          "description": "Stores learning links created and owned by a specific user. Includes denormalized 'userId' field for authorization independence, matching the path 'userId'.",
+          "description": "Stores learning links owned by the user.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique ID of the user who owns this learning link."
+              "description": "Owner UID."
             },
             {
               "name": "learningLinkId",
-              "description": "The unique ID of the learning link."
+              "description": "Link ID."
             }
           ]
         }
@@ -164,32 +165,32 @@
           "schema": {
             "$ref": "#/backend/entities/Tag"
           },
-          "description": "Stores globally available tags for categorizing learning links. These tags can be accessed and selected by all users. Write access can be restricted.",
+          "description": "Global tags.",
           "params": [
             {
               "name": "tagId",
-              "description": "The unique ID of the tag."
+              "description": "Tag ID."
             }
           ]
         }
       },
       {
-        "path": "/roles_admin/{userId}",
+        "path": "/admins/{userId}",
         "definition": {
           "entityName": "User",
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "A collection for Database Access Control (DBAC) to identify global administrators. The existence of a document for a specific `userId` in this collection grants admin privileges to that user.",
+          "description": "Identification of global administrators.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique ID of the user designated as an administrator."
+              "description": "The UID of the administrator."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure for LinkFlow prioritizes Authorization Independence and Query-Aware Security Rules (QAPs) through systematic denormalization and structural segregation. \n\n**Authorization Independence:**\n1.  **User-Owned Learning Links:** Learning links are stored in a subcollection under each user's document at `/users/{userId}/learningLinks/{learningLinkId}`. Crucially, each `LearningLink` document also contains a `userId` field that explicitly references its owner. This design means that Firestore security rules can verify ownership by checking `request.auth.uid == userId` against the path parameter (e.g., `match /users/{userId}/learningLinks/{learningLinkId} { allow read, write: if request.auth.uid == userId; }`) or the document's `userId` field, **without** needing to perform an expensive and non-atomic `get()` operation on a parent user document. This makes rules simpler, more robust, and highly debuggable.\n2.  **Global Roles (Admin):** Administrative roles are managed via a dedicated top-level collection, `/roles_admin/{userId}`. The mere existence of a document at `/roles_admin/$(request.auth.uid)` indicates admin status. Checking admin status still involves a `get()` call (e.g., `get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).exists()`), but this is a sanctioned pattern for global role checks that are largely independent of specific data entities and can be cached by the rules engine.\n\n**QAPs (Rules are not Filters):**\n1.  **Secure Listing of Learning Links:** By segregating learning links into `/users/{userId}/learningLinks`, `list` operations become inherently secure and performant. A user can only `list` documents within their own `/users/$(request.auth.uid)/learningLinks` path. The security rules can then simply ensure that the `userId` in the path matches `request.auth.uid`, guaranteeing that all documents returned by a query satisfy the user's authorization without requiring client-side filtering.\n2.  **Global Tags:** Tags are stored in a top-level collection `/tags/{tagId}`. These are assumed to be globally readable, facilitating universal search and categorization. Write access might be limited to authenticated users (for creating new tags during link creation) or administrators. This global scope allows for efficient `list` operations for all users, as there are no user-specific authorization constraints on reading tags.\n3.  **Structural Segregation:** The separation of user-owned data (`/users/{userId}/learningLinks`) from global data (`/tags`) and authorization data (`/roles_admin`) ensures that each collection has a homogeneous security posture, simplifying security rule logic and enhancing debuggability. There's no mixing of public/private or owned/collaborative data within a single collection, adhering to the "
+    "reasoning": "Standard LinkFlow structure using /admins/{userId} for role management."
   }
 }

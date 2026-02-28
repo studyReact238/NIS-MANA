@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
@@ -9,8 +10,7 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
-  deleteDoc, 
-  getDoc
+  deleteDoc
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -70,7 +70,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    // コレクション名を 'admins' で確定
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
@@ -78,9 +77,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    // エラーが出た場合は管理者ではないとみなす（権限エラー対策）
     if (adminError) return false;
-    // ドキュメントが存在すれば管理者
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
@@ -161,33 +158,35 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
-      {/* Admin Status Debug Panel */}
+      {/* Admin Debug Panel (Force Visible) */}
       <div 
-        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#111', color: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #333', fontSize: '11px', minWidth: '240px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', fontFamily: 'monospace' }}
+        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#111', color: 'white', padding: '16px', borderRadius: '16px', border: '2px solid #f87171', fontSize: '11px', minWidth: '260px', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', fontFamily: 'monospace' }}
       >
-        <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#888' }}>ADMIN DEBUG</div>
-        <div style={{ marginBottom: '4px' }}>Project: {firebaseApp?.options.projectId || 'Loading...'}</div>
-        <div style={{ marginBottom: '4px' }}>My UID: <span style={{ color: '#4ade80' }}>{user?.uid}</span></div>
+        <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#f87171', borderBottom: '1px solid #333', pb: '4px' }}>ADMIN STATUS DEBUG</div>
+        <div style={{ marginBottom: '4px' }}>Project: <span style={{ color: '#60a5fa' }}>{firebaseApp?.options.projectId || firebaseConfig.projectId}</span></div>
+        <div style={{ marginBottom: '4px' }}>My UID: <span style={{ color: '#4ade80' }}>{user?.uid || 'Not Login'}</span></div>
         <div style={{ marginBottom: '8px' }}>Admin Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
         
-        <button 
-          onClick={() => {
-            if(user?.uid) {
-              navigator.clipboard.writeText(user.uid);
-              alert("UIDをコピーしました。Firebaseコンソールの 'admins' コレクションに登録してください。");
-            }
-          }}
-          style={{ width: '100%', background: '#333', color: 'white', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer', marginBottom: '6px' }}
-        >
-          UIDをコピー
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <button 
+            onClick={() => {
+              if(user?.uid) {
+                navigator.clipboard.writeText(user.uid);
+                alert("UIDをコピーしました。Firebaseコンソールの 'admins' コレクションに、このUIDをドキュメントIDとして登録してください。");
+              }
+            }}
+            style={{ background: '#333', color: 'white', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            UIDをコピー
+          </button>
 
-        <button 
-          onClick={() => window.location.reload()}
-          style={{ width: '100%', background: '#222', color: '#888', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
-        >
-          ページを再読み込み
-        </button>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{ background: '#222', color: '#888', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}
+          >
+            ページを再読み込み
+          </button>
+        </div>
       </div>
       
       {children}
