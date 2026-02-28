@@ -99,9 +99,13 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
     if (userVote === type) {
       // 投票取り消し
       deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
-      updateDoc(linkRef, {
-        [`${type}voteCount`]: increment(-1)
-      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+      
+      const currentVoteCount = (link as any)[`${type}voteCount`] || 0;
+      if (currentVoteCount > 0) {
+        updateDoc(linkRef, {
+          [`${type}voteCount`]: increment(-1)
+        }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+      }
     } else {
       // 新規投票または投票変更
       const oldVote = userVote;
@@ -112,7 +116,10 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
         [`${type}voteCount`]: increment(1)
       };
       if (oldVote) {
-        updates[`${oldVote}voteCount`] = increment(-1);
+        const oldVoteCount = (link as any)[`${oldVote}voteCount`] || 0;
+        if (oldVoteCount > 0) {
+          updates[`${oldVote}voteCount`] = increment(-1);
+        }
       }
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
     }
@@ -257,7 +264,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
             <div className="flex items-center gap-6 pt-4 mt-2 border-t-2 border-black/5">
                <div className="flex items-center gap-1.5 text-slate-500">
                   <Users className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">{link.completedCount || 0}人が受講</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.completedCount || 0)}人が受講</span>
                </div>
                
                <div className="flex items-center gap-4 ml-auto">
@@ -269,7 +276,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                    )}
                  >
                    <ThumbsUp className={cn("w-4 h-4", userVote === 'up' && "fill-emerald-600")} />
-                   <span className="text-[10px] font-black">{link.upvoteCount || 0}</span>
+                   <span className="text-[10px] font-black">{Math.max(0, link.upvoteCount || 0)}</span>
                  </button>
                  <button 
                    onClick={() => handleVote('down')}
@@ -279,7 +286,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                    )}
                  >
                    <ThumbsDown className={cn("w-4 h-4", userVote === 'down' && "fill-rose-600")} />
-                   <span className="text-[10px] font-black">{link.downvoteCount || 0}</span>
+                   <span className="text-[10px] font-black">{Math.max(0, link.downvoteCount || 0)}</span>
                  </button>
                </div>
             </div>
@@ -338,7 +345,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">受講者数</span>
                   <div className="flex items-center gap-2">
                     <Users className="w-5 h-5 text-emerald-600" />
-                    <span className="text-xl font-black text-emerald-900">{link.completedCount || 0}</span>
+                    <span className="text-xl font-black text-emerald-900">{Math.max(0, link.completedCount || 0)}</span>
                   </div>
                </div>
                <div className="h-10 w-px bg-emerald-200" />
@@ -347,11 +354,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
                       <ThumbsUp className="w-5 h-5 text-emerald-600" />
-                      <span className="text-lg font-black text-emerald-900">{link.upvoteCount || 0}</span>
+                      <span className="text-lg font-black text-emerald-900">{Math.max(0, link.upvoteCount || 0)}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <ThumbsDown className="w-5 h-5 text-rose-600" />
-                      <span className="text-lg font-black text-emerald-900">{link.downvoteCount || 0}</span>
+                      <span className="text-lg font-black text-emerald-900">{Math.max(0, link.downvoteCount || 0)}</span>
                     </div>
                   </div>
                </div>

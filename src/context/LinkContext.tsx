@@ -85,18 +85,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return collection(firestore, 'users', user.uid, 'progress');
   }, [firestore, user?.uid]));
 
-  // ユーザーの全リンクへの投票を取得
-  // 本来はリンクごとに取得するのがよいが、MVPのため一括取得
-  const { data: userVotes, isLoading: isVotesLoading } = useCollection<any>(useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    // 注：Firestoreの構成上、サブコレクションを全検索するにはコレクショングループクエリが必要だが、
-    // ここでは各リンクのvotesサブコレクション内の自分のIDのドキュメントをチェックする必要がある。
-    // クライアントサイドでの効率化のため、ここではlinksがロードされてから個別に取得するのではなく、
-    // 別の方法（例：ユーザーごとのvotesコレクション）が望ましいかもしれない。
-    // しかし、既存のbackend.jsonに合わせ、ここでは空配列として初期化し、LinkCard側で個別に判定する形を取る。
-    return null; 
-  }, [firestore, user?.uid]));
-
   // リンクデータと個別進捗をマージ
   const links = useMemo(() => {
     if (!rawLinks) return [];
@@ -105,10 +93,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return rawLinks.map(link => ({
       ...link,
       isCompleted: progressMap.get(link.id) || false,
-      // userVoteはCard内で個別にフェッチするか、別の手段でマージする
-      completedCount: link.completedCount || 0,
-      upvoteCount: link.upvoteCount || 0,
-      downvoteCount: link.downvoteCount || 0,
+      completedCount: Math.max(0, link.completedCount || 0),
+      upvoteCount: Math.max(0, link.upvoteCount || 0),
+      downvoteCount: Math.max(0, link.downvoteCount || 0),
     })) as LearningLink[];
   }, [rawLinks, userProgress]);
 
@@ -166,23 +153,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
 
     // 全体カウントを更新
-    updateDoc(linkRef, {
-      completedCount: increment(nextStatus ? 1 : -1)
-    }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+    // 負の数にならないようにデクリメント値を調整
+    const currentCount = link?.completedCount || 0;
+    const incValue = nextStatus ? 1 : (currentCount > 0 ? -1 : 0);
+
+    if (incValue !== 0) {
+      updateDoc(linkRef, {
+        completedCount: increment(incValue)
+      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+    }
   };
 
   const toggleVote = async (id: string, type: 'up' | 'down') => {
-    if (!firestore || !user) return;
-    
-    // 注：現在の投票状態を把握するためにサブコレクションを直接見る必要がある。
-    // 本来はContext内のデータにマージされているのが理想だが、実装をシンプルにするためFirestoreを直接参照。
-    const voteRef = doc(firestore, 'learningLinks', id, 'votes', user.uid);
-    const linkRef = doc(firestore, 'learningLinks', id);
-
-    // Context内の状態ではなく、Firestoreから最新の状態を（できれば）取得したいが、
-    // ここではCard側で管理されているuserVoteプロパティを利用するか、
-    // toggleVote内部で再判定する。
-    // ここでは簡易的に、Cardコンポーネント側でクリック時に「現在の投票」を渡すように設計変更。
+    // Note: LinkCard.tsx 側で直接 handleVote を実装しているため、ここではプレースホルダーのみ
   };
 
   const toggleTag = (tag: string) => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
