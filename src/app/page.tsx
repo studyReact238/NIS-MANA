@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -29,7 +30,11 @@ export default function Home() {
   }
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-emerald-800 font-bold">リダイレクト中...</p>
+      </div>
+    );
   }
 
   return (

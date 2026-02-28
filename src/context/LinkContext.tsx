@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor } from '@/types/link';
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, useFirebaseApp } from '@/firebase';
 import { 
@@ -17,7 +17,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 interface LinkContextType {
   links: LearningLink[];
   isAdmin: boolean;
-  isServerAdmin: boolean | null; // null: loading, boolean: loaded
+  isServerAdmin: boolean | null;
   setIsAdmin: (val: boolean) => void;
   search: string;
   setSearch: (val: string) => void;
@@ -52,7 +52,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useUser();
   const { firebaseApp } = useFirebaseApp();
   
-  // UI States
   const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -61,7 +60,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
 
-  // Firestore Queries
   const linksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'learningLinks');
@@ -69,22 +67,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: firestoreLinks, isLoading: isLinksLoading } = useCollection<LearningLink>(linksQuery);
 
-  // Admin Check
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    // 空白などを防ぐために念のため trim
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
   const { data: adminDoc, isLoading: isAdminLoading, error: adminError } = useDoc(adminDocRef);
   
-  // 管理者かどうかを判定 (ドキュメントが存在すれば管理者)
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    if (adminError) {
-      console.error("Admin Check Error:", adminError);
-      return false;
-    }
+    if (adminError) return false;
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
@@ -94,59 +86,28 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addLink = (data: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!firestore || !user) return;
     const colRef = collection(firestore, 'users', user.uid, 'learningLinks');
-    
-    addDoc(colRef, {
-      ...data,
-      userId: user.uid,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    }).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: colRef.path,
-        operation: 'create',
-        requestResourceData: data
-      }));
-    });
+    addDoc(colRef, { ...data, userId: user.uid, createdAt: Date.now(), updatedAt: Date.now() })
+      .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: data })));
   };
 
   const updateLink = (id: string, updates: Partial<LearningLink>) => {
     if (!firestore || !user) return;
     const docRef = doc(firestore, 'users', user.uid, 'learningLinks', id);
-    
-    updateDoc(docRef, {
-      ...updates,
-      updatedAt: Date.now()
-    }).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'update',
-        requestResourceData: updates
-      }));
-    });
+    updateDoc(docRef, { ...updates, updatedAt: Date.now() })
+      .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: updates })));
   };
 
   const deleteLink = (id: string) => {
     if (!firestore || !user) return;
     const docRef = doc(firestore, 'users', user.uid, 'learningLinks', id);
-    
-    deleteDoc(docRef).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'delete'
-      }));
-    });
+    deleteDoc(docRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' })));
   };
 
   const duplicateLink = (id: string) => {
     const original = links.find(l => l.id === id);
     if (!original || !firestore || !user) return;
-    
     const { id: _, ...data } = original;
-    addLink({
-      ...data,
-      title: `${original.title} のコピー`,
-      isCompleted: false,
-    });
+    addLink({ ...data, title: `${original.title} のコピー`, isCompleted: false });
   };
 
   const toggleComplete = (id: string) => {
@@ -155,22 +116,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateLink(id, { isCompleted: !link.isCompleted });
   };
 
-  const toggleTag = (tag: string) => {
-    setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-  };
-
+  const toggleTag = (tag: string) => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   const clearTags = () => setSelectedTags([]);
-
-  const toggleColor = (color: LinkColor) => {
-    setSelectedColors(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]);
-  };
-
+  const toggleColor = (color: LinkColor) => setSelectedColors(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]);
   const clearColors = () => setSelectedColors([]);
-
-  const toggleIcon = (icon: string) => {
-    setSelectedIcons(prev => prev.includes(icon) ? prev.filter(i => i !== icon) : [...prev, i]);
-  };
-
+  const toggleIcon = (icon: string) => setSelectedIcons(prev => prev.includes(icon) ? prev.filter(i => i !== icon) : [...prev, icon]);
   const clearIcons = () => setSelectedIcons([]);
 
   const allTags = useMemo(() => {
@@ -181,31 +131,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const filteredLinks = useMemo(() => {
     let result = [...links];
-
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(l => 
-        l.title.toLowerCase().includes(s) || 
-        (l.description && l.description.toLowerCase().includes(s)) || 
-        l.tags.some(t => t.toLowerCase().includes(s))
-      );
+      result = result.filter(l => l.title.toLowerCase().includes(s) || (l.description && l.description.toLowerCase().includes(s)) || l.tags.some(t => t.toLowerCase().includes(s)));
     }
-
     if (statusFilter === 'learning') result = result.filter(l => !l.isCompleted);
     if (statusFilter === 'completed') result = result.filter(l => l.isCompleted);
-
-    if (selectedTags.length > 0) {
-      result = result.filter(l => selectedTags.some(t => l.tags.includes(t)));
-    }
-
-    if (selectedColors.length > 0) {
-      result = result.filter(l => selectedColors.includes(l.color));
-    }
-
-    if (selectedIcons.length > 0) {
-      result = result.filter(l => selectedIcons.includes(l.icon));
-    }
-
+    if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => l.tags.includes(t)));
+    if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
+    if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
     result.sort((a, b) => {
       if (sortBy === 'title-asc') return a.title.localeCompare(b.title);
       if (sortBy === 'title-desc') return b.title.localeCompare(a.title);
@@ -213,7 +147,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (sortBy === 'date-old') return a.updatedAt - b.updatedAt;
       return 0;
     });
-
     return result;
   }, [links, search, statusFilter, sortBy, selectedTags, selectedColors, selectedIcons]);
 
@@ -224,28 +157,32 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
-      {children}
-      
-      {/* 画面上に強制的に表示するデバッグパネル */}
-      <div className="fixed bottom-4 right-4 z-[9999] bg-black/90 text-white p-4 rounded-2xl text-[10px] font-mono border border-white/20 shadow-2xl backdrop-blur-md max-w-[300px]">
-        <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-2">
-          <div className={`w-2 h-2 rounded-full ${isServerAdmin ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-          <span className="font-bold uppercase tracking-widest">Admin Status Debug</span>
+      {/* 緊急デバッグパネル: 何があっても最前面に表示 */}
+      <div 
+        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: 'rgba(0,0,0,0.9)', color: 'white', padding: '15px', borderRadius: '15px', border: '2px solid red', fontSize: '12px', minWidth: '250px' }}
+      >
+        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #444', marginBottom: '10px' }}>Admin Debug Panel</div>
+        <div>Project: {firebaseApp?.options.projectId}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px' }}>
+          UID: <span style={{ color: '#4ade80' }}>{user?.uid}</span>
         </div>
-        <div className="space-y-1">
-          <p><span className="text-gray-400">Project:</span> {firebaseApp?.options.projectId}</p>
-          <p><span className="text-gray-400">My UID:</span> {user?.uid}</p>
-          <p><span className="text-gray-400">Searching:</span> admins/{user?.uid}</p>
-          <p><span className="text-gray-400">Found:</span> <span className={isServerAdmin ? 'text-green-400 font-bold' : 'text-red-400'}>{String(isServerAdmin)}</span></p>
-          {adminError && <p className="text-orange-400">Error: {adminError.message}</p>}
-        </div>
+        <div>Path: admins/{user?.uid}</div>
+        <div>Admin Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
+        {adminError && <div style={{ color: '#fb923c' }}>Error: {adminError.message}</div>}
         <button 
-          onClick={() => window.location.reload()} 
-          className="mt-3 w-full bg-white/10 hover:bg-white/20 py-1.5 rounded-lg transition-colors border border-white/5"
+          onClick={() => {
+            if(user?.uid) {
+              navigator.clipboard.writeText(user.uid);
+              alert("UIDをコピーしました。FirestoreのドキュメントIDとして使用してください。");
+            }
+          }}
+          style={{ width: '100%', marginTop: '10px', background: '#444', color: 'white', border: 'none', padding: '5px', borderRadius: '5px', cursor: 'pointer' }}
         >
-          ページを再読み込み
+          UIDをコピー
         </button>
       </div>
+      
+      {children}
     </LinkContext.Provider>
   );
 };

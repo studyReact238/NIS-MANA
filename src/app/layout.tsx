@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -24,6 +25,8 @@ export default function RootLayout({
         <FirebaseClientProvider>
           {children}
           <Toaster />
+          {/* グローバルデバッグマーカー */}
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '2px', background: 'red', zIndex: 99999, opacity: 0.5 }}></div>
         </FirebaseClientProvider>
       </body>
     </html>
