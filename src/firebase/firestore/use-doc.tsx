@@ -1,4 +1,3 @@
-
 'use client';
     
 import { useState, useEffect } from 'react';
@@ -39,7 +38,6 @@ export function useDoc<T = any>(
 
   useEffect(() => {
     if (!memoizedDocRef) {
-      console.log("--- [useDoc] Waiting for reference... ---");
       setData(null);
       setIsLoading(false);
       setError(null);
@@ -49,26 +47,18 @@ export function useDoc<T = any>(
     setIsLoading(true);
     setError(null);
 
-    console.log(`--- [useDoc] ATTEMPTING FETCH: ${memoizedDocRef.path} ---`);
-
     const unsubscribe = onSnapshot(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
-        console.log(`--- [useDoc] RESPONSE RECEIVED for: ${memoizedDocRef.path} ---`);
-        console.log(`Exists: ${snapshot.exists()}`);
-        
         if (snapshot.exists()) {
-          console.log(`Data found:`, snapshot.data());
           setData({ ...(snapshot.data() as T), id: snapshot.id });
         } else {
-          console.log(`Document does NOT exist at this path.`);
           setData(null);
         }
         setError(null);
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        console.error(`--- [useDoc] FIRESTORE ERROR for: ${memoizedDocRef.path} ---`, error);
         const contextualError = new FirestorePermissionError({
           operation: 'get',
           path: memoizedDocRef.path,

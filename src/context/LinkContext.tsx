@@ -1,9 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor } from '@/types/link';
-import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase, useFirebaseApp } from '@/firebase';
-import { firebaseConfig } from '@/firebase/config';
+import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { 
   collection, 
   doc, 
@@ -50,7 +49,6 @@ const LinkContext = createContext<LinkContextType | undefined>(undefined);
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const firestore = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
-  const firebaseApp = useFirebaseApp();
   
   const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
@@ -60,22 +58,22 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
 
+  // 管理者ドキュメントの参照をメモ化
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    const cleanUid = user.uid.trim();
-    console.log(`--- [STEP 1] Setting up path: admins/${cleanUid} ---`);
-    return doc(firestore, 'admins', cleanUid);
+    return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
 
-  const { data: adminDoc, isLoading: isAdminDocLoading, error: adminError } = useDoc(adminDocRef);
+  // Firestoreから管理者ドキュメントを取得
+  const { data: adminDoc, isLoading: isAdminDocLoading } = useDoc(adminDocRef);
 
+  // サーバー上の管理者権限を判定
   const isServerAdmin = useMemo(() => {
     if (!firestore || !user || isAuthLoading || isAdminDocLoading) return null;
-    const found = adminDoc !== null;
-    console.log(`--- [STEP 2] Admin Check Result: ${found} ---`);
-    return found;
+    return adminDoc !== null;
   }, [adminDoc, firestore, user, isAuthLoading, isAdminDocLoading]);
 
+  // ユーザーの学習リンク一覧を取得
   const linksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'learningLinks');
@@ -83,6 +81,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: firestoreLinks, isLoading: isLinksLoading } = useCollection<LearningLink>(linksQuery);
 
+  // 管理者権限の最終判定
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
 
@@ -165,41 +164,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
-      <div 
-        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#0f172a', color: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '2px solid #10b981', fontSize: '11px', minWidth: '280px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', fontFamily: 'monospace' }}
-      >
-        <div style={{ fontWeight: 'bold', marginBottom: '1rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isServerAdmin ? '#10b981' : '#ef4444' }}></div>
-          ADMIN DEBUG PANEL
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1rem' }}>
-          <div>Project: <span style={{ color: '#94a3b8' }}>{firebaseApp?.options.projectId || firebaseConfig.projectId}</span></div>
-          <div>My UID: <span style={{ color: '#4ade80' }}>{user?.uid || 'Not logged in'}</span></div>
-          <div>Admin Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#ef4444', fontWeight: 'bold' }}>{isServerAdmin === null ? 'Loading...' : String(isServerAdmin)}</span></div>
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button 
-            onClick={() => {
-              if(user?.uid) {
-                navigator.clipboard.writeText(user.uid);
-                alert("UIDをコピーしました。Firebaseコンソールの 'admins' コレクションのドキュメントIDに貼り付けてください。");
-              }
-            }}
-            style={{ background: '#1e293b', color: 'white', border: '1px solid #334155', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            UIDをコピー
-          </button>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}
-          >
-            ページを再読み込み
-          </button>
-        </div>
-      </div>
-      
       {children}
     </LinkContext.Provider>
   );
