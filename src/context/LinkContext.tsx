@@ -85,15 +85,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isAdminLoading) return null;
     if (adminError) return false;
     // ドキュメントが存在する場合（adminDocがnullでない場合）のみ管理者とみなす
-    // ドキュメントが空でも、snapshotが存在すれば adminDoc は null にならないはず
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
-  // デバッグ用ログ：ブラウザのコンソールに出力されます
+  // デバッグ用ログ
   useEffect(() => {
     if (user) {
       console.log('--- ADMIN CHECK DEBUG ---');
       console.log('Current User UID:', user.uid);
+      console.log('Query Path:', `admins/${user.uid}`);
       console.log('Is Admin Loading:', isAdminLoading);
       console.log('Admin Doc Data:', adminDoc);
       console.log('Is Server Admin Result:', isServerAdmin);
