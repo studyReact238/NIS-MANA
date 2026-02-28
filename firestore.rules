@@ -49,7 +49,7 @@ service cloud.firestore {
     // 管理者名簿
     match /admins/{userId} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow write: if isAdmin();
     }
   }
 }
