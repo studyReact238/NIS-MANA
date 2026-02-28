@@ -61,43 +61,48 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
 
+  // 1. 管理者ドキュメントへの参照を作成
+  const adminDocRef = useMemoFirebase(() => {
+    console.log("--- ADMIN CHECK STEP 1: memoizing reference ---");
+    if (!firestore) {
+      console.log("--- [STOP] Firestore is not ready ---");
+      return null;
+    }
+    if (!user?.uid) {
+      console.log("--- [STOP] User UID is not ready ---");
+      return null;
+    }
+    const cleanUid = user.uid.trim();
+    const path = `admins/${cleanUid}`;
+    console.log(`--- [START] Targeting path: ${path} ---`);
+    return doc(firestore, 'admins', cleanUid);
+  }, [firestore, user?.uid]);
+
+  // 2. ドキュメントを取得
+  const { data: adminDoc, isLoading: isAdminLoading, error: adminError } = useDoc(adminDocRef);
+
+  // 3. 判定結果のログ出力
+  useEffect(() => {
+    console.log("--- ADMIN CHECK STEP 3: checking result ---");
+    console.log("Loading Status:", isAdminLoading);
+    if (adminError) console.error("Permission Error Detected:", adminError);
+    console.log("Document Content:", adminDoc);
+  }, [adminDoc, isAdminLoading, adminError]);
+
+  const isServerAdmin = useMemo(() => {
+    if (isAdminLoading) return null;
+    const isFound = adminDoc !== null;
+    console.log(`--- [FINAL DECISION] Admin Status: ${isFound} ---`);
+    return isFound;
+  }, [adminDoc, isAdminLoading]);
+
+  // リンク取得
   const linksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'learningLinks');
   }, [firestore, user?.uid]);
 
   const { data: firestoreLinks, isLoading: isLinksLoading } = useCollection<LearningLink>(linksQuery);
-
-  const adminDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) {
-      console.log("--- ADMIN CHECK: Firestore or User not ready ---");
-      return null;
-    }
-    const path = `admins/${user.uid.trim()}`;
-    console.log(`--- ADMIN CHECK STEP 1: Target Path Created ---`);
-    console.log(`Path: ${path}`);
-    return doc(firestore, 'admins', user.uid.trim());
-  }, [firestore, user?.uid]);
-  
-  const { data: adminDoc, isLoading: isAdminLoading, error: adminError } = useDoc(adminDocRef);
-  
-  useEffect(() => {
-    console.log("--- ADMIN CHECK STEP 3: useDoc status change ---");
-    console.log("Loading:", isAdminLoading);
-    console.log("Error:", adminError);
-    console.log("Doc Data (Result):", adminDoc);
-  }, [adminDoc, isAdminLoading, adminError]);
-
-  const isServerAdmin = useMemo(() => {
-    if (isAdminLoading) {
-      console.log("--- ADMIN CHECK: Still Loading... ---");
-      return null;
-    }
-    const found = adminDoc !== null;
-    console.log(`--- ADMIN CHECK STEP 4: Final Decision ---`);
-    console.log(`Is Admin Found: ${found}`);
-    return found;
-  }, [adminDoc, isAdminLoading]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
@@ -196,6 +201,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           <div>Project: <span style={{ color: '#94a3b8' }}>{firebaseApp?.options.projectId || firebaseConfig.projectId}</span></div>
           <div>My UID: <span style={{ color: '#4ade80' }}>{user?.uid}</span></div>
           <div>Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#ef4444', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
+          <div>Path: <span style={{ color: '#94a3b8' }}>admins/{user?.uid}</span></div>
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
