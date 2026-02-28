@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -18,7 +19,10 @@ import {
   Edit3, 
   ExternalLink,
   CheckCircle2,
-  Clock
+  Clock,
+  ThumbsUp,
+  ThumbsDown,
+  Users
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -47,6 +51,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, setDoc, updateDoc, increment, deleteDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface LinkCardProps {
   link: LearningLink;
@@ -57,10 +65,21 @@ const SPARKLE_COLORS = ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#f43f5e', '
 
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const { isAdmin, toggleComplete, deleteLink, duplicateLink } = useLinks();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [showSparkles, setShowSparkles] = useState(false);
   
+  // ユーザーの個別投票状態を取得
+  const voteDocRef = useMemoFirebase(() => {
+    if (!firestore || !user || !link.id) return null;
+    return doc(firestore, 'learningLinks', link.id, 'votes', user.uid);
+  }, [firestore, user?.uid, link.id]);
+  
+  const { data: voteData } = useDoc<any>(voteDocRef);
+  const userVote = voteData?.type as 'up' | 'down' | undefined;
+
   const Icon = getIcon(link.icon);
   const colorData = getColorData(link.color);
 
@@ -72,13 +91,39 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
     toggleComplete(link.id);
   };
 
+  const handleVote = (type: 'up' | 'down') => {
+    if (!firestore || !user) return;
+    const voteRef = doc(firestore, 'learningLinks', link.id, 'votes', user.uid);
+    const linkRef = doc(firestore, 'learningLinks', link.id);
+
+    if (userVote === type) {
+      // 投票取り消し
+      deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
+      updateDoc(linkRef, {
+        [`${type}voteCount`]: increment(-1)
+      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+    } else {
+      // 新規投票または投票変更
+      const oldVote = userVote;
+      setDoc(voteRef, { type, updatedAt: Date.now() }, { merge: true })
+        .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: { type } })));
+      
+      const updates: any = {
+        [`${type}voteCount`]: increment(1)
+      };
+      if (oldVote) {
+        updates[`${oldVote}voteCount`] = increment(-1);
+      }
+      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+    }
+  };
+
   return (
     <>
       <Card className={cn(
         "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 shadow-sm",
         cn(colorData.bg, colorData.border)
       )}>
-        {/* Large Watermark Checkmark - Always visible when completed */}
         {link.isCompleted && (
           <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none z-0">
             <CheckCircle2 className="w-64 h-64 text-emerald-600/50" />
@@ -94,7 +139,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
             </div>
             
             <div className="flex items-center gap-3 relative">
-              {/* Explosive Sparkle Animation (Cracker Style) */}
               {showSparkles && (
                 <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
                   <div className="relative">
@@ -210,8 +254,38 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               ))}
             </div>
 
+            <div className="flex items-center gap-6 pt-4 mt-2 border-t-2 border-black/5">
+               <div className="flex items-center gap-1.5 text-slate-500">
+                  <Users className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{link.completedCount || 0}人が受講</span>
+               </div>
+               
+               <div className="flex items-center gap-4 ml-auto">
+                 <button 
+                   onClick={() => handleVote('up')}
+                   className={cn(
+                     "flex items-center gap-1.5 transition-all hover:scale-110",
+                     userVote === 'up' ? "text-emerald-600 scale-110" : "text-slate-400"
+                   )}
+                 >
+                   <ThumbsUp className={cn("w-4 h-4", userVote === 'up' && "fill-emerald-600")} />
+                   <span className="text-[10px] font-black">{link.upvoteCount || 0}</span>
+                 </button>
+                 <button 
+                   onClick={() => handleVote('down')}
+                   className={cn(
+                     "flex items-center gap-1.5 transition-all hover:scale-110",
+                     userVote === 'down' ? "text-rose-600 scale-110" : "text-slate-400"
+                   )}
+                 >
+                   <ThumbsDown className={cn("w-4 h-4", userVote === 'down' && "fill-rose-600")} />
+                   <span className="text-[10px] font-black">{link.downvoteCount || 0}</span>
+                 </button>
+               </div>
+            </div>
+
             <div className={cn(
-              "flex flex-col gap-4 pt-6 mt-4 border-t-2 border-black/5"
+              "flex flex-col gap-4 pt-6 mt-2 border-t-2 border-black/5"
             )}>
               <div className={cn(
                 "flex items-center justify-between text-[11px] font-bold",
@@ -241,7 +315,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
         </CardContent>
       </Card>
 
-      {/* 詳細ダイアログ */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-2xl rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
           <DialogHeader className="mb-6">
@@ -260,6 +333,30 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
           </DialogHeader>
 
           <div className="space-y-8">
+            <div className="flex items-center gap-8 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
+               <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">受講者数</span>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-emerald-600" />
+                    <span className="text-xl font-black text-emerald-900">{link.completedCount || 0}</span>
+                  </div>
+               </div>
+               <div className="h-10 w-px bg-emerald-200" />
+               <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">評価</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                      <ThumbsUp className="w-5 h-5 text-emerald-600" />
+                      <span className="text-lg font-black text-emerald-900">{link.upvoteCount || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <ThumbsDown className="w-5 h-5 text-rose-600" />
+                      <span className="text-lg font-black text-emerald-900">{link.downvoteCount || 0}</span>
+                    </div>
+                  </div>
+               </div>
+            </div>
+
             <div className="space-y-3">
               <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">リソースの説明</h4>
               <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100 min-h-[100px] whitespace-pre-wrap text-slate-800 leading-relaxed">

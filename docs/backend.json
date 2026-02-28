@@ -80,6 +80,18 @@
         "createdBy": {
           "type": "string",
           "description": "UID of the admin who created this link."
+        },
+        "completedCount": {
+          "type": "number",
+          "description": "Total number of users who completed this link."
+        },
+        "upvoteCount": {
+          "type": "number",
+          "description": "Total number of upvotes."
+        },
+        "downvoteCount": {
+          "type": "number",
+          "description": "Total number of downvotes."
         }
       },
       "required": [
@@ -90,7 +102,10 @@
         "icon",
         "createdAt",
         "updatedAt",
-        "createdBy"
+        "createdBy",
+        "completedCount",
+        "upvoteCount",
+        "downvoteCount"
       ]
     },
     "UserProgress": {
@@ -99,6 +114,15 @@
       "description": "Individual user's progress on a link.",
       "properties": {
         "isCompleted": { "type": "boolean" },
+        "updatedAt": { "type": "number" }
+      }
+    },
+    "Vote": {
+      "title": "Vote",
+      "type": "object",
+      "description": "A user's vote on a link.",
+      "properties": {
+        "type": { "type": "string", "enum": ["up", "down"] },
         "updatedAt": { "type": "number" }
       }
     }
@@ -124,6 +148,14 @@
           "entityName": "LearningLink",
           "schema": { "$ref": "#/backend/entities/LearningLink" },
           "description": "Global shared learning links managed by admins."
+        }
+      },
+      {
+        "path": "/learningLinks/{linkId}/votes/{userId}",
+        "definition": {
+          "entityName": "Vote",
+          "schema": { "$ref": "#/backend/entities/Vote" },
+          "description": "User votes on a link."
         }
       },
       {

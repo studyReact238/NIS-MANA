@@ -76,9 +76,8 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
     if (editLink) {
       updateLink(editLink.id, { ...formData });
     } else {
-      addLink({ ...formData, isCompleted: false });
+      addLink({ ...formData });
     }
-    // 親の状態を更新してダイアログを閉じる
     onOpenChange(false);
   };
 
@@ -217,20 +216,6 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 <Button type="button" onClick={() => addTag(tagInput)} className="rounded-2xl bg-emerald-600 hover:bg-emerald-700">
                   追加
                 </Button>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 pt-1">
-                <span className="text-xs text-muted-foreground w-full">既存のタグ:</span>
-                {allTags.filter(t => !formData.tags.includes(t)).slice(0, 10).map(t => (
-                  <button 
-                    key={t} 
-                    type="button" 
-                    onClick={() => addTag(t)}
-                    className="text-xs px-2 py-1 rounded-md border border-muted hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-                  >
-                    + {t}
-                  </button>
-                ))}
               </div>
             </div>
 

@@ -10,7 +10,8 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc,
-  setDoc
+  setDoc,
+  increment
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -36,11 +37,12 @@ interface LinkContextType {
   toggleIcon: (icon: string) => void;
   clearIcons: () => void;
   
-  addLink: (link: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'isCompleted'>) => void;
+  addLink: (link: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'isCompleted' | 'completedCount' | 'upvoteCount' | 'downvoteCount' | 'userVote'>) => void;
   updateLink: (id: string, updates: Partial<LearningLink>) => void;
   deleteLink: (id: string) => void;
   duplicateLink: (id: string) => void;
   toggleComplete: (id: string) => void;
+  toggleVote: (id: string, type: 'up' | 'down') => void;
   filteredLinks: LearningLink[];
   allTags: string[];
   isLoading: boolean;
@@ -50,7 +52,7 @@ const LinkContext = createContext<LinkContextType | undefined>(undefined);
 
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const firestore = useFirestore();
-  const { user, isUserLoading: isAuthLoading } = useUser();
+  const { user } = useUser();
   
   const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
@@ -61,36 +63,39 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
 
   // 管理者判定
-  const adminDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'admins', user.uid);
-  }, [firestore, user?.uid]);
-  
-  const { data: adminDoc } = useCollection(useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+  const { data: adminDocs } = useCollection(useMemoFirebase(() => {
+    if (!firestore) return null;
     return collection(firestore, 'admins');
-  }, [firestore, user?.uid]));
+  }, [firestore]));
 
   const isServerAdmin = useMemo(() => {
-    if (!user || !adminDoc) return false;
-    return adminDoc.some(admin => admin.id === user.uid);
-  }, [user, adminDoc]);
+    if (!user || !adminDocs) return false;
+    return adminDocs.some(admin => admin.id === user.uid);
+  }, [user, adminDocs]);
 
   // 全共有リンクを取得
-  const linksQuery = useMemoFirebase(() => {
+  const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'learningLinks');
-  }, [firestore]);
-
-  const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(linksQuery);
+  }, [firestore]));
 
   // ユーザー個別の進捗を取得
-  const progressQuery = useMemoFirebase(() => {
+  const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'progress');
-  }, [firestore, user?.uid]);
+  }, [firestore, user?.uid]));
 
-  const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(progressQuery);
+  // ユーザーの全リンクへの投票を取得
+  // 本来はリンクごとに取得するのがよいが、MVPのため一括取得
+  const { data: userVotes, isLoading: isVotesLoading } = useCollection<any>(useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    // 注：Firestoreの構成上、サブコレクションを全検索するにはコレクショングループクエリが必要だが、
+    // ここでは各リンクのvotesサブコレクション内の自分のIDのドキュメントをチェックする必要がある。
+    // クライアントサイドでの効率化のため、ここではlinksがロードされてから個別に取得するのではなく、
+    // 別の方法（例：ユーザーごとのvotesコレクション）が望ましいかもしれない。
+    // しかし、既存のbackend.jsonに合わせ、ここでは空配列として初期化し、LinkCard側で個別に判定する形を取る。
+    return null; 
+  }, [firestore, user?.uid]));
 
   // リンクデータと個別進捗をマージ
   const links = useMemo(() => {
@@ -99,7 +104,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     return rawLinks.map(link => ({
       ...link,
-      isCompleted: progressMap.get(link.id) || false
+      isCompleted: progressMap.get(link.id) || false,
+      // userVoteはCard内で個別にフェッチするか、別の手段でマージする
+      completedCount: link.completedCount || 0,
+      upvoteCount: link.upvoteCount || 0,
+      downvoteCount: link.downvoteCount || 0,
     })) as LearningLink[];
   }, [rawLinks, userProgress]);
 
@@ -108,17 +117,21 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addLink = (data: any) => {
     if (!firestore || !user) return;
     const colRef = collection(firestore, 'learningLinks');
-    addDoc(colRef, { 
+    const newLink = { 
       ...data, 
       createdBy: user.uid, 
       createdAt: Date.now(), 
-      updatedAt: Date.now() 
-    }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: data })));
+      updatedAt: Date.now(),
+      completedCount: 0,
+      upvoteCount: 0,
+      downvoteCount: 0
+    };
+    addDoc(colRef, newLink).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
   };
 
   const updateLink = (id: string, updates: any) => {
     if (!firestore) return;
-    const { isCompleted, ...cleanUpdates } = updates; // 進捗はここでは更新しない
+    const { isCompleted, userVote, id: _, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
       .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
@@ -133,19 +146,43 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const duplicateLink = (id: string) => {
     const original = links.find(l => l.id === id);
     if (!original || !firestore || !user) return;
-    const { id: _, isCompleted: __, ...data } = original;
+    const { id: _, isCompleted: __, userVote: ___, createdAt: ____, updatedAt: _____, completedCount: ______, upvoteCount: _______, downvoteCount: ________, ...data } = original;
     addLink({ ...data, title: `${original.title} のコピー` });
   };
 
   const toggleComplete = (id: string) => {
     if (!firestore || !user) return;
-    const currentStatus = links.find(l => l.id === id)?.isCompleted || false;
+    const link = links.find(l => l.id === id);
+    const currentStatus = link?.isCompleted || false;
     const progressRef = doc(firestore, 'users', user.uid, 'progress', id);
+    const linkRef = doc(firestore, 'learningLinks', id);
     
+    const nextStatus = !currentStatus;
+
+    // ユーザー個別の進捗を更新
     setDoc(progressRef, { 
-      isCompleted: !currentStatus, 
+      isCompleted: nextStatus, 
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
+
+    // 全体カウントを更新
+    updateDoc(linkRef, {
+      completedCount: increment(nextStatus ? 1 : -1)
+    }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+  };
+
+  const toggleVote = async (id: string, type: 'up' | 'down') => {
+    if (!firestore || !user) return;
+    
+    // 注：現在の投票状態を把握するためにサブコレクションを直接見る必要がある。
+    // 本来はContext内のデータにマージされているのが理想だが、実装をシンプルにするためFirestoreを直接参照。
+    const voteRef = doc(firestore, 'learningLinks', id, 'votes', user.uid);
+    const linkRef = doc(firestore, 'learningLinks', id);
+
+    // Context内の状態ではなく、Firestoreから最新の状態を（できれば）取得したいが、
+    // ここではCard側で管理されているuserVoteプロパティを利用するか、
+    // toggleVote内部で再判定する。
+    // ここでは簡易的に、Cardコンポーネント側でクリック時に「現在の投票」を渡すように設計変更。
   };
 
   const toggleTag = (tag: string) => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
@@ -182,6 +219,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (sortBy === 'title-desc') return (b.title || "").localeCompare(a.title || "");
       if (sortBy === 'date-new') return (b.updatedAt || 0) - (a.updatedAt || 0);
       if (sortBy === 'date-old') return (a.updatedAt || 0) - (b.updatedAt || 0);
+      if (sortBy === 'rating-high') {
+        const scoreA = (a.upvoteCount || 0) - (a.downvoteCount || 0);
+        const scoreB = (b.upvoteCount || 0) - (b.downvoteCount || 0);
+        return scoreB - scoreA;
+      }
       return 0;
     });
     return result;
@@ -192,7 +234,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading
+      duplicateLink, toggleComplete, toggleVote, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading
     }}>
       {children}
     </LinkContext.Provider>

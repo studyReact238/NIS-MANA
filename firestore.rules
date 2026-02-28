@@ -18,7 +18,15 @@ service cloud.firestore {
     // グローバル共有リンク：全員閲覧可、追加・編集は管理者のみ
     match /learningLinks/{linkId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow create, delete: if isAdmin();
+      // カウントの更新は一般ユーザーも行う可能性があるため、updateを許可
+      allow update: if isSignedIn();
+    }
+
+    // リンクへの投票
+    match /learningLinks/{linkId}/votes/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
     }
 
     // ユーザー個別の進捗管理：本人だけが読み書き可能

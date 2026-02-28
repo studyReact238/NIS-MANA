@@ -21,7 +21,8 @@ import {
   User,
   LogOut,
   Loader2,
-  Lock
+  Lock,
+  Star
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -98,7 +99,6 @@ export const Dashboard: React.FC = () => {
               </Button>
             )}
 
-            {/* 管理者のみ編集モードの切り替えを表示 */}
             {isServerAdmin === true && (
               <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
                 <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
@@ -177,7 +177,7 @@ export const Dashboard: React.FC = () => {
                 <span className="text-[10px] font-bold whitespace-nowrap">並べ替え:</span>
               </div>
               <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
-                <SelectTrigger className="w-full max-w-[180px] border-emerald-200 bg-emerald-50/50 rounded-xl h-8 text-[10px] font-bold text-emerald-900">
+                <SelectTrigger className="w-full max-w-[220px] border-emerald-200 bg-emerald-50/50 rounded-xl h-8 text-[10px] font-bold text-emerald-900">
                   <SelectValue placeholder="並べ替え" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-emerald-200">
@@ -185,6 +185,7 @@ export const Dashboard: React.FC = () => {
                   <SelectItem value="date-old">更新日時：古い順</SelectItem>
                   <SelectItem value="title-asc">タイトル：昇順</SelectItem>
                   <SelectItem value="title-desc">タイトル：降順</SelectItem>
+                  <SelectItem value="rating-high">評価：高い順</SelectItem>
                 </SelectContent>
               </Select>
             </div>
