@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
@@ -71,6 +70,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
+    // コレクション名を 'admins' で確定
     return doc(firestore, 'admins', user.uid.trim());
   }, [firestore, user?.uid]);
   
@@ -78,39 +78,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const isServerAdmin = useMemo(() => {
     if (isAdminLoading) return null;
-    if (adminError) {
-      console.error("Admin Check Permission Error:", adminError);
-      return false;
-    }
-    // ドキュメントが存在すれば (dataがnullでなければ) 管理者
+    // エラーが出た場合は管理者ではないとみなす（権限エラー対策）
+    if (adminError) return false;
+    // ドキュメントが存在すれば管理者
     return adminDoc !== null;
   }, [adminDoc, isAdminLoading, adminError]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
   const links = useMemo(() => firestoreLinks || [], [firestoreLinks]);
-
-  // デバッグ用: 直接 getDoc を試みる
-  useEffect(() => {
-    if (user?.uid && firestore) {
-      const checkAdmin = async () => {
-        const ref = doc(firestore, 'admins', user.uid.trim());
-        try {
-          const snap = await getDoc(ref);
-          console.log("--- ADMIN CHECK DEBUG ---");
-          console.log("Connected Project:", firestore.app.options.projectId || firebaseConfig.projectId);
-          console.log("Checking Path:", ref.path);
-          console.log("Doc Exists:", snap.exists());
-          if (snap.exists()) {
-            console.log("Doc Data:", snap.data());
-          }
-          console.log("-------------------------");
-        } catch (e) {
-          console.error("Manual Admin Check Failed:", e);
-        }
-      };
-      checkAdmin();
-    }
-  }, [user?.uid, firestore]);
 
   const addLink = (data: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!firestore || !user) return;
@@ -186,31 +161,30 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, toggleComplete, filteredLinks, allTags, isLoading: isLinksLoading || (isServerAdmin === null)
     }}>
-      {/* Admin Debug Panel */}
+      {/* Admin Status Debug Panel */}
       <div 
-        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#111', color: 'white', padding: '20px', borderRadius: '20px', border: '2px solid red', fontSize: '12px', minWidth: '300px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}
+        style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 99999, background: '#111', color: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #333', fontSize: '11px', minWidth: '240px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', fontFamily: 'monospace' }}
       >
-        <div style={{ fontWeight: 'bold', borderBottom: '1px solid #333', marginBottom: '12px', paddingBottom: '8px' }}>Admin Debug Panel</div>
-        <div style={{ marginBottom: '6px' }}>Project: <span style={{ color: '#4ade80' }}>{firebaseApp?.options.projectId || firebaseConfig.projectId}</span></div>
-        <div style={{ marginBottom: '6px' }}>UID: <span style={{ color: '#4ade80' }}>{user?.uid}</span></div>
-        <div style={{ marginBottom: '6px' }}>Path: <span style={{ color: '#60a5fa' }}>admins/{user?.uid}</span></div>
-        <div style={{ marginBottom: '12px' }}>Admin Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
+        <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#888' }}>ADMIN DEBUG</div>
+        <div style={{ marginBottom: '4px' }}>Project: {firebaseApp?.options.projectId || 'Loading...'}</div>
+        <div style={{ marginBottom: '4px' }}>My UID: <span style={{ color: '#4ade80' }}>{user?.uid}</span></div>
+        <div style={{ marginBottom: '8px' }}>Admin Found: <span style={{ color: isServerAdmin ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{String(isServerAdmin)}</span></div>
         
         <button 
           onClick={() => {
             if(user?.uid) {
               navigator.clipboard.writeText(user.uid);
-              alert("UIDをコピーしました。FirestoreのadminsコレクションのドキュメントIDに貼り付けてください。");
+              alert("UIDをコピーしました。Firebaseコンソールの 'admins' コレクションに登録してください。");
             }
           }}
-          style={{ width: '100%', background: '#333', color: 'white', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '10px' }}
+          style={{ width: '100%', background: '#333', color: 'white', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer', marginBottom: '6px' }}
         >
           UIDをコピー
         </button>
 
         <button 
           onClick={() => window.location.reload()}
-          style={{ width: '100%', background: '#444', color: 'white', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer' }}
+          style={{ width: '100%', background: '#222', color: '#888', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
         >
           ページを再読み込み
         </button>
