@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'にすまな - Learning Knowledge Base',
-  description: 'AI-powered knowledge base for your learning links',
+  title: 'にすまな - 若手のたまり場、成長のきっかけ。',
+  description: '若手社員のためのナレッジ共有・学習集会所',
 };
 
 export default function RootLayout({
