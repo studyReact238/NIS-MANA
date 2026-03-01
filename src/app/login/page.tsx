@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -116,7 +115,7 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-xs text-emerald-600/60 font-medium">
-          &copy; 2024 にすまな - All rights reserved.
+          &copy; 2026 にすまな制作委員会 - All rights reserved.
         </p>
       </div>
     </div>
