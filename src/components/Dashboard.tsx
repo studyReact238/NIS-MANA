@@ -225,7 +225,7 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white rounded-3xl border border-emerald-100 p-4 sm:p-5 shadow-sm hidden sm:flex items-center gap-4">
           <div className="flex-1 space-y-2">
              <div className="flex justify-between items-center px-1">
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Progress Bar</span>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">プログレスバー</span>
                 <span className="text-[10px] font-black text-emerald-700">{progressStats.percentage}%</span>
              </div>
              <Progress value={progressStats.percentage} className="h-2 bg-emerald-50" />
@@ -295,7 +295,7 @@ export const Dashboard: React.FC = () => {
                 ))}
                 {selectedColors.length > 0 && (
                   <button onClick={clearColors} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
-                    Clear
+                    クリア
                   </button>
                 )}
               </div>
@@ -327,7 +327,7 @@ export const Dashboard: React.FC = () => {
               })}
               {selectedIcons.length > 0 && (
                 <button onClick={clearIcons} className="col-span-4 sm:col-span-1 px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase text-center mt-1 sm:mt-0">
-                  Clear All
+                  すべてクリア
                 </button>
               )}
             </div>
@@ -355,7 +355,7 @@ export const Dashboard: React.FC = () => {
               ))}
               {selectedTags.length > 0 && (
                 <button onClick={clearTags} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
-                  Clear
+                  クリア
                 </button>
               )}
             </div>
@@ -367,9 +367,9 @@ export const Dashboard: React.FC = () => {
       <div className="flex items-center justify-between mb-4 px-2">
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 font-black px-3 py-1 rounded-full text-[10px]">
-            {filteredLinks.length} <span className="ml-1 opacity-60">LINKS</span>
+            {filteredLinks.length} <span className="ml-1 opacity-60">件のリンク</span>
           </Badge>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Displaying search results</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">検索結果を表示中</span>
         </div>
         {(search || selectedTags.length > 0 || selectedColors.length > 0 || selectedIcons.length > 0 || statusFilter !== 'all') && (
           <Button 
@@ -384,7 +384,7 @@ export const Dashboard: React.FC = () => {
             }}
             className="text-[10px] font-black text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-7"
           >
-            <XCircle className="w-3 h-3 mr-1" /> 全てクリア
+            <XCircle className="w-3 h-3 mr-1" /> 条件をクリア
           </Button>
         )}
       </div>
