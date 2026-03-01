@@ -92,7 +92,6 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // 進捗計算
   const progressStats = useMemo(() => {
     const total = links.length;
     const completed = links.filter(l => l.isCompleted).length;
@@ -102,18 +101,17 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-20">
-      {/* Header Section */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 sm:py-6 -mx-4 sm:-mx-6 px-4 sm:px-6 mb-4 border-b border-emerald-100">
         <div className="flex flex-col md:flex-row md:items-center justify-between bg-emerald-100/30 p-4 sm:p-5 rounded-3xl border border-emerald-200 shadow-sm gap-4">
           <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-white shadow-md shrink-0 border border-emerald-200">
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shrink-0">
                 {logo && (
                   <Image
                     src={logo.imageUrl}
                     alt={logo.description}
                     fill
-                    className="object-contain p-1"
+                    className="object-contain"
                     data-ai-hint={logo.imageHint}
                   />
                 )}
@@ -217,7 +215,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div className="bg-white rounded-3xl border border-emerald-100 p-4 sm:p-5 shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -247,7 +244,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Filter Panel */}
       <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-5 sm:p-8 mb-6 sm:mb-8 space-y-4">
         <div className="relative group max-w-3xl mx-auto">
           <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
@@ -377,7 +373,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Result Count and Actions */}
       <div className="flex items-center justify-between mb-4 px-2">
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 font-black px-3 py-1 rounded-full text-[10px]">
@@ -403,7 +398,6 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Grid */}
       {isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center gap-4">
           <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
@@ -444,7 +438,7 @@ export const Dashboard: React.FC = () => {
 
       <PasswordChangeDialog
         open={passwordDialogOpen}
-        onOpenChange={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
       />
 
       {isAdmin && (
