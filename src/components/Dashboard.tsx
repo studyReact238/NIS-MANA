@@ -14,8 +14,6 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { 
   Search, 
   Plus, 
@@ -69,8 +67,6 @@ export const Dashboard: React.FC = () => {
   const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
 
-  const logo = PlaceHolderImages.find(img => img.id === 'app-logo');
-
   const handleEdit = useCallback((link: LearningLink) => {
     setEditingLink(link);
     setDialogOpen(true);
@@ -105,16 +101,8 @@ export const Dashboard: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between bg-emerald-100/30 p-4 sm:p-5 rounded-3xl border border-emerald-200 shadow-sm gap-4">
           <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shrink-0">
-                {logo && (
-                  <Image
-                    src={logo.imageUrl}
-                    alt={logo.description}
-                    fill
-                    className="object-contain"
-                    data-ai-hint={logo.imageHint}
-                  />
-                )}
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-black shrink-0 shadow-md">
+                に
               </div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-emerald-800 whitespace-nowrap">にすまな</h1>
             </div>

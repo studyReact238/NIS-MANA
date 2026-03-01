@@ -11,8 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,8 +20,6 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-
-  const logo = PlaceHolderImages.find(img => img.id === 'app-logo');
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -60,16 +56,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-emerald-50/50 p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <div className="relative inline-flex w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mx-auto transform hover:scale-105 transition-transform">
-            {logo && (
-              <Image
-                src={logo.imageUrl}
-                alt={logo.description}
-                fill
-                className="object-contain"
-                data-ai-hint={logo.imageHint}
-              />
-            )}
+          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-emerald-600 rounded-full flex items-center justify-center text-white text-5xl sm:text-6xl font-black mx-auto transform hover:scale-105 transition-transform shadow-xl shadow-emerald-200">
+            に
           </div>
           <div className="space-y-1">
             <h1 className="text-4xl font-black text-emerald-950 tracking-tight">にすまな</h1>
