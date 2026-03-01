@@ -60,7 +60,7 @@ export default function LoginPage() {
           </div>
           <div className="space-y-1">
             <h1 className="text-4xl font-black text-emerald-950 tracking-tight">にすまな</h1>
-            <p className="text-emerald-700 font-bold text-lg">スキマ時間でちょっとレベルアップ。</p>
+            <p className="text-emerald-700 font-bold text-lg">スキマ時間でちょいアプデ。</p>
           </div>
         </div>
 

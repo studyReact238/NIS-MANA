@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'にすまな - スキマ時間でちょっとレベルアップ。',
+  title: 'にすまな - スキマ時間でちょいアプデ。',
   description: '若手社員のためのナレッジ共有・学習集会所',
 };
 
