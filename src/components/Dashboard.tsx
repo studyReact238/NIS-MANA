@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { LinkCard } from '@/components/LinkCard';
 import { LinkDialog } from '@/components/LinkDialog';
@@ -10,6 +10,7 @@ import { UserManagementDialog } from '@/components/UserManagementDialog';
 import { Timeline } from '@/components/Timeline';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { 
@@ -24,7 +25,9 @@ import {
   LogOut,
   Loader2,
   Lock,
-  Users
+  Users,
+  CheckCircle2,
+  Target
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -49,7 +52,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export const Dashboard: React.FC = () => {
   const { 
-    filteredLinks, isAdmin, isServerAdmin, setIsAdmin, search, setSearch, statusFilter, 
+    links, filteredLinks, isAdmin, isServerAdmin, setIsAdmin, search, setSearch, statusFilter, 
     setStatusFilter, sortBy, setSortBy, selectedTags, toggleTag, clearTags,
     selectedColors, toggleColor, clearColors, selectedIcons, toggleIcon, 
     clearIcons, allTags, isLoading
@@ -84,6 +87,14 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // 進捗計算
+  const progressStats = useMemo(() => {
+    const total = links.length;
+    const completed = links.filter(l => l.isCompleted).length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, percentage };
+  }, [links]);
+
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-20">
       {/* Header Section */}
@@ -95,7 +106,6 @@ export const Dashboard: React.FC = () => {
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-emerald-800 whitespace-nowrap">にすまな</h1>
             </div>
 
-            {/* Profile trigger (Mobile) */}
             <div className="flex md:hidden items-center gap-2">
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
@@ -192,8 +202,38 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-3xl border border-emerald-100 p-4 sm:p-5 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
+              <Target className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">学習進捗</p>
+              <p className="text-lg font-black text-emerald-950">{progressStats.percentage}% <span className="text-xs text-slate-400">完了</span></p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-bold text-emerald-800">
+              {progressStats.completed} / {progressStats.total}
+            </p>
+            <p className="text-[9px] text-slate-400 font-bold">受講済み / 全体</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-3xl border border-emerald-100 p-4 sm:p-5 shadow-sm hidden sm:flex items-center gap-4">
+          <div className="flex-1 space-y-2">
+             <div className="flex justify-between items-center px-1">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Progress Bar</span>
+                <span className="text-[10px] font-black text-emerald-700">{progressStats.percentage}%</span>
+             </div>
+             <Progress value={progressStats.percentage} className="h-2 bg-emerald-50" />
+          </div>
+        </div>
+      </div>
+
       {/* Main Filter Panel */}
-      <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-5 sm:p-8 mb-8 sm:mb-10 space-y-4">
+      <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-5 sm:p-8 mb-6 sm:mb-8 space-y-4">
         <div className="relative group max-w-3xl mx-auto">
           <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
           <Input 
@@ -240,33 +280,33 @@ export const Dashboard: React.FC = () => {
                 <Palette className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-bold">カラー:</span>
               </div>
-              <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {LINK_COLORS.map(c => (
                   <button
                     key={c.name}
                     onClick={() => toggleColor(c.name)}
                     className={cn(
-                      "w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full border-2 transition-all shrink-0",
+                      "w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 transition-all shrink-0",
                       c.class,
-                      selectedColors.includes(c.name) ? "border-emerald-800 scale-110 ring-2 ring-emerald-200" : "border-white shadow-sm hover:scale-105"
+                      selectedColors.includes(c.name) ? "border-emerald-800 scale-110 ring-4 ring-emerald-200" : "border-white shadow-md hover:scale-105"
                     )}
                   />
                 ))}
                 {selectedColors.length > 0 && (
-                  <button onClick={clearColors} className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200">
-                    クリア
+                  <button onClick={clearColors} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
+                    Clear
                   </button>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px]">
               <Layout className="w-3.5 h-3.5" />
               <span className="text-[10px] font-bold">タイプ:</span>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-2">
               {LINK_ICONS.map(i => {
                 const IconComp = i.icon;
                 return (
@@ -274,19 +314,19 @@ export const Dashboard: React.FC = () => {
                     key={i.name}
                     onClick={() => toggleIcon(i.name)}
                     className={cn(
-                      "p-1.5 rounded-lg transition-all border",
+                      "flex items-center justify-center p-2 rounded-xl transition-all border-2",
                       selectedIcons.includes(i.name) 
-                        ? "bg-emerald-600 text-white border-emerald-700" 
-                        : "bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                        ? "bg-emerald-600 text-white border-emerald-700 shadow-md scale-105" 
+                        : "bg-white border-emerald-100 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200"
                     )}
                   >
-                    <IconComp className="w-3.5 h-3.5" />
+                    <IconComp className="w-4 h-4" />
                   </button>
                 );
               })}
               {selectedIcons.length > 0 && (
-                <button onClick={clearIcons} className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200">
-                  クリア
+                <button onClick={clearIcons} className="col-span-4 sm:col-span-1 px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase text-center mt-1 sm:mt-0">
+                  Clear All
                 </button>
               )}
             </div>
@@ -303,23 +343,49 @@ export const Dashboard: React.FC = () => {
                   key={tag}
                   onClick={() => toggleTag(tag)}
                   className={cn(
-                    "px-2.5 py-0.5 rounded-full text-[9px] font-bold border transition-all",
+                    "px-3 py-1 rounded-full text-[9px] font-bold border-2 transition-all",
                     selectedTags.includes(tag) 
-                      ? "bg-emerald-700 text-white border-emerald-800" 
-                      : "bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100"
+                      ? "bg-emerald-700 text-white border-emerald-800 shadow-sm" 
+                      : "bg-emerald-50/50 text-emerald-900 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200"
                   )}
                 >
-                  {tag}
+                  #{tag}
                 </button>
               ))}
               {selectedTags.length > 0 && (
-                <button onClick={clearTags} className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200">
-                  クリア
+                <button onClick={clearTags} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
+                  Clear
                 </button>
               )}
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Result Count and Actions */}
+      <div className="flex items-center justify-between mb-4 px-2">
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 font-black px-3 py-1 rounded-full text-[10px]">
+            {filteredLinks.length} <span className="ml-1 opacity-60">LINKS</span>
+          </Badge>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Displaying search results</span>
+        </div>
+        {(search || selectedTags.length > 0 || selectedColors.length > 0 || selectedIcons.length > 0 || statusFilter !== 'all') && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              setSearch('');
+              clearTags();
+              clearColors();
+              clearIcons();
+              setStatusFilter('all');
+            }}
+            className="text-[10px] font-black text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-7"
+          >
+            <XCircle className="w-3 h-3 mr-1" /> 全てクリア
+          </Button>
+        )}
       </div>
 
       {/* Grid */}
@@ -341,6 +407,7 @@ export const Dashboard: React.FC = () => {
                   <Search className="w-8 h-8 text-emerald-200" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-emerald-900">該当するリンクが見つかりません</h3>
+                <p className="text-sm text-slate-400 font-medium">条件を変えて試してみてください。</p>
               </div>
             )}
           </div>
