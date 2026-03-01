@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,6 +22,8 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+
+  const logo = PlaceHolderImages.find(img => img.id === 'app-logo');
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -55,12 +59,22 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-emerald-50/50 p-4">
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <div className="inline-flex w-16 h-16 bg-emerald-600 rounded-3xl items-center justify-center text-white font-black text-3xl shadow-xl transform rotate-3">
-            に
+        <div className="text-center space-y-4">
+          <div className="relative inline-flex w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-white mx-auto transform hover:scale-105 transition-transform">
+            {logo && (
+              <Image
+                src={logo.imageUrl}
+                alt={logo.description}
+                fill
+                className="object-cover"
+                data-ai-hint={logo.imageHint}
+              />
+            )}
           </div>
-          <h1 className="text-4xl font-black text-emerald-950 tracking-tight">にすまな</h1>
-          <p className="text-emerald-700 font-bold">あなたの学びを、もっとスマートに。</p>
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black text-emerald-950 tracking-tight">にすまな</h1>
+            <p className="text-emerald-700 font-bold">あなたの学びを、もっとスマートに。</p>
+          </div>
         </div>
 
         <Card className="rounded-4xl border-2 border-emerald-100 shadow-2xl shadow-emerald-900/10">
