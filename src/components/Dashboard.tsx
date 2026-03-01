@@ -113,7 +113,7 @@ export const Dashboard: React.FC = () => {
                     src={logo.imageUrl}
                     alt={logo.description}
                     fill
-                    className="object-cover"
+                    className="object-contain p-1"
                     data-ai-hint={logo.imageHint}
                   />
                 )}
@@ -159,8 +159,8 @@ export const Dashboard: React.FC = () => {
                   variant="outline"
                   className="rounded-full h-9 sm:h-10 px-3 sm:px-4 border-emerald-200 text-emerald-800 font-bold hover:bg-emerald-50 text-xs"
                 >
-                  <Users className="w-3.5 h-3.5 sm:mr-2" /> 
                   <span className="hidden sm:inline">ユーザー管理</span>
+                  <Users className="w-3.5 h-3.5 sm:ml-2" />
                 </Button>
                 <Button 
                   onClick={handleAdd} 

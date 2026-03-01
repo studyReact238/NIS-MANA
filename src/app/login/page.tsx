@@ -60,13 +60,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-emerald-50/50 p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <div className="relative inline-flex w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-white mx-auto transform hover:scale-105 transition-transform">
+          <div className="relative inline-flex w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-white mx-auto transform hover:scale-105 transition-transform bg-white">
             {logo && (
               <Image
                 src={logo.imageUrl}
                 alt={logo.description}
                 fill
-                className="object-cover"
+                className="object-contain p-2"
                 data-ai-hint={logo.imageHint}
               />
             )}
