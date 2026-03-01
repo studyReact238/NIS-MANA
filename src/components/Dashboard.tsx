@@ -11,6 +11,7 @@ import { Timeline } from '@/components/Timeline';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { 
@@ -429,7 +430,7 @@ export const Dashboard: React.FC = () => {
 
       <PasswordChangeDialog
         open={passwordDialogOpen}
-        onOpenChange={setPasswordDialogOpen}
+        onOpenChange={passwordDialogOpen}
       />
 
       {isAdmin && (
