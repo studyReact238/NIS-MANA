@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -15,22 +16,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
+  // クライアントサイドでのマウントを確認
   useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/');
+    setMounted(true);
+  }, []);
+
+  // すでにログインしている場合はトップへリダイレクト
+  useEffect(() => {
+    if (mounted && !isUserLoading && user) {
+      router.replace('/');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, mounted]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth!, email, password);
+      if (!auth) throw new Error("Auth service is not available");
+      await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "ログイン成功", description: "おかえりなさい！" });
     } catch (error: any) {
       toast({
@@ -43,7 +52,8 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || user) {
+  // 読み込み中や遷移中はローダーを表示
+  if (!mounted || isUserLoading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
