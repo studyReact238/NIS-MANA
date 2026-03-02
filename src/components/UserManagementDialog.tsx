@@ -44,12 +44,15 @@ import {
   ArrowLeft,
   BookOpen,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Clock
 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useLinks } from '@/context/LinkContext';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
 
 interface UserManagementDialogProps {
   open: boolean;
@@ -157,7 +160,8 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
       await setDoc(userDocRef, {
         id: newUser.uid,
         email: newUser.email,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        lastLoginAt: null
       });
 
       if (grantAdmin) {
@@ -291,6 +295,12 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-bold text-emerald-950 truncate">{u.email}</span>
                               {admins?.some(a => a.id === u.id) && <Badge className="bg-emerald-600 text-[8px] h-4 px-1.5 rounded-sm">Admin</Badge>}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                最終ログイン: {u.lastLoginAt ? format(u.lastLoginAt, 'yyyy/MM/dd HH:mm', { locale: ja }) : '記録なし'}
+                              </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-1">

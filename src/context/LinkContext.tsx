@@ -72,20 +72,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(50);
 
-  // ログイン中ユーザーのドキュメントがFirestoreにない場合に作成する
+  // ログイン中ユーザーのドキュメントを更新（最終ログイン日時を含む）
   useEffect(() => {
     if (!firestore || !user) return;
     
     const userRef = doc(firestore, 'users', user.uid);
-    getDoc(userRef).then((docSnap) => {
-      if (!docSnap.exists()) {
-        setDoc(userRef, {
-          id: user.uid,
-          email: user.email,
-          createdAt: Date.now()
-        }, { merge: true });
-      }
-    });
+    setDoc(userRef, {
+      id: user.uid,
+      email: user.email,
+      lastLoginAt: Date.now()
+    }, { merge: true });
   }, [firestore, user]);
 
   const { data: adminDocs } = useCollection(useMemoFirebase(() => {
