@@ -8,24 +8,14 @@ AI機能を無効化し、クレジットカード登録不要の **Firebase Hos
 この画面下の **「Terminal」タブ** で以下の通りに入力してください。
 
 ### 1. 正しい場所に移動する
-まず、アプリの「本棚」に相当する場所に移動します。
+アプリのルートディレクトリ（`/workspace`）にいることを確認します。
 ```bash
-# 自分のホームディレクトリに移動
-cd ~
-
-# ファイル一覧を表示
-ls
-```
-※ `ls` と打った時に `package.json` というファイルが見える場所が「ルートディレクトリ」です。
-
-**もし見つからない場合:**
-```bash
-# 現在地を `/workspace` に変更して確認
 cd /workspace
 ls
 ```
+※ `ls` と打った時に `package.json` というファイルが見える場所が正解です。
 
-### 2. Firebase ツールを準備する
+### 2. Firebase ツールを準備する（未実施の場合）
 ```bash
 npm install -g firebase-tools
 ```
@@ -36,7 +26,14 @@ firebase login --no-localhost
 ```
 ※ 画面に表示される URL をブラウザで開き、ログインを許可して、表示されたコードをターミナルに貼り付けてください。
 
-### 4. プロジェクトの初期化
+### 4. ビルド（ウェブサイトの作成）
+**【重要】** デプロイの前に、Next.js を「静的ファイル（HTML/JS）」に変換して `out` ディレクトリを作成する必要があります。
+```bash
+npm run build
+```
+ビルドが完了したら、`ls -d out` と入力して `out` という名前のフォルダが存在することを確認してください。
+
+### 5. プロジェクトの初期化（未実施の場合）
 ```bash
 firebase init hosting
 ```
@@ -45,12 +42,6 @@ firebase init hosting
 *   `Public directory`: **out** と入力（⚠️重要：デフォルトの `public` ではなく `out`）
 *   `Configure as a single-page app`: **Yes**
 *   `Overwrite out/index.html?`: **No**
-
-### 5. ビルド（ウェブサイトの作成）
-Next.js を「静的ファイル（HTML/JS）」に変換します。
-```bash
-npm run build
-```
 
 ### 6. デプロイ（世界中に公開！）
 ```bash

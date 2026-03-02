@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -25,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -60,6 +61,7 @@ interface UserManagementDialogProps {
 
 export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open, onOpenChange }) => {
   const { recalculateAllCounts, links } = useLinks();
+  const { user } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [grantAdmin, setGrantAdmin] = useState(false);
@@ -86,7 +88,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const { data: users, isLoading: isUsersLoading } = useCollection<any>(usersRef);
   const { data: admins, isLoading: isAdminsLoading } = useCollection<any>(adminsRef);
 
-  // 最終ログイン日時で降順（新しい順）にソート
   const sortedUsers = React.useMemo(() => {
     if (!users) return [];
     return [...users].sort((a, b) => {
@@ -185,6 +186,37 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
       toast({ variant: "destructive", title: "登録失敗", description: error.message });
     } finally {
       setIsRegistering(false);
+    }
+  };
+
+  const toggleAdminStatus = async (userToUpdate: {id: string, email: string}, isCurrentlyAdmin: boolean) => {
+    if (!firestore || !user) return;
+    
+    if (user.uid === userToUpdate.id) {
+      toast({
+        variant: "destructive",
+        title: "操作不可",
+        description: "自分自身の管理者権限は変更できません。"
+      });
+      return;
+    }
+
+    try {
+      if (isCurrentlyAdmin) {
+        await deleteDoc(doc(firestore, 'admins', userToUpdate.id));
+        toast({ title: "権限解除", description: `${userToUpdate.email} の管理者権限を解除しました。` });
+      } else {
+        await setDoc(doc(firestore, 'admins', userToUpdate.id), {
+          id: userToUpdate.id,
+          email: userToUpdate.email
+        });
+        toast({ title: "権限付与", description: `${userToUpdate.email} に管理者権限を付与しました。` });
+      }
+    } catch (e: any) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+        path: `admins/${userToUpdate.id}`, 
+        operation: isCurrentlyAdmin ? 'delete' : 'create' 
+      }));
     }
   };
 
@@ -297,40 +329,55 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                     <div className="p-4 space-y-2">
                       {isUsersLoading ? (
                         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 text-emerald-600 animate-spin" /></div>
-                      ) : sortedUsers?.map((u: any) => (
-                        <div key={u.id} className="group flex items-center justify-between p-3 bg-white rounded-2xl border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all">
-                          <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-emerald-950 truncate">{u.email}</span>
-                              {admins?.some(a => a.id === u.id) && <Badge className="bg-emerald-600 text-[8px] h-4 px-1.5 rounded-sm">Admin</Badge>}
+                      ) : sortedUsers?.map((u: any) => {
+                        const isAdminUser = admins?.some(a => a.id === u.id) || false;
+                        return (
+                          <div key={u.id} className="group flex items-center justify-between p-3 bg-white rounded-2xl border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all">
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-emerald-950 truncate">{u.email}</span>
+                                {isAdminUser && <Badge className="bg-emerald-600 text-[8px] h-4 px-1.5 rounded-sm">Admin</Badge>}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                  最終ログイン: {u.lastLoginAt ? format(u.lastLoginAt, 'yyyy/MM/dd HH:mm', { locale: ja }) : '記録なし'}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <Clock className="w-3 h-3 text-slate-400" />
-                              <span className="text-[10px] text-slate-400 font-medium">
-                                最終ログイン: {u.lastLoginAt ? format(u.lastLoginAt, 'yyyy/MM/dd HH:mm', { locale: ja }) : '記録なし'}
-                              </span>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => toggleAdminStatus(u, isAdminUser)} 
+                                className={cn(
+                                  "h-8 w-8 rounded-lg transition-all",
+                                  isAdminUser ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-slate-300 hover:text-emerald-600 hover:bg-emerald-50"
+                                )}
+                                title={isAdminUser ? "管理者権限を解除" : "管理者権限を付与"}
+                              >
+                                <ShieldCheck className={cn("w-3.5 h-3.5", isAdminUser && "fill-current")} />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setSelectedUser(u)} 
+                                className="h-8 px-3 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold text-[10px]"
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1.5" /> 進捗
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => setUserToDelete(u)} 
+                                className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setSelectedUser(u)} 
-                              className="h-8 px-3 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold text-[10px]"
-                            >
-                              <Eye className="w-3.5 h-3.5 mr-1.5" /> 進捗
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => setUserToDelete(u)} 
-                              className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </ScrollArea>
                 </div>
