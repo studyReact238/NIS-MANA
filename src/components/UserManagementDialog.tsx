@@ -32,10 +32,24 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Trash2, Mail, Lock, ShieldCheck, RefreshCw } from 'lucide-react';
+import { 
+  Loader2, 
+  UserPlus, 
+  Trash2, 
+  Mail, 
+  Lock, 
+  ShieldCheck, 
+  RefreshCw, 
+  Eye, 
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  ExternalLink
+} from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useLinks } from '@/context/LinkContext';
+import { cn } from '@/lib/utils';
 
 interface UserManagementDialogProps {
   open: boolean;
@@ -43,13 +57,17 @@ interface UserManagementDialogProps {
 }
 
 export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open, onOpenChange }) => {
-  const { recalculateAllCounts } = useLinks();
+  const { recalculateAllCounts, links } = useLinks();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [grantAdmin, setGrantAdmin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
+  
+  // ユーザー詳細表示用のステータス
+  const [selectedUser, setSelectedUser] = useState<{id: string, email: string} | null>(null);
+
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -65,6 +83,35 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   const { data: users, isLoading: isUsersLoading } = useCollection<any>(usersRef);
   const { data: admins, isLoading: isAdminsLoading } = useCollection<any>(adminsRef);
+
+  // 選択されたユーザーの進捗データを取得
+  const userProgressRef = useMemoFirebase(() => {
+    if (!firestore || !selectedUser) return null;
+    return collection(firestore, 'users', selectedUser.id, 'progress');
+  }, [firestore, selectedUser?.id]);
+
+  const { data: selectedUserProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
+
+  // 進捗データをリンク情報とマージ
+  const userLearningLinks = React.useMemo(() => {
+    if (!selectedUserProgress || !links) return [];
+    return selectedUserProgress
+      .filter(p => p.status === 'learning')
+      .map(p => {
+        const link = links.find(l => l.id === p.id);
+        return { id: p.id, title: link?.title || '不明なリンク', url: link?.url };
+      });
+  }, [selectedUserProgress, links]);
+
+  const userCompletedLinks = React.useMemo(() => {
+    if (!selectedUserProgress || !links) return [];
+    return selectedUserProgress
+      .filter(p => p.status === 'completed')
+      .map(p => {
+        const link = links.find(l => l.id === p.id);
+        return { id: p.id, title: link?.title || '不明なリンク', url: link?.url };
+      });
+  }, [selectedUserProgress, links]);
 
   const initiateRegister = (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,6 +195,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
       await deleteDoc(doc(firestore, 'users', userId));
       await deleteDoc(doc(firestore, 'admins', userId));
       toast({ title: "削除完了", description: "ユーザー情報を削除しました。" });
+      if (selectedUser?.id === userId) setSelectedUser(null);
     } catch (e: any) {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `users/${userId}`, operation: 'delete' }));
     }
@@ -155,55 +203,59 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-              <UserPlus className="w-6 h-6 text-emerald-600" />
+      <Dialog open={open} onOpenChange={(val) => {
+        onOpenChange(val);
+        if (!val) setSelectedUser(null);
+      }}>
+        <DialogContent className="max-w-4xl rounded-4xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="mb-6 shrink-0">
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-emerald-950">
+              <ShieldCheck className="w-6 h-6 text-emerald-600" />
               ユーザー・システム管理
             </DialogTitle>
             <DialogDescription>
-              新規ユーザーの登録とデータのメンテナンスを行います。
+              新規ユーザーの登録、学習進捗の確認、データのメンテナンスを行います。
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div className="space-y-6">
-              <h3 className="text-sm font-black text-emerald-900 uppercase tracking-widest border-b pb-2">新規登録</h3>
-              <form onSubmit={initiateRegister} className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="new-email">メールアドレス</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
-                    <Input id="new-email" type="email" placeholder="user@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-11 rounded-2xl h-11 border-emerald-100" disabled={isRegistering} required />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 flex-1 overflow-hidden">
+            {/* 左カラム: 登録・メンテナンス (4/12) */}
+            <div className="md:col-span-4 space-y-6 overflow-y-auto pr-2">
+              <div className="space-y-4">
+                <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest border-b border-emerald-100 pb-2">新規ユーザー登録</h3>
+                <form onSubmit={initiateRegister} className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-email" className="text-xs font-bold text-slate-600">メールアドレス</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
+                      <Input id="new-email" type="email" placeholder="user@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-9 rounded-xl h-10 border-emerald-100 text-xs" disabled={isRegistering} required />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">初期パスワード</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
-                    <Input id="new-password" type="password" placeholder="6文字以上" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-11 rounded-2xl h-11 border-emerald-100" disabled={isRegistering} required />
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password" className="text-xs font-bold text-slate-600">初期パスワード</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
+                      <Input id="new-password" type="password" placeholder="6文字以上" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-9 rounded-xl h-10 border-emerald-100 text-xs" disabled={isRegistering} required />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-3 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
-                  <Checkbox id="grant-admin" checked={grantAdmin} onCheckedChange={(c) => setGrantAdmin(c as boolean)} className="w-5 h-5 rounded-md border-emerald-300 data-[state=checked]:bg-emerald-600" />
-                  <div className="grid gap-1.5 leading-none">
-                    <Label htmlFor="grant-admin" className="text-sm font-bold text-emerald-900 cursor-pointer flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <div className="flex items-center space-x-2 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                    <Checkbox id="grant-admin" checked={grantAdmin} onCheckedChange={(c) => setGrantAdmin(c as boolean)} className="w-4 h-4 rounded-md border-emerald-300 data-[state=checked]:bg-emerald-600" />
+                    <Label htmlFor="grant-admin" className="text-[11px] font-bold text-emerald-900 cursor-pointer">
                       管理者権限を付与する
                     </Label>
                   </div>
-                </div>
-                <Button type="submit" className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 font-bold h-12 shadow-lg shadow-emerald-200" disabled={isRegistering}>
-                  {isRegistering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "ユーザーを登録する"}
-                </Button>
-              </form>
+                  <Button type="submit" className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold h-10 text-xs shadow-md shadow-emerald-200" disabled={isRegistering}>
+                    {isRegistering ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <UserPlus className="mr-2 h-3.5 w-3.5" />}
+                    登録する
+                  </Button>
+                </form>
+              </div>
 
-              <div className="pt-6 border-t border-dashed border-emerald-200">
-                <h3 className="text-sm font-black text-emerald-900 uppercase tracking-widest pb-2">メンテナンス</h3>
-                <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 space-y-3">
+              <div className="pt-6 border-t border-dashed border-emerald-100">
+                <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest pb-2">システム・メンテナンス</h3>
+                <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-3">
                   <p className="text-[10px] text-amber-800 font-bold leading-relaxed">
-                    既存データの「学習中」「受講済み」の人数が正しく表示されない場合は、以下のボタンで統計情報を再集計してください。
+                    学習状況のカウントが不正確な場合は、統計情報を再集計してください。
                   </p>
                   <Button 
                     onClick={handleRecalculate} 
@@ -212,39 +264,138 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                     className="w-full rounded-xl bg-white border-amber-200 text-amber-800 hover:bg-amber-100 font-bold text-xs h-10"
                   >
                     {isRecalculating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-2 h-3.5 w-3.5" />}
-                    統計情報を同期する
+                    統計情報を同期
                   </Button>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-6">
-              <h3 className="text-sm font-black text-emerald-900 uppercase tracking-widest border-b pb-2 flex items-center justify-between">
-                登録済みユーザー
-                <Badge variant="outline" className="text-[10px] border-emerald-200">{users?.length || 0} 名</Badge>
-              </h3>
-              <ScrollArea className="h-[450px] pr-4">
-                <div className="space-y-2 pt-2">
-                  {isUsersLoading ? (
-                    <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 text-emerald-600 animate-spin" /></div>
-                  ) : users?.map((u: any) => (
-                    <div key={u.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-emerald-50 shadow-sm">
-                      <div className="flex flex-col min-w-0 mr-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-emerald-900 truncate">{u.email}</span>
-                          {admins?.some(a => a.id === u.id) && <Badge className="bg-emerald-600 text-[8px] h-4 px-1.5 rounded-sm">Admin</Badge>}
+            {/* 右カラム: ユーザーリスト または ユーザー詳細 (8/12) */}
+            <div className="md:col-span-8 flex flex-col overflow-hidden bg-slate-50/50 rounded-3xl border border-emerald-50">
+              {!selectedUser ? (
+                // ユーザー一覧表示
+                <div className="flex flex-col h-full overflow-hidden">
+                  <div className="p-4 border-b border-emerald-100 bg-white/80 flex items-center justify-between shrink-0">
+                    <h3 className="text-sm font-black text-emerald-900 uppercase tracking-widest flex items-center gap-2">
+                      登録済みユーザー
+                      <Badge variant="outline" className="text-[10px] font-bold border-emerald-200 bg-emerald-50 text-emerald-700">{users?.length || 0}</Badge>
+                    </h3>
+                  </div>
+                  <ScrollArea className="flex-1">
+                    <div className="p-4 space-y-2">
+                      {isUsersLoading ? (
+                        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 text-emerald-600 animate-spin" /></div>
+                      ) : users?.map((u: any) => (
+                        <div key={u.id} className="group flex items-center justify-between p-3 bg-white rounded-2xl border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all">
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-emerald-950 truncate">{u.email}</span>
+                              {admins?.some(a => a.id === u.id) && <Badge className="bg-emerald-600 text-[8px] h-4 px-1.5 rounded-sm">Admin</Badge>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setSelectedUser(u)} 
+                              className="h-8 px-3 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold text-[10px]"
+                            >
+                              <Eye className="w-3.5 h-3.5 mr-1.5" /> 進捗
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(u.id, u.email)} className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(u.id, u.email)} className="h-8 w-8 text-rose-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></Button>
+                      ))}
                     </div>
-                  ))}
+                  </ScrollArea>
                 </div>
-              </ScrollArea>
+              ) : (
+                // ユーザー詳細表示
+                <div className="flex flex-col h-full overflow-hidden">
+                  <div className="p-4 border-b border-emerald-100 bg-white/80 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="icon" onClick={() => setSelectedUser(null)} className="h-8 w-8 rounded-full hover:bg-emerald-100">
+                        <ArrowLeft className="w-4 h-4 text-emerald-700" />
+                      </Button>
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest truncate">{selectedUser.email}</h3>
+                        <p className="text-[10px] text-slate-400 font-bold">ユーザーの学習進捗</p>
+                      </div>
+                    </div>
+                    {admins?.some(a => a.id === selectedUser.id) && <Badge className="bg-emerald-600 text-[9px] font-bold">管理者</Badge>}
+                  </div>
+                  
+                  <ScrollArea className="flex-1">
+                    <div className="p-5 space-y-6">
+                      {isProgressLoading ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-3">
+                          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+                          <p className="text-xs font-bold text-emerald-800">データを読み込み中...</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-[11px] font-black text-blue-800 uppercase tracking-widest flex items-center gap-2">
+                                <BookOpen className="w-3.5 h-3.5" /> 学習中のリンク
+                              </h4>
+                              <Badge variant="outline" className="text-[10px] border-blue-100 bg-blue-50 text-blue-700">{userLearningLinks.length}</Badge>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2">
+                              {userLearningLinks.length > 0 ? userLearningLinks.map(link => (
+                                <div key={link.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-blue-100 shadow-sm">
+                                  <span className="text-xs font-bold text-slate-800 truncate pr-4">{link.title}</span>
+                                  {link.url && (
+                                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 p-1">
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
+                                </div>
+                              )) : (
+                                <div className="p-8 text-center bg-white/40 rounded-xl border border-dashed border-slate-200">
+                                  <p className="text-[10px] text-slate-400 font-bold italic">学習中のリンクはありません</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-[11px] font-black text-emerald-800 uppercase tracking-widest flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> 受講済みのリンク
+                              </h4>
+                              <Badge variant="outline" className="text-[10px] border-emerald-100 bg-emerald-50 text-emerald-700">{userCompletedLinks.length}</Badge>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2">
+                              {userCompletedLinks.length > 0 ? userCompletedLinks.map(link => (
+                                <div key={link.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-emerald-100 shadow-sm">
+                                  <span className="text-xs font-bold text-slate-800 truncate pr-4">{link.title}</span>
+                                  {link.url && (
+                                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:text-emerald-700 p-1">
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
+                                </div>
+                              )) : (
+                                <div className="p-8 text-center bg-white/40 rounded-xl border border-dashed border-slate-200">
+                                  <p className="text-[10px] text-slate-400 font-bold italic">受講済みのリンクはありません</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
             </div>
           </div>
 
-          <DialogFooter className="pt-6 border-t border-emerald-100">
-            <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-2xl font-bold">閉じる</Button>
+          <DialogFooter className="pt-6 border-t border-emerald-100 shrink-0">
+            <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl font-bold h-10 px-6">閉じる</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -252,7 +403,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
       <AlertDialog open={showConfirmAlert} onOpenChange={setShowConfirmAlert}>
         <AlertDialogContent className="rounded-4xl border-2 border-emerald-100 p-8">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-bold">ユーザーを登録しますか？</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-bold text-emerald-950">ユーザーを登録しますか？</AlertDialogTitle>
             <AlertDialogDescription className="text-base text-emerald-800 font-medium">「{email}」を新規登録します。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8">
