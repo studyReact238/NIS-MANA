@@ -236,7 +236,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const recalculateAllCounts = async () => {
-    if (!firestore || !isAdmin) return;
+    if (!firestore) return;
+    
+    // サーバー側の管理者権限がない場合はエラーを投げてUIに通知する
+    if (!isServerAdmin) {
+      throw new Error('権限がありません。管理者としてログインしているか確認してください。');
+    }
 
     try {
       const usersSnap = await getDocs(collection(firestore, 'users'));
@@ -254,7 +259,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const progressSnap = await getDocs(collection(firestore, 'users', userDoc.id, 'progress'));
         progressSnap.docs.forEach(pDoc => {
           const linkId = pDoc.id;
-          const status = pDoc.data().status;
+          const status = String(pDoc.data().status || '').toLowerCase();
           const current = countsMap.get(linkId);
           if (current) {
             if (status === 'learning') current.learning++;
@@ -268,10 +273,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const batch = writeBatch(firestore);
       countsMap.forEach((counts, linkId) => {
         const linkRef = doc(firestore, 'learningLinks', linkId);
-        batch.update(linkRef, {
+        // updateではなくset mergeを使用することで、フィールドが存在しない場合にも対応する
+        batch.set(linkRef, {
           learningCount: counts.learning,
           completedCount: counts.completed
-        });
+        }, { merge: true });
       });
 
       await batch.commit();
