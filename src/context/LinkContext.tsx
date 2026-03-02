@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus } from '@/types/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { 
@@ -16,7 +16,8 @@ import {
   limit,
   orderBy,
   getDocs,
-  writeBatch
+  writeBatch,
+  getDoc
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -70,6 +71,22 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(50);
+
+  // ログイン中ユーザーのドキュメントがFirestoreにない場合に作成する
+  useEffect(() => {
+    if (!firestore || !user) return;
+    
+    const userRef = doc(firestore, 'users', user.uid);
+    getDoc(userRef).then((docSnap) => {
+      if (!docSnap.exists()) {
+        setDoc(userRef, {
+          id: user.uid,
+          email: user.email,
+          createdAt: Date.now()
+        }, { merge: true });
+      }
+    });
+  }, [firestore, user]);
 
   const { data: adminDocs } = useCollection(useMemoFirebase(() => {
     if (!firestore) return null;
@@ -238,7 +255,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const recalculateAllCounts = async () => {
     if (!firestore) return;
     
-    // サーバー側の管理者権限がない場合はエラーを投げてUIに通知する
     if (!isServerAdmin) {
       throw new Error('権限がありません。管理者としてログインしているか確認してください。');
     }
@@ -255,8 +271,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       // 全ユーザーの進捗を走査
-      for (const userDoc of usersSnap.docs) {
-        const progressSnap = await getDocs(collection(firestore, 'users', userDoc.id, 'progress'));
+      // usersSnapに含まれない場合（Authのみ存在する場合）に備え、現在のユーザーは確実に追加する
+      const userIds = new Set(usersSnap.docs.map(d => d.id));
+      if (user) userIds.add(user.uid);
+
+      for (const userId of Array.from(userIds)) {
+        const progressSnap = await getDocs(collection(firestore, 'users', userId, 'progress'));
         progressSnap.docs.forEach(pDoc => {
           const linkId = pDoc.id;
           const status = String(pDoc.data().status || '').toLowerCase();
@@ -273,7 +293,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const batch = writeBatch(firestore);
       countsMap.forEach((counts, linkId) => {
         const linkRef = doc(firestore, 'learningLinks', linkId);
-        // updateではなくset mergeを使用することで、フィールドが存在しない場合にも対応する
         batch.set(linkRef, {
           learningCount: counts.learning,
           completedCount: counts.completed
