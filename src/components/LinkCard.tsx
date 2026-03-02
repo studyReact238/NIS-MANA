@@ -25,7 +25,8 @@ import {
   Calendar,
   BookOpen,
   Circle,
-  ClipboardCheck
+  ClipboardCheck,
+  User
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -112,6 +113,13 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
   
   const { data: voteData } = useDoc<any>(voteDocRef);
   const userVote = voteData?.type as 'up' | 'down' | undefined;
+
+  const creatorDocRef = useMemoFirebase(() => {
+    if (!firestore || !link.createdBy) return null;
+    return doc(firestore, 'users', link.createdBy);
+  }, [firestore, link.createdBy]);
+
+  const { data: creatorData } = useDoc<any>(creatorDocRef);
 
   const completionsRef = useMemoFirebase(() => {
     if (!firestore || !isServerAdmin || !link.id || !detailOpen) return null;
@@ -374,12 +382,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               "flex flex-col gap-4 pt-6 mt-2 border-t-2 border-black/5"
             )}>
               <div className={cn(
-                "flex items-center justify-between text-[11px] font-bold",
+                "flex flex-col sm:flex-row sm:items-center justify-between text-[11px] font-bold gap-2",
                 colorData.text
               )}>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
                   <span>更新: {format(link.updatedAt, 'yyyy/MM/dd HH:mm', { locale: ja })}</span>
+                </div>
+                <div className="flex items-center gap-1.5 opacity-80">
+                  <User className="w-3.5 h-3.5" />
+                  <span className="truncate max-w-[150px]">投稿者: {creatorData?.email || '管理者'}</span>
                 </div>
               </div>
               
@@ -428,10 +440,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
             <DialogTitle className={cn("text-3xl font-bold leading-tight", colorData.darkText)}>
               {link.title}
             </DialogTitle>
-            <DialogDescription className="flex items-center gap-2 pt-2 text-slate-500 font-bold">
-              <Clock className="w-4 h-4" />
-              最終更新: {format(link.updatedAt, 'yyyy年MM月dd日 HH:mm', { locale: ja })}
-            </DialogDescription>
+            <div className="flex flex-col gap-1 pt-2">
+              <DialogDescription className="flex items-center gap-2 text-slate-500 font-bold">
+                <Clock className="w-4 h-4" />
+                最終更新: {format(link.updatedAt, 'yyyy年MM月dd日 HH:mm', { locale: ja })}
+              </DialogDescription>
+              <DialogDescription className="flex items-center gap-2 text-emerald-600 font-bold">
+                <User className="w-4 h-4" />
+                投稿者: {creatorData?.email || '管理者'}
+              </DialogDescription>
+            </div>
           </DialogHeader>
 
           <div className="space-y-8">
