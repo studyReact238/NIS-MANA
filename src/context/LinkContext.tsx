@@ -49,6 +49,8 @@ interface LinkContextType {
   allTags: string[];
   isLoading: boolean;
   activities: any[];
+  timelineLimit: number;
+  setTimelineLimit: (val: number) => void;
 }
 
 const LinkContext = createContext<LinkContextType | undefined>(undefined);
@@ -64,6 +66,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
+  const [timelineLimit, setTimelineLimit] = useState(50);
 
   const { data: adminDocs } = useCollection(useMemoFirebase(() => {
     if (!firestore) return null;
@@ -85,14 +88,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return collection(firestore, 'users', user.uid, 'progress');
   }, [firestore, user?.uid]));
 
-  const { data: activities } = useCollection<any>(useMemoFirebase(() => {
+  const activitiesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(
-      collection(firestore, 'activities'),
-      orderBy('timestamp', 'desc'),
-      limit(20)
-    );
-  }, [firestore]));
+    const baseQuery = collection(firestore, 'activities');
+    // timelineLimit が 0 の場合は「すべて」として扱う（Firestoreでは制限なし）
+    if (timelineLimit > 0) {
+      return query(baseQuery, orderBy('timestamp', 'desc'), limit(timelineLimit));
+    }
+    return query(baseQuery, orderBy('timestamp', 'desc'));
+  }, [firestore, timelineLimit]);
+
+  const { data: activities } = useCollection<any>(activitiesQuery);
 
   const links = useMemo(() => {
     if (!rawLinks) return [];
@@ -123,7 +129,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       downvoteCount: 0
     };
     addDoc(colRef, newLink).then((docRef) => {
-      // 追加アクティビティ
       addDoc(activityRef, {
         type: 'link_added',
         linkId: docRef.id,
@@ -142,7 +147,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
       .then(() => {
-        // 編集アクティビティ
         addDoc(activityRef, {
           type: 'link_updated',
           linkId: id,
@@ -180,13 +184,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     const activityRef = collection(firestore, 'activities');
     
-    // ユーザー個別の進捗を更新
     setDoc(progressRef, { 
       status: nextStatus, 
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
 
-    // 受講済みになった時のみ名簿とタイムラインに記録
+    // アクティビティの記録
     if (nextStatus === 'completed') {
       setDoc(completionRef, {
         email: user.email,
@@ -199,9 +202,23 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkId: link.id,
         timestamp: Date.now(),
         type: 'completion'
-      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: activityRef.path, operation: 'create' })));
+      });
 
       updateDoc(linkRef, { completedCount: increment(1) });
+    } else if (nextStatus === 'learning') {
+      addDoc(activityRef, {
+        userEmail: user.email,
+        linkTitle: link.title,
+        linkId: link.id,
+        timestamp: Date.now(),
+        type: 'learning_started'
+      });
+      
+      // もし以前が受講済みだった場合はカウントを減らす
+      if (oldStatus === 'completed') {
+        deleteDoc(completionRef);
+        updateDoc(linkRef, { completedCount: increment(-1) });
+      }
     } else {
       // 受講済みから他へ変更された場合、カウントを減らす
       if (oldStatus === 'completed') {
@@ -262,7 +279,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, updateStatus, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
-      activities: activities || []
+      activities: activities || [], timelineLimit, setTimelineLimit
     }}>
       {children}
     </LinkContext.Provider>
