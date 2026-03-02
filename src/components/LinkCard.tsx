@@ -2,11 +2,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { LearningLink } from '@/types/link';
+import { LearningLink, LinkStatus } from '@/types/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   getIcon, 
@@ -23,13 +22,16 @@ import {
   ThumbsUp,
   ThumbsDown,
   Users,
-  Calendar
+  Calendar,
+  BookOpen,
+  Circle
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -73,7 +75,7 @@ interface Sparkle {
 }
 
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
-  const { isAdmin, isServerAdmin, toggleComplete, deleteLink, duplicateLink } = useLinks();
+  const { isAdmin, isServerAdmin, updateStatus, deleteLink, duplicateLink } = useLinks();
   const { user } = useUser();
   const firestore = useFirestore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -81,7 +83,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const [showSparkles, setShowSparkles] = useState(false);
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
   
-  // Hydrationエラー防止のため、ランダムな値の生成をuseEffect内で行う
   useEffect(() => {
     if (showSparkles) {
       const newSparkles = [...Array(24)].map((_, i) => {
@@ -101,7 +102,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
     }
   }, [showSparkles]);
 
-  // ユーザーの個別投票状態を取得
   const voteDocRef = useMemoFirebase(() => {
     if (!firestore || !user || !link.id) return null;
     return doc(firestore, 'learningLinks', link.id, 'votes', user.uid);
@@ -110,7 +110,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const { data: voteData } = useDoc<any>(voteDocRef);
   const userVote = voteData?.type as 'up' | 'down' | undefined;
 
-  // 管理者向け：受講者リストの取得
   const completionsRef = useMemoFirebase(() => {
     if (!firestore || !isServerAdmin || !link.id || !detailOpen) return null;
     return collection(firestore, 'learningLinks', link.id, 'completions');
@@ -121,12 +120,12 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
   const Icon = getIcon(link.icon);
   const colorData = getColorData(link.color);
 
-  const handleToggleComplete = () => {
-    if (!link.isCompleted) {
+  const handleStatusChange = (newStatus: LinkStatus) => {
+    if (newStatus === 'completed' && link.status !== 'completed') {
       setShowSparkles(true);
       setTimeout(() => setShowSparkles(false), 800);
     }
-    toggleComplete(link.id);
+    updateStatus(link.id, newStatus);
   };
 
   const handleVote = (type: 'up' | 'down') => {
@@ -161,14 +160,30 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
     }
   };
 
+  const getStatusLabel = (status: LinkStatus) => {
+    switch (status) {
+      case 'unstarted': return '未着手';
+      case 'learning': return '学習中';
+      case 'completed': return '受講済み';
+    }
+  };
+
+  const getStatusIcon = (status: LinkStatus) => {
+    switch (status) {
+      case 'unstarted': return <Circle className="w-4 h-4" />;
+      case 'learning': return <BookOpen className="w-4 h-4" />;
+      case 'completed': return <CheckCircle2 className="w-4 h-4" />;
+    }
+  };
+
   return (
     <>
       <Card className={cn(
         "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 shadow-sm",
         cn(colorData.bg, colorData.border)
       )}>
-        {link.isCompleted && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none z-0">
+        {link.status === 'completed' && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none z-0">
             <CheckCircle2 className="w-64 h-64 text-emerald-600/50" />
           </div>
         )}
@@ -204,24 +219,35 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 </div>
               )}
 
-              <div className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-full border-2 transition-all",
-                link.isCompleted 
-                  ? "bg-emerald-600 border-emerald-700 text-white shadow-lg scale-105" 
-                  : "bg-white/80 border-emerald-200 text-emerald-900"
-              )}>
-                <span className="text-[10px] font-black uppercase tracking-wider">
-                  {link.isCompleted ? '受講済み' : '完了にする'}
-                </span>
-                <Checkbox 
-                  checked={link.isCompleted} 
-                  onCheckedChange={handleToggleComplete}
-                  className={cn(
-                    "w-5 h-5 rounded-full border-2 transition-all",
-                    link.isCompleted ? "bg-white text-emerald-700 border-white" : "bg-white border-emerald-300"
-                  )}
-                />
-              </div>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 h-auto rounded-full border-2 transition-all",
+                      link.status === 'completed' ? "bg-emerald-600 border-emerald-700 text-white" :
+                      link.status === 'learning' ? "bg-blue-600 border-blue-700 text-white" :
+                      "bg-white border-slate-200 text-slate-700"
+                    )}
+                  >
+                    {getStatusIcon(link.status)}
+                    <span className="text-[10px] font-black uppercase tracking-wider">
+                      {getStatusLabel(link.status)}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="rounded-2xl p-2 min-w-[140px] shadow-2xl border-2 border-emerald-100">
+                  <DropdownMenuItem onClick={() => handleStatusChange('unstarted')} className="rounded-xl font-bold text-xs h-10">
+                    <Circle className="w-4 h-4 mr-2" /> 未着手
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleStatusChange('learning')} className="rounded-xl font-bold text-xs h-10 text-blue-600">
+                    <BookOpen className="w-4 h-4 mr-2" /> 学習中
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleStatusChange('completed')} className="rounded-xl font-bold text-xs h-10 text-emerald-600">
+                    <CheckCircle2 className="w-4 h-4 mr-2" /> 受講済み
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               
               {isAdmin && (
                 <DropdownMenu modal={false}>
@@ -292,7 +318,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
             <div className="flex items-center gap-6 pt-4 mt-2 border-t-2 border-black/5">
                <div className="flex items-center gap-1.5 text-slate-500">
                   <Users className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.completedCount || 0)}人が受講</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.completedCount || 0)}人が受講完了</span>
                </div>
                
                <div className="flex items-center gap-4 ml-auto">
@@ -328,7 +354,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               )}>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
-                  <span>最終更新日時: {format(link.updatedAt, 'yyyy/MM/dd HH:mm', { locale: ja })}</span>
+                  <span>更新: {format(link.updatedAt, 'MM/dd HH:mm', { locale: ja })}</span>
                 </div>
               </div>
               
@@ -370,7 +396,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
           <div className="space-y-8">
             <div className="flex items-center gap-8 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
                <div className="flex flex-col items-center">
-                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">受講者数</span>
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">受講完了数</span>
                   <div className="flex items-center gap-2">
                     <Users className="w-5 h-5 text-emerald-600" />
                     <span className="text-xl font-black text-emerald-900">{Math.max(0, link.completedCount || 0)}</span>
@@ -414,7 +440,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               <div className="space-y-4 pt-6 border-t-2 border-dashed border-emerald-200">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest flex items-center gap-2">
-                    <Users className="w-4 h-4" /> 受講者リスト（管理者のみ）
+                    <Users className="w-4 h-4" /> 受講完了者リスト（管理者のみ）
                   </h4>
                   <Badge variant="outline" className="text-[10px] font-bold border-emerald-200">
                     {completions?.length || 0} 名
@@ -443,7 +469,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                         ))
                       ) : (
                         <div className="text-center py-10">
-                          <p className="text-xs text-slate-400 font-bold italic">受講者はまだいません</p>
+                          <p className="text-xs text-slate-400 font-bold italic">受講完了者はまだいません</p>
                         </div>
                       )}
                     </div>

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { LearningLink, SortOption, StatusFilter, LinkColor } from '@/types/link';
+import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus } from '@/types/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { 
   collection, 
@@ -13,7 +13,6 @@ import {
   setDoc,
   increment,
   query,
-  where,
   limit,
   orderBy
 } from 'firebase/firestore';
@@ -41,12 +40,11 @@ interface LinkContextType {
   toggleIcon: (icon: string) => void;
   clearIcons: () => void;
   
-  addLink: (link: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'isCompleted' | 'completedCount' | 'upvoteCount' | 'downvoteCount' | 'userVote'>) => void;
+  addLink: (link: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'status' | 'completedCount' | 'upvoteCount' | 'downvoteCount' | 'userVote'>) => void;
   updateLink: (id: string, updates: Partial<LearningLink>) => void;
   deleteLink: (id: string) => void;
   duplicateLink: (id: string) => void;
-  toggleComplete: (id: string) => void;
-  toggleVote: (id: string, type: 'up' | 'down') => void;
+  updateStatus: (id: string, status: LinkStatus) => void;
   filteredLinks: LearningLink[];
   allTags: string[];
   isLoading: boolean;
@@ -92,17 +90,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return query(
       collection(firestore, 'activities'),
       orderBy('timestamp', 'desc'),
-      limit(10)
+      limit(20)
     );
   }, [firestore]));
 
   const links = useMemo(() => {
     if (!rawLinks) return [];
-    const progressMap = new Map(userProgress?.map(p => [p.id, p.isCompleted]) || []);
+    const progressMap = new Map(userProgress?.map(p => [p.id, p.status]) || []);
     
     return rawLinks.map(link => ({
       ...link,
-      isCompleted: progressMap.get(link.id) || false,
+      status: progressMap.get(link.id) || 'unstarted',
       completedCount: Math.max(0, link.completedCount || 0),
       upvoteCount: Math.max(0, link.upvoteCount || 0),
       downvoteCount: Math.max(0, link.downvoteCount || 0),
@@ -114,6 +112,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addLink = (data: any) => {
     if (!firestore || !user) return;
     const colRef = collection(firestore, 'learningLinks');
+    const activityRef = collection(firestore, 'activities');
     const newLink = { 
       ...data, 
       createdBy: user.uid, 
@@ -123,14 +122,35 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       upvoteCount: 0,
       downvoteCount: 0
     };
-    addDoc(colRef, newLink).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
+    addDoc(colRef, newLink).then((docRef) => {
+      // 追加アクティビティ
+      addDoc(activityRef, {
+        type: 'link_added',
+        linkId: docRef.id,
+        linkTitle: data.title,
+        timestamp: Date.now(),
+        adminEmail: user.email
+      });
+    }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
   };
 
   const updateLink = (id: string, updates: any) => {
-    if (!firestore) return;
-    const { isCompleted, userVote, id: _, ...cleanUpdates } = updates;
+    if (!firestore || !user) return;
+    const { status, userVote, id: _, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
+    const activityRef = collection(firestore, 'activities');
+
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
+      .then(() => {
+        // 編集アクティビティ
+        addDoc(activityRef, {
+          type: 'link_updated',
+          linkId: id,
+          linkTitle: cleanUpdates.title || '（タイトル不明）',
+          timestamp: Date.now(),
+          adminEmail: user.email
+        });
+      })
       .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
   };
 
@@ -143,37 +163,36 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const duplicateLink = (id: string) => {
     const original = links.find(l => l.id === id);
     if (!original || !firestore || !user) return;
-    const { id: _, isCompleted: __, userVote: ___, createdAt: ____, updatedAt: _____, completedCount: ______, upvoteCount: _______, downvoteCount: ________, ...data } = original;
+    const { id: _, status: __, userVote: ___, createdAt: ____, updatedAt: _____, completedCount: ______, upvoteCount: _______, downvoteCount: ________, ...data } = original;
     addLink({ ...data, title: `${original.title} のコピー` });
   };
 
-  const toggleComplete = (id: string) => {
+  const updateStatus = (id: string, nextStatus: LinkStatus) => {
     if (!firestore || !user) return;
     const link = links.find(l => l.id === id);
     if (!link) return;
 
-    const currentStatus = link.isCompleted || false;
+    const oldStatus = link.status;
+    if (oldStatus === nextStatus) return;
+
     const progressRef = doc(firestore, 'users', user.uid, 'progress', id);
     const linkRef = doc(firestore, 'learningLinks', id);
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     const activityRef = collection(firestore, 'activities');
     
-    const nextStatus = !currentStatus;
-
     // ユーザー個別の進捗を更新
     setDoc(progressRef, { 
-      isCompleted: nextStatus, 
+      status: nextStatus, 
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
 
-    // 管理者向け名簿への記録 & タイムラインへの記録
-    if (nextStatus) {
+    // 受講済みになった時のみ名簿とタイムラインに記録
+    if (nextStatus === 'completed') {
       setDoc(completionRef, {
         email: user.email,
         completedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
 
-      // タイムラインへの記録
       addDoc(activityRef, {
         userEmail: user.email,
         linkTitle: link.title,
@@ -181,22 +200,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         timestamp: Date.now(),
         type: 'completion'
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: activityRef.path, operation: 'create' })));
+
+      updateDoc(linkRef, { completedCount: increment(1) });
     } else {
-      deleteDoc(completionRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'delete' })));
-    }
-
-    // 全体カウントを更新
-    const currentCount = link?.completedCount || 0;
-    const incValue = nextStatus ? 1 : (currentCount > 0 ? -1 : 0);
-
-    if (incValue !== 0) {
-      updateDoc(linkRef, {
-        completedCount: increment(incValue)
-      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+      // 受講済みから他へ変更された場合、カウントを減らす
+      if (oldStatus === 'completed') {
+        deleteDoc(completionRef);
+        updateDoc(linkRef, { completedCount: increment(-1) });
+      }
     }
   };
-
-  const toggleVote = async (id: string, type: 'up' | 'down') => {};
 
   const toggleTag = (tag: string) => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   const clearTags = () => setSelectedTags([]);
@@ -221,8 +234,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (l.tags || []).some(t => t.toLowerCase().includes(s))
       );
     }
-    if (statusFilter === 'learning') result = result.filter(l => !l.isCompleted);
-    if (statusFilter === 'completed') result = result.filter(l => l.isCompleted);
+    if (statusFilter !== 'all') {
+      result = result.filter(l => l.status === statusFilter);
+    }
     if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => (l.tags || []).includes(t)));
     if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
     if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
@@ -247,7 +261,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, toggleComplete, toggleVote, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
+      duplicateLink, updateStatus, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
       activities: activities || []
     }}>
       {children}

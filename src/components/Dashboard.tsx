@@ -27,10 +27,11 @@ import {
   Loader2,
   Lock,
   Users,
-  CheckCircle2,
-  Target
+  Target,
+  Zap,
+  BookOpen
 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -90,9 +91,11 @@ export const Dashboard: React.FC = () => {
 
   const progressStats = useMemo(() => {
     const total = links.length;
-    const completed = links.filter(l => l.isCompleted).length;
+    const completed = links.filter(l => l.status === 'completed').length;
+    const learning = links.filter(l => l.status === 'learning').length;
+    const unstarted = links.filter(l => l.status === 'unstarted').length;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    return { total, completed, percentage };
+    return { total, completed, learning, unstarted, percentage };
   }, [links]);
 
   return (
@@ -203,28 +206,47 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white rounded-3xl border border-emerald-100 p-4 sm:p-5 shadow-sm flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-3xl border border-emerald-100 p-4 shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
               <Target className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">学習進捗</p>
-              <p className="text-lg font-black text-emerald-950">{progressStats.percentage}% <span className="text-xs text-slate-400">完了</span></p>
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">受講完了</p>
+              <p className="text-lg font-black text-emerald-950">{progressStats.percentage}%</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs font-bold text-emerald-800">
-              {progressStats.completed} / {progressStats.total}
-            </p>
-            <p className="text-[9px] text-slate-400 font-bold">受講済み / 全体</p>
+            <p className="text-xs font-bold text-emerald-800">{progressStats.completed}</p>
           </div>
         </div>
-        <div className="bg-white rounded-3xl border border-emerald-100 p-4 sm:p-5 shadow-sm hidden sm:flex items-center gap-4">
+        <div className="bg-white rounded-3xl border border-emerald-100 p-4 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">学習中</p>
+              <p className="text-lg font-black text-emerald-950">{progressStats.learning}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-3xl border border-emerald-100 p-4 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-600">
+              <XCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">未着手</p>
+              <p className="text-lg font-black text-emerald-950">{progressStats.unstarted}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-3xl border border-emerald-100 p-4 shadow-sm flex items-center gap-3">
           <div className="flex-1 space-y-2">
              <div className="flex justify-between items-center px-1">
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">プログレスバー</span>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">進捗率</span>
                 <span className="text-[10px] font-black text-emerald-700">{progressStats.percentage}%</span>
              </div>
              <Progress value={progressStats.percentage} className="h-2 bg-emerald-50" />
@@ -232,186 +254,202 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-5 sm:p-8 mb-6 sm:mb-8 space-y-4">
-        <div className="relative group max-w-3xl mx-auto">
-          <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
-          <Input 
-            value={search} 
-            onChange={e => setSearch(e.target.value)}
-            placeholder="タイトルやタグで検索..." 
-            className="pl-12 sm:pl-14 h-14 sm:h-16 rounded-full bg-emerald-50/50 border-emerald-100 border-2 focus:border-emerald-500 focus:ring-0 text-base sm:text-lg transition-all"
-          />
+      <Tabs defaultValue="links" className="space-y-6">
+        <div className="flex justify-center">
+          <TabsList className="bg-emerald-100/50 p-1 rounded-2xl border border-emerald-200 h-12">
+            <TabsTrigger value="links" className="rounded-xl px-8 font-bold data-[state=active]:bg-white data-[state=active]:text-emerald-800">
+              <Layout className="w-4 h-4 mr-2" /> リンク集
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="rounded-xl px-8 font-bold data-[state=active]:bg-white data-[state=active]:text-emerald-800">
+              <Zap className="w-4 h-4 mr-2" /> タイムライン
+            </TabsTrigger>
+          </TabsList>
         </div>
 
-        <div className="flex justify-center pb-2">
-          <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full max-w-xl">
-            <TabsList className="grid grid-cols-3 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
-              <TabsTrigger value="all" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-emerald-800 font-bold text-[10px] sm:text-xs px-1">すべて</TabsTrigger>
-              <TabsTrigger value="learning" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-emerald-800 font-bold text-[10px] sm:text-xs px-1">学習中</TabsTrigger>
-              <TabsTrigger value="completed" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-emerald-800 font-bold text-[10px] sm:text-xs px-1">受講済み</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <div className="space-y-4 pt-4 border-t border-emerald-100">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px]">
-                <ArrowUpDown className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold">並べ替え:</span>
-              </div>
-              <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
-                <SelectTrigger className="w-full max-w-[220px] border-emerald-200 bg-emerald-50/50 rounded-xl h-8 text-[10px] font-bold text-emerald-900">
-                  <SelectValue placeholder="並べ替え" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-emerald-200">
-                  <SelectItem value="date-new">更新日時：新着順</SelectItem>
-                  <SelectItem value="date-old">更新日時：古い順</SelectItem>
-                  <SelectItem value="title-asc">タイトル：昇順</SelectItem>
-                  <SelectItem value="title-desc">タイトル：降順</SelectItem>
-                  <SelectItem value="rating-high">評価：高い順</SelectItem>
-                </SelectContent>
-              </Select>
+        <TabsContent value="links" className="space-y-6">
+          <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-5 sm:p-8 space-y-4">
+            <div className="relative group max-w-3xl mx-auto">
+              <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
+              <Input 
+                value={search} 
+                onChange={e => setSearch(e.target.value)}
+                placeholder="タイトルやタグで検索..." 
+                className="pl-12 sm:pl-14 h-14 sm:h-16 rounded-full bg-emerald-50/50 border-emerald-100 border-2 focus:border-emerald-500 focus:ring-0 text-base sm:text-lg transition-all"
+              />
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px]">
-                <Palette className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold">カラー:</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                {LINK_COLORS.map(c => (
-                  <button
-                    key={c.name}
-                    onClick={() => toggleColor(c.name)}
-                    className={cn(
-                      "w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 transition-all shrink-0",
-                      c.class,
-                      selectedColors.includes(c.name) ? "border-emerald-800 scale-110 ring-4 ring-emerald-200" : "border-white shadow-md hover:scale-105"
-                    )}
-                  />
-                ))}
-                {selectedColors.length > 0 && (
-                  <button onClick={clearColors} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
-                    クリア
-                  </button>
-                )}
-              </div>
+            <div className="flex justify-center pb-2">
+              <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full max-w-2xl">
+                <TabsList className="grid grid-cols-4 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
+                  <TabsTrigger value="all" className="rounded-xl font-bold text-[10px] sm:text-xs">すべて</TabsTrigger>
+                  <TabsTrigger value="unstarted" className="rounded-xl font-bold text-[10px] sm:text-xs">未着手</TabsTrigger>
+                  <TabsTrigger value="learning" className="rounded-xl font-bold text-[10px] sm:text-xs text-blue-700">学習中</TabsTrigger>
+                  <TabsTrigger value="completed" className="rounded-xl font-bold text-[10px] sm:text-xs text-emerald-700">受講済み</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px]">
-              <Layout className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold">タイプ:</span>
-            </div>
-            <div className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-2">
-              {LINK_ICONS.map(i => {
-                const IconComp = i.icon;
-                return (
-                  <button
-                    key={i.name}
-                    onClick={() => toggleIcon(i.name)}
-                    className={cn(
-                      "flex items-center justify-center p-2 rounded-xl transition-all border-2",
-                      selectedIcons.includes(i.name) 
-                        ? "bg-emerald-600 text-white border-emerald-700 shadow-md scale-105" 
-                        : "bg-white border-emerald-100 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200"
-                    )}
-                  >
-                    <IconComp className="w-4 h-4" />
-                  </button>
-                );
-              })}
-              {selectedIcons.length > 0 && (
-                <button onClick={clearIcons} className="col-span-4 sm:col-span-1 px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase text-center mt-1 sm:mt-0">
-                  すべてクリア
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px] pt-1">
-              <TagIcon className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold">タグ:</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5 flex-1">
-              {allTags.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => toggleTag(tag)}
-                  className={cn(
-                    "px-3 py-1 rounded-full text-[9px] font-bold border-2 transition-all",
-                    selectedTags.includes(tag) 
-                      ? "bg-emerald-700 text-white border-emerald-800 shadow-sm" 
-                      : "bg-emerald-50/50 text-emerald-900 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200"
-                  )}
-                >
-                  #{tag}
-                </button>
-              ))}
-              {selectedTags.length > 0 && (
-                <button onClick={clearTags} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
-                  クリア
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between mb-4 px-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 font-black px-3 py-1 rounded-full text-[10px]">
-            {filteredLinks.length} <span className="ml-1 opacity-60">件のリンク</span>
-          </Badge>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">検索結果を表示中</span>
-        </div>
-        {(search || selectedTags.length > 0 || selectedColors.length > 0 || selectedIcons.length > 0 || statusFilter !== 'all') && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => {
-              setSearch('');
-              clearTags();
-              clearColors();
-              clearIcons();
-              setStatusFilter('all');
-            }}
-            className="text-[10px] font-black text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-7"
-          >
-            <XCircle className="w-3 h-3 mr-1" /> 条件をクリア
-          </Button>
-        )}
-      </div>
-
-      {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
-          <p className="text-emerald-800 font-bold">データを取得中...</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredLinks.map(link => (
-              <LinkCard key={link.id} link={link} onEdit={handleEdit} />
-            ))}
-            
-            {filteredLinks.length === 0 && (
-              <div className="col-span-full py-20 sm:py-32 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-[2rem] border-4 border-dashed border-emerald-100/50 px-6">
-                <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-100/50">
-                  <Search className="w-8 h-8 text-emerald-200" />
+            <div className="space-y-4 pt-4 border-t border-emerald-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px]">
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold">並べ替え:</span>
+                  </div>
+                  <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
+                    <SelectTrigger className="w-full max-w-[220px] border-emerald-200 bg-emerald-50/50 rounded-xl h-8 text-[10px] font-bold text-emerald-900">
+                      <SelectValue placeholder="並べ替え" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-emerald-200">
+                      <SelectItem value="date-new">更新日時：新着順</SelectItem>
+                      <SelectItem value="date-old">更新日時：古い順</SelectItem>
+                      <SelectItem value="title-asc">タイトル：昇順</SelectItem>
+                      <SelectItem value="title-desc">タイトル：降順</SelectItem>
+                      <SelectItem value="rating-high">評価：高い順</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-emerald-900">該当するリンクが見つかりません</h3>
-                <p className="text-sm text-slate-400 font-medium">条件を変えて試してみてください。</p>
+
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px]">
+                    <Palette className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold">カラー:</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    {LINK_COLORS.map(c => (
+                      <button
+                        key={c.name}
+                        onClick={() => toggleColor(c.name)}
+                        className={cn(
+                          "w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 transition-all shrink-0",
+                          c.class,
+                          selectedColors.includes(c.name) ? "border-emerald-800 scale-110 ring-4 ring-emerald-200" : "border-white shadow-md hover:scale-105"
+                        )}
+                      />
+                    ))}
+                    {selectedColors.length > 0 && (
+                      <button onClick={clearColors} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
+                        クリア
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px]">
+                  <Layout className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-bold">タイプ:</span>
+                </div>
+                <div className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-2">
+                  {LINK_ICONS.map(i => {
+                    const IconComp = i.icon;
+                    return (
+                      <button
+                        key={i.name}
+                        onClick={() => toggleIcon(i.name)}
+                        className={cn(
+                          "flex items-center justify-center p-2 rounded-xl transition-all border-2",
+                          selectedIcons.includes(i.name) 
+                            ? "bg-emerald-600 text-white border-emerald-700 shadow-md scale-105" 
+                            : "bg-white border-emerald-100 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200"
+                        )}
+                      >
+                        <IconComp className="w-4 h-4" />
+                      </button>
+                    );
+                  })}
+                  {selectedIcons.length > 0 && (
+                    <button onClick={clearIcons} className="col-span-4 sm:col-span-1 px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase text-center mt-1 sm:mt-0">
+                      すべてクリア
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px] pt-1">
+                  <TagIcon className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-bold">タグ:</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 flex-1">
+                  {allTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={cn(
+                        "px-3 py-1 rounded-full text-[9px] font-bold border-2 transition-all",
+                        selectedTags.includes(tag) 
+                          ? "bg-emerald-700 text-white border-emerald-800 shadow-sm" 
+                          : "bg-emerald-50/50 text-emerald-900 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200"
+                      )}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                  {selectedTags.length > 0 && (
+                    <button onClick={clearTags} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
+                      クリア
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 font-black px-3 py-1 rounded-full text-[10px]">
+                {filteredLinks.length} <span className="ml-1 opacity-60">件のリンク</span>
+              </Badge>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">検索結果を表示中</span>
+            </div>
+            {(search || selectedTags.length > 0 || selectedColors.length > 0 || selectedIcons.length > 0 || statusFilter !== 'all') && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setSearch('');
+                  clearTags();
+                  clearColors();
+                  clearIcons();
+                  setStatusFilter('all');
+                }}
+                className="text-[10px] font-black text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-7"
+              >
+                <XCircle className="w-3 h-3 mr-1" /> 条件をクリア
+              </Button>
             )}
           </div>
 
+          {isLoading ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-4">
+              <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
+              <p className="text-emerald-800 font-bold">データを取得中...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {filteredLinks.map(link => (
+                <LinkCard key={link.id} link={link} onEdit={handleEdit} />
+              ))}
+              
+              {filteredLinks.length === 0 && (
+                <div className="col-span-full py-20 sm:py-32 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-[2rem] border-4 border-dashed border-emerald-100/50 px-6">
+                  <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-100/50">
+                    <Search className="w-8 h-8 text-emerald-200" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-emerald-900">該当するリンクが見つかりません</h3>
+                  <p className="text-sm text-slate-400 font-medium">条件を変えて試してみてください。</p>
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="timeline">
           <Timeline />
-        </>
-      )}
+        </TabsContent>
+      </Tabs>
 
       <LinkDialog 
         open={dialogOpen} 

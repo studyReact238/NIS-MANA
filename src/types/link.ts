@@ -1,14 +1,16 @@
 
 export type LinkColor = 'emerald' | 'blue' | 'amber' | 'rose' | 'slate';
 
+export type LinkStatus = 'unstarted' | 'learning' | 'completed';
+
 export interface LearningLink {
   id: string;
   title: string;
   url: string;
   description?: string;
   tags: string[];
-  isCompleted: boolean; // UI上でマージされる項目
-  userVote?: 'up' | 'down' | null; // UI上でマージされる項目
+  status: LinkStatus; // ユーザー個別のステータス
+  userVote?: 'up' | 'down' | null;
   color: LinkColor;
   icon: string;
   createdAt: number;
@@ -21,4 +23,4 @@ export interface LearningLink {
 
 export type SortOption = 'title-asc' | 'title-desc' | 'date-new' | 'date-old' | 'rating-high';
 
-export type StatusFilter = 'all' | 'learning' | 'completed';
+export type StatusFilter = 'all' | LinkStatus;
