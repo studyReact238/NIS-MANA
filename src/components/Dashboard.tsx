@@ -218,7 +218,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* コンパクトな学習進捗セクション */}
       <div className="bg-white rounded-3xl border border-emerald-100 p-5 sm:p-6 shadow-sm mb-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -241,7 +240,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* 3色スタックドプログレスバー */}
         <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
           <div 
             style={{ width: `${progressStats.completedP}%` }} 
@@ -314,6 +312,7 @@ export const Dashboard: React.FC = () => {
                       <SelectItem value="title-asc">タイトル：昇順</SelectItem>
                       <SelectItem value="title-desc">タイトル：降順</SelectItem>
                       <SelectItem value="rating-high">評価：高い順</SelectItem>
+                      <SelectItem value="learning-high">学習中人数：多い順</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

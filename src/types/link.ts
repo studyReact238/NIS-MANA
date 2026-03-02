@@ -17,10 +17,11 @@ export interface LearningLink {
   updatedAt: number;
   createdBy: string;
   completedCount: number;
+  learningCount: number;
   upvoteCount: number;
   downvoteCount: number;
 }
 
-export type SortOption = 'title-asc' | 'title-desc' | 'date-new' | 'date-old' | 'rating-high';
+export type SortOption = 'title-asc' | 'title-desc' | 'date-new' | 'date-old' | 'rating-high' | 'learning-high';
 
 export type StatusFilter = 'all' | LinkStatus;

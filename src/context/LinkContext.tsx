@@ -40,7 +40,7 @@ interface LinkContextType {
   toggleIcon: (icon: string) => void;
   clearIcons: () => void;
   
-  addLink: (link: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'status' | 'completedCount' | 'upvoteCount' | 'downvoteCount' | 'userVote'>) => void;
+  addLink: (link: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'status' | 'completedCount' | 'learningCount' | 'upvoteCount' | 'downvoteCount' | 'userVote'>) => void;
   updateLink: (id: string, updates: Partial<LearningLink>) => void;
   deleteLink: (id: string) => void;
   duplicateLink: (id: string) => void;
@@ -91,7 +91,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const activitiesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     const baseQuery = collection(firestore, 'activities');
-    // timelineLimit が 0 の場合は「すべて」として扱う（Firestoreでは制限なし）
     if (timelineLimit > 0) {
       return query(baseQuery, orderBy('timestamp', 'desc'), limit(timelineLimit));
     }
@@ -108,6 +107,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...link,
       status: progressMap.get(link.id) || 'unstarted',
       completedCount: Math.max(0, link.completedCount || 0),
+      learningCount: Math.max(0, link.learningCount || 0),
       upvoteCount: Math.max(0, link.upvoteCount || 0),
       downvoteCount: Math.max(0, link.downvoteCount || 0),
     })) as LearningLink[];
@@ -125,6 +125,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: Date.now(), 
       updatedAt: Date.now(),
       completedCount: 0,
+      learningCount: 0,
       upvoteCount: 0,
       downvoteCount: 0
     };
@@ -167,7 +168,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const duplicateLink = (id: string) => {
     const original = links.find(l => l.id === id);
     if (!original || !firestore || !user) return;
-    const { id: _, status: __, userVote: ___, createdAt: ____, updatedAt: _____, completedCount: ______, upvoteCount: _______, downvoteCount: ________, ...data } = original;
+    const { id: _, status: __, userVote: ___, createdAt: ____, updatedAt: _____, completedCount: ______, learningCount: _______, upvoteCount: ________, downvoteCount: _________, ...data } = original;
     addLink({ ...data, title: `${original.title} のコピー` });
   };
 
@@ -189,8 +190,20 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
 
-    // アクティビティの記録
+    // 学習中・受講済みのカウント更新
+    const updates: any = {};
+
+    // 以前のステータスのカウントを減らす
+    if (oldStatus === 'completed') {
+      updates.completedCount = increment(-1);
+      deleteDoc(completionRef);
+    } else if (oldStatus === 'learning') {
+      updates.learningCount = increment(-1);
+    }
+
+    // 新しいステータスのカウントを増やす
     if (nextStatus === 'completed') {
+      updates.completedCount = increment(1);
       setDoc(completionRef, {
         email: user.email,
         completedAt: Date.now()
@@ -203,9 +216,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         timestamp: Date.now(),
         type: 'completion'
       });
-
-      updateDoc(linkRef, { completedCount: increment(1) });
     } else if (nextStatus === 'learning') {
+      updates.learningCount = increment(1);
       addDoc(activityRef, {
         userEmail: user.email,
         linkTitle: link.title,
@@ -213,18 +225,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         timestamp: Date.now(),
         type: 'learning_started'
       });
-      
-      // もし以前が受講済みだった場合はカウントを減らす
-      if (oldStatus === 'completed') {
-        deleteDoc(completionRef);
-        updateDoc(linkRef, { completedCount: increment(-1) });
-      }
-    } else {
-      // 受講済みから他へ変更された場合、カウントを減らす
-      if (oldStatus === 'completed') {
-        deleteDoc(completionRef);
-        updateDoc(linkRef, { completedCount: increment(-1) });
-      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
     }
   };
 
@@ -263,6 +267,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (sortBy === 'title-desc') return (b.title || "").localeCompare(a.title || "");
       if (sortBy === 'date-new') return (b.updatedAt || 0) - (a.updatedAt || 0);
       if (sortBy === 'date-old') return (a.updatedAt || 0) - (b.updatedAt || 0);
+      if (sortBy === 'learning-high') return (b.learningCount || 0) - (a.learningCount || 0);
       if (sortBy === 'rating-high') {
         const scoreA = (a.upvoteCount || 0) - (a.downvoteCount || 0);
         const scoreB = (b.upvoteCount || 0) - (b.downvoteCount || 0);

@@ -315,10 +315,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               ))}
             </div>
 
-            <div className="flex items-center gap-6 pt-4 mt-2 border-t-2 border-black/5">
-               <div className="flex items-center gap-1.5 text-slate-500">
-                  <Users className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.completedCount || 0)}人が受講完了</span>
+            <div className="flex flex-col gap-2 pt-4 mt-2 border-t-2 border-black/5">
+               <div className="flex items-center gap-6">
+                 <div className="flex items-center gap-1.5 text-slate-500">
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.completedCount || 0)}人が受講完了</span>
+                 </div>
+                 <div className="flex items-center gap-1.5 text-blue-500">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.learningCount || 0)}人が学習中</span>
+                 </div>
                </div>
                
                <div className="flex items-center gap-4 ml-auto">
@@ -354,7 +360,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               )}>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
-                  <span>更新: {format(link.updatedAt, 'MM/dd HH:mm', { locale: ja })}</span>
+                  <span>更新: {format(link.updatedAt, 'yyyy/MM/dd HH:mm', { locale: ja })}</span>
                 </div>
               </div>
               
@@ -394,12 +400,20 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
           </DialogHeader>
 
           <div className="space-y-8">
-            <div className="flex items-center gap-8 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
-               <div className="flex flex-col items-center">
-                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">受講完了数</span>
+            <div className="flex flex-wrap items-center gap-6 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
+               <div className="flex flex-col items-center min-w-[80px]">
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">受講完了</span>
                   <div className="flex items-center gap-2">
                     <Users className="w-5 h-5 text-emerald-600" />
                     <span className="text-xl font-black text-emerald-900">{Math.max(0, link.completedCount || 0)}</span>
+                  </div>
+               </div>
+               <div className="h-10 w-px bg-emerald-200" />
+               <div className="flex flex-col items-center min-w-[80px]">
+                  <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1">学習中</span>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-blue-600" />
+                    <span className="text-xl font-black text-emerald-900">{Math.max(0, link.learningCount || 0)}</span>
                   </div>
                </div>
                <div className="h-10 w-px bg-emerald-200" />
