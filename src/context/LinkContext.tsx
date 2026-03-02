@@ -271,32 +271,56 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const linksSnap = await getDocs(collection(firestore, 'learningLinks'));
       
       const countsMap = new Map<string, { learning: number, completed: number }>();
+      const userEmailsMap = new Map<string, string>();
       
+      // ユーザーのIDとメールアドレスをマッピング
+      usersSnap.docs.forEach(d => {
+        userEmailsMap.set(d.id, d.data().email);
+      });
+
       // 全てのリンクのカウントを0で初期化
       linksSnap.docs.forEach(d => {
         countsMap.set(d.id, { learning: 0, completed: 0 });
       });
 
       // 全ユーザーの進捗を走査
-      // usersSnapに含まれない場合（Authのみ存在する場合）に備え、現在のユーザーは確実に追加する
-      const userIds = new Set(usersSnap.docs.map(d => d.id));
-      if (user) userIds.add(user.uid);
+      const userIds = Array.from(userEmailsMap.keys());
+      if (user && !userIds.includes(user.uid)) userIds.push(user.uid);
 
-      for (const userId of Array.from(userIds)) {
+      for (const userId of userIds) {
+        const userEmail = userEmailsMap.get(userId) || (userId === user?.uid ? user?.email : 'Unknown User');
         const progressSnap = await getDocs(collection(firestore, 'users', userId, 'progress'));
-        progressSnap.docs.forEach(pDoc => {
+        
+        for (const pDoc of progressSnap.docs) {
           const linkId = pDoc.id;
           const status = String(pDoc.data().status || '').toLowerCase();
+          const updatedAt = pDoc.data().updatedAt || Date.now();
+          
           const current = countsMap.get(linkId);
           if (current) {
-            if (status === 'learning') current.learning++;
-            if (status === 'completed') current.completed++;
+            if (status === 'learning') {
+              current.learning++;
+              // 学習中ユーザー名簿を復元
+              const learnerRef = doc(firestore, 'learningLinks', linkId, 'learners', userId);
+              await setDoc(learnerRef, {
+                email: userEmail,
+                startedAt: updatedAt
+              }, { merge: true });
+            } else if (status === 'completed') {
+              current.completed++;
+              // 受講完了ユーザー名簿を復元
+              const completionRef = doc(firestore, 'learningLinks', linkId, 'completions', userId);
+              await setDoc(completionRef, {
+                email: userEmail,
+                completedAt: updatedAt
+              }, { merge: true });
+            }
             countsMap.set(linkId, current);
           }
-        });
+        }
       }
 
-      // バッチ処理で一括更新
+      // バッチ処理でリンク本体の集計値を更新
       const batch = writeBatch(firestore);
       countsMap.forEach((counts, linkId) => {
         const linkRef = doc(firestore, 'learningLinks', linkId);
