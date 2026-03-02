@@ -64,6 +64,10 @@
           "description": "The URL of the confirmation test (HTML file etc).",
           "format": "uri"
         },
+        "testHtml": {
+          "type": "string",
+          "description": "Directly uploaded HTML content for the confirmation test."
+        },
         "description": {
           "type": "string",
           "description": "Summary or description."

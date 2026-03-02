@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -18,8 +18,9 @@ import { Badge } from '@/components/ui/badge';
 import { useLinks } from '@/context/LinkContext';
 import { LearningLink, LinkColor } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
-import { X, Tag as TagIcon, Plus, ClipboardCheck } from 'lucide-react';
+import { X, Tag as TagIcon, Plus, ClipboardCheck, Upload, FileCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface LinkDialogProps {
   open: boolean;
@@ -29,11 +30,14 @@ interface LinkDialogProps {
 
 export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, editLink }) => {
   const { addLink, updateLink, allTags } = useLinks();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     title: '',
     url: '',
     testUrl: '',
+    testHtml: '',
     description: '',
     tags: [] as string[],
     color: 'emerald' as LinkColor,
@@ -49,6 +53,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
           title: editLink.title,
           url: editLink.url,
           testUrl: editLink.testUrl || '',
+          testHtml: editLink.testHtml || '',
           description: editLink.description || '',
           tags: editLink.tags,
           color: editLink.color,
@@ -59,6 +64,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
           title: '',
           url: '',
           testUrl: '',
+          testHtml: '',
           description: '',
           tags: [],
           color: 'emerald',
@@ -90,6 +96,35 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
 
   const removeTag = (tagToRemove: string) => {
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tagToRemove) }));
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'text/html' && !file.name.endsWith('.html')) {
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: "HTMLファイルを選択してください。"
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setFormData(prev => ({ 
+        ...prev, 
+        testHtml: content,
+        testUrl: '' // HTMLアップロード時はURLをクリア
+      }));
+      toast({
+        title: "アップロード完了",
+        description: "HTMLファイルを読み込みました。"
+      });
+    };
+    reader.readAsText(file);
   };
 
   const suggestedTags = allTags.filter(t => !formData.tags.includes(t));
@@ -133,17 +168,58 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             </div>
 
             <div className="space-y-2 col-span-2 sm:col-span-1">
-              <Label htmlFor="testUrl" className="text-base font-semibold flex items-center gap-2">
+              <Label className="text-base font-semibold flex items-center gap-2">
                 <ClipboardCheck className="w-4 h-4 text-blue-600" />
-                確認テスト URL
+                確認テストの設定
               </Label>
-              <Input 
-                id="testUrl" 
-                value={formData.testUrl} 
-                onChange={e => setFormData(prev => ({ ...prev, testUrl: e.target.value }))}
-                placeholder="https://example.com/test.html" 
-                className="rounded-2xl py-6 border-blue-100 focus:border-blue-500"
-              />
+              
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Input 
+                    id="testUrl" 
+                    value={formData.testUrl} 
+                    onChange={e => setFormData(prev => ({ ...prev, testUrl: e.target.value, testHtml: '' }))}
+                    placeholder="テストのURLを入力..." 
+                    disabled={!!formData.testHtml}
+                    className="rounded-2xl h-12 border-blue-100 focus:border-blue-500 flex-1"
+                  />
+                  <div className="relative">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".html"
+                      className="hidden"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "rounded-2xl h-12 px-4 border-2 transition-all",
+                        formData.testHtml 
+                          ? "bg-blue-600 border-blue-700 text-white" 
+                          : "border-blue-100 text-blue-600 hover:bg-blue-50"
+                      )}
+                    >
+                      {formData.testHtml ? <FileCode className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+                
+                {formData.testHtml && (
+                  <div className="flex items-center justify-between px-3 py-2 bg-blue-50 rounded-xl border border-blue-100">
+                    <span className="text-[10px] font-bold text-blue-700">HTMLファイルを読み込み済み</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setFormData(prev => ({ ...prev, testHtml: '' }))}
+                      className="text-blue-400 hover:text-rose-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-3 col-span-2">

@@ -59,6 +59,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, setDoc, updateDoc, increment, deleteDoc, collection } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import Link from 'next/link';
 
 interface LinkCardProps {
   link: LearningLink;
@@ -184,6 +185,9 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
       case 'completed': return <CheckCircle2 className="w-4 h-4" />;
     }
   };
+
+  const hasTest = !!(link.testUrl || link.testHtml);
+  const testHref = link.testHtml ? `/test-viewer?id=${link.id}` : (link.testUrl || '#');
 
   return (
     <>
@@ -381,19 +385,19 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               
               <div className="flex gap-2">
                 {isTestView ? (
-                  <a 
-                    href={link.testUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                  <Link 
+                    href={testHref}
+                    target={link.testHtml ? undefined : "_blank"}
+                    rel={link.testHtml ? undefined : "noopener noreferrer"}
                     className={cn(
                       "flex-1 inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
-                      link.testUrl 
+                      hasTest 
                         ? "bg-blue-600 border-blue-700 text-white hover:bg-blue-700 hover:shadow-lg shadow-blue-200"
                         : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed pointer-events-none"
                     )}
                   >
                     確認テスト <ClipboardCheck className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-                  </a>
+                  </Link>
                 ) : (
                   <a 
                     href={link.url} 
@@ -580,15 +584,15 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 >
                   学習サイト <ExternalLink className="w-5 h-5" />
                 </a>
-                {link.testUrl && (
-                  <a 
-                    href={link.testUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                {hasTest && (
+                  <Link 
+                    href={testHref}
+                    target={link.testHtml ? undefined : "_blank"}
+                    rel={link.testHtml ? undefined : "noopener noreferrer"}
                     className="flex-1 inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-blue-600 text-white font-black hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all"
                   >
                     確認テスト <ClipboardCheck className="w-5 h-5" />
-                  </a>
+                  </Link>
                 )}
               </div>
               <Button 

@@ -8,6 +8,7 @@ export interface LearningLink {
   title: string;
   url: string;
   testUrl?: string; // 確認テストのURL
+  testHtml?: string; // 直接アップロードされたHTML
   description?: string;
   tags: string[];
   status: LinkStatus; // ユーザー個別のステータス
