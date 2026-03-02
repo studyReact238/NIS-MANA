@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -68,7 +67,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
   
-  // ユーザー詳細・削除用のステータス
   const [selectedUser, setSelectedUser] = useState<{id: string, email: string} | null>(null);
   const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
 
@@ -87,6 +85,16 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   const { data: users, isLoading: isUsersLoading } = useCollection<any>(usersRef);
   const { data: admins, isLoading: isAdminsLoading } = useCollection<any>(adminsRef);
+
+  // 最終ログイン日時で降順（新しい順）にソート
+  const sortedUsers = React.useMemo(() => {
+    if (!users) return [];
+    return [...users].sort((a, b) => {
+      const timeA = a.lastLoginAt || 0;
+      const timeB = b.lastLoginAt || 0;
+      return timeB - timeA;
+    });
+  }, [users]);
 
   const userProgressRef = useMemoFirebase(() => {
     if (!firestore || !selectedUser) return null;
@@ -289,7 +297,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                     <div className="p-4 space-y-2">
                       {isUsersLoading ? (
                         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 text-emerald-600 animate-spin" /></div>
-                      ) : users?.map((u: any) => (
+                      ) : sortedUsers?.map((u: any) => (
                         <div key={u.id} className="group flex items-center justify-between p-3 bg-white rounded-2xl border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all">
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
