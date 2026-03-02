@@ -320,7 +320,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                         <ArrowLeft className="w-4 h-4 text-emerald-700" />
                       </Button>
                       <div className="min-w-0">
-                        <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest truncate">{selectedUser.email}</h3>
+                        <h3 className="text-sm font-body font-bold text-emerald-900 truncate">{selectedUser.email}</h3>
                         <p className="text-[10px] text-slate-400 font-bold">ユーザーの学習進捗</p>
                       </div>
                     </div>
