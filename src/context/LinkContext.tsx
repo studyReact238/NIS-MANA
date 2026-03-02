@@ -14,7 +14,9 @@ import {
   increment,
   query,
   limit,
-  orderBy
+  orderBy,
+  getDocs,
+  writeBatch
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -45,6 +47,7 @@ interface LinkContextType {
   deleteLink: (id: string) => void;
   duplicateLink: (id: string) => void;
   updateStatus: (id: string, status: LinkStatus) => void;
+  recalculateAllCounts: () => Promise<void>;
   filteredLinks: LearningLink[];
   allTags: string[];
   isLoading: boolean;
@@ -232,6 +235,52 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const recalculateAllCounts = async () => {
+    if (!firestore || !isAdmin) return;
+
+    try {
+      const usersSnap = await getDocs(collection(firestore, 'users'));
+      const linksSnap = await getDocs(collection(firestore, 'learningLinks'));
+      
+      const countsMap = new Map<string, { learning: number, completed: number }>();
+      
+      // 全てのリンクのカウントを0で初期化
+      linksSnap.docs.forEach(d => {
+        countsMap.set(d.id, { learning: 0, completed: 0 });
+      });
+
+      // 全ユーザーの進捗を走査
+      for (const userDoc of usersSnap.docs) {
+        const progressSnap = await getDocs(collection(firestore, 'users', userDoc.id, 'progress'));
+        progressSnap.docs.forEach(pDoc => {
+          const linkId = pDoc.id;
+          const status = pDoc.data().status;
+          const current = countsMap.get(linkId);
+          if (current) {
+            if (status === 'learning') current.learning++;
+            if (status === 'completed') current.completed++;
+            countsMap.set(linkId, current);
+          }
+        });
+      }
+
+      // バッチ処理で一括更新
+      const batch = writeBatch(firestore);
+      countsMap.forEach((counts, linkId) => {
+        const linkRef = doc(firestore, 'learningLinks', linkId);
+        batch.update(linkRef, {
+          learningCount: counts.learning,
+          completedCount: counts.completed
+        });
+      });
+
+      await batch.commit();
+    } catch (error) {
+      console.error('Recalculation failed:', error);
+      throw error;
+    }
+  };
+
   const toggleTag = (tag: string) => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   const clearTags = () => setSelectedTags([]);
   const toggleColor = (color: LinkColor) => setSelectedColors(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]);
@@ -283,7 +332,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, updateStatus, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
+      duplicateLink, updateStatus, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
       activities: activities || [], timelineLimit, setTimelineLimit
     }}>
       {children}
