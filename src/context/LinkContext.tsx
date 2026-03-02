@@ -70,7 +70,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
-  const [timelineLimit, setTimelineLimit] = useState(50);
+  const [timelineLimit, setTimelineLimit] = useState(10); // 初期値を10に変更
 
   // ログイン中ユーザーのドキュメントを更新（最終ログイン日時を含む）
   useEffect(() => {
