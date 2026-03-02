@@ -7,6 +7,7 @@ export interface LearningLink {
   id: string;
   title: string;
   url: string;
+  testUrl?: string; // 確認テストのURL
   description?: string;
   tags: string[];
   status: LinkStatus; // ユーザー個別のステータス

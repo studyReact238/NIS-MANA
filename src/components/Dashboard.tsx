@@ -29,7 +29,8 @@ import {
   Target,
   Zap,
   BookOpen,
-  Circle
+  Circle,
+  ClipboardCheck
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -109,6 +110,28 @@ export const Dashboard: React.FC = () => {
       unstarted, unstartedP: Math.round((unstarted / total) * 100)
     };
   }, [links]);
+
+  const testLinks = useMemo(() => {
+    // 確認テストタブでは「受講済み」のカードのみを表示
+    return links.filter(l => l.status === 'completed');
+  }, [links]);
+
+  const filteredTestLinks = useMemo(() => {
+    let result = [...testLinks];
+    if (search) {
+      const s = search.toLowerCase();
+      result = result.filter(l => 
+        l.title?.toLowerCase().includes(s) || 
+        (l.description && l.description.toLowerCase().includes(s)) || 
+        (l.tags || []).some(t => t.toLowerCase().includes(s))
+      );
+    }
+    if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => (l.tags || []).includes(t)));
+    if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
+    if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
+    
+    return result;
+  }, [testLinks, search, selectedTags, selectedColors, selectedIcons]);
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-20">
@@ -254,19 +277,18 @@ export const Dashboard: React.FC = () => {
             className="bg-slate-300 h-full transition-all duration-500 ease-out relative group border-l border-white/20"
           />
         </div>
-        
-        {progressStats.total === 0 && (
-          <p className="text-[10px] text-center text-slate-400 font-bold italic">表示できるリンクがありません</p>
-        )}
       </div>
 
       <Tabs defaultValue="links" className="space-y-6">
         <div className="flex justify-center">
           <TabsList className="bg-emerald-100/50 p-1 rounded-2xl border border-emerald-200 h-12">
-            <TabsTrigger value="links" className="rounded-xl px-8 font-bold data-[state=active]:bg-white data-[state=active]:text-emerald-800">
+            <TabsTrigger value="links" className="rounded-xl px-6 sm:px-8 font-bold data-[state=active]:bg-white data-[state=active]:text-emerald-800 text-xs sm:text-sm">
               <Layout className="w-4 h-4 mr-2" /> リンク集
             </TabsTrigger>
-            <TabsTrigger value="timeline" className="rounded-xl px-8 font-bold data-[state=active]:bg-white data-[state=active]:text-emerald-800">
+            <TabsTrigger value="tests" className="rounded-xl px-6 sm:px-8 font-bold data-[state=active]:bg-white data-[state=active]:text-emerald-800 text-xs sm:text-sm">
+              <ClipboardCheck className="w-4 h-4 mr-2" /> 確認テスト
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="rounded-xl px-6 sm:px-8 font-bold data-[state=active]:bg-white data-[state=active]:text-emerald-800 text-xs sm:text-sm">
               <Zap className="w-4 h-4 mr-2" /> タイムライン
             </TabsTrigger>
           </TabsList>
@@ -411,46 +433,53 @@ export const Dashboard: React.FC = () => {
               </Badge>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">検索結果を表示中</span>
             </div>
-            {(search || selectedTags.length > 0 || selectedColors.length > 0 || selectedIcons.length > 0 || statusFilter !== 'all') && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  setSearch('');
-                  clearTags();
-                  clearColors();
-                  clearIcons();
-                  setStatusFilter('all');
-                }}
-                className="text-[10px] font-black text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-7"
-              >
-                <XCircle className="w-3 h-3 mr-1" /> 条件をクリア
-              </Button>
-            )}
           </div>
 
-          {isLoading ? (
-            <div className="py-20 flex flex-col items-center justify-center gap-4">
-              <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
-              <p className="text-emerald-800 font-bold">データを取得中...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {filteredLinks.map(link => (
+              <LinkCard key={link.id} link={link} onEdit={handleEdit} />
+            ))}
+            {filteredLinks.length === 0 && !isLoading && (
+              <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-[2rem] border-4 border-dashed border-emerald-100/50 px-6">
+                <h3 className="text-lg font-bold text-emerald-900">該当するリンクが見つかりません</h3>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="tests" className="space-y-6">
+          <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-blue-900/10 border border-blue-200 p-5 sm:p-8 space-y-4">
+             <div className="text-center mb-4">
+                <h2 className="text-xl font-bold text-blue-900 flex items-center justify-center gap-2">
+                   <ClipboardCheck className="w-6 h-6" /> 確認テスト一覧
+                </h2>
+                <p className="text-sm text-blue-600 font-medium">受講を完了した教材のテストに挑戦できます。</p>
+             </div>
+             <div className="relative group max-w-3xl mx-auto">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 text-blue-400" />
+              <Input 
+                value={search} 
+                onChange={e => setSearch(e.target.value)}
+                placeholder="受講済みの中から検索..." 
+                className="pl-12 h-14 rounded-full bg-blue-50/50 border-blue-100 border-2 focus:border-blue-500"
+              />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {filteredLinks.map(link => (
-                <LinkCard key={link.id} link={link} onEdit={handleEdit} />
-              ))}
-              
-              {filteredLinks.length === 0 && (
-                <div className="col-span-full py-20 sm:py-32 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-[2rem] border-4 border-dashed border-emerald-100/50 px-6">
-                  <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-100/50">
-                    <Search className="w-8 h-8 text-emerald-200" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-emerald-900">該当するリンクが見つかりません</h3>
-                  <p className="text-sm text-slate-400 font-medium">条件を変えて試してみてください。</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {filteredTestLinks.map(link => (
+              <LinkCard key={link.id} link={link} onEdit={handleEdit} isTestView />
+            ))}
+            {filteredTestLinks.length === 0 && !isLoading && (
+              <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-[2rem] border-4 border-dashed border-blue-100/50 px-6">
+                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
+                  <Target className="w-8 h-8 text-blue-200" />
                 </div>
-              )}
-            </div>
-          )}
+                <h3 className="text-lg font-bold text-blue-900">表示できるテストがありません</h3>
+                <p className="text-sm text-slate-400">教材を「受講済み」にするとここに表示されます。</p>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="timeline">

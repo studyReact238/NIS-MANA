@@ -24,7 +24,8 @@ import {
   Users,
   Calendar,
   BookOpen,
-  Circle
+  Circle,
+  ClipboardCheck
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -62,6 +63,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 interface LinkCardProps {
   link: LearningLink;
   onEdit: (link: LearningLink) => void;
+  isTestView?: boolean;
 }
 
 const SPARKLE_COLORS = ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#f43f5e', '#ffffff', '#a855f7', '#ec4899'];
@@ -74,7 +76,7 @@ interface Sparkle {
   delay: number;
 }
 
-export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
+export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) => {
   const { isAdmin, isServerAdmin, updateStatus, deleteLink, duplicateLink, toggleTag, selectedTags } = useLinks();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -377,18 +379,34 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 </div>
               </div>
               
-              <div className="flex">
-                <a 
-                  href={link.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "flex-1 inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
-                    "bg-emerald-700 border-emerald-800 text-white hover:bg-emerald-800 hover:shadow-lg shadow-emerald-200"
-                  )}
-                >
-                  学習サイト <ExternalLink className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-                </a>
+              <div className="flex gap-2">
+                {isTestView ? (
+                  <a 
+                    href={link.testUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "flex-1 inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
+                      link.testUrl 
+                        ? "bg-blue-600 border-blue-700 text-white hover:bg-blue-700 hover:shadow-lg shadow-blue-200"
+                        : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed pointer-events-none"
+                    )}
+                  >
+                    確認テスト <ClipboardCheck className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+                  </a>
+                ) : (
+                  <a 
+                    href={link.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "flex-1 inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
+                      "bg-emerald-700 border-emerald-800 text-white hover:bg-emerald-800 hover:shadow-lg shadow-emerald-200"
+                    )}
+                  >
+                    学習サイト <ExternalLink className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -553,14 +571,26 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
             )}
 
             <div className="pt-6 border-t border-emerald-100 flex flex-col sm:flex-row gap-4">
-              <a 
-                href={link.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-emerald-600 text-white font-black hover:bg-emerald-700 shadow-xl shadow-emerald-200 transition-all"
-              >
-                学習サイトを開く <ExternalLink className="w-5 h-5" />
-              </a>
+              <div className="flex-1 flex gap-2">
+                <a 
+                  href={link.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-emerald-600 text-white font-black hover:bg-emerald-700 shadow-xl shadow-emerald-200 transition-all"
+                >
+                  学習サイト <ExternalLink className="w-5 h-5" />
+                </a>
+                {link.testUrl && (
+                  <a 
+                    href={link.testUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-blue-600 text-white font-black hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all"
+                  >
+                    確認テスト <ClipboardCheck className="w-5 h-5" />
+                  </a>
+                )}
+              </div>
               <Button 
                 variant="ghost" 
                 onClick={() => setDetailOpen(false)}

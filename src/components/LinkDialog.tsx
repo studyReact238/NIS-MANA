@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLinks } from '@/context/LinkContext';
 import { LearningLink, LinkColor } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
-import { X, Tag as TagIcon, Plus } from 'lucide-react';
+import { X, Tag as TagIcon, Plus, ClipboardCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LinkDialogProps {
@@ -33,6 +33,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
   const [formData, setFormData] = useState({
     title: '',
     url: '',
+    testUrl: '',
     description: '',
     tags: [] as string[],
     color: 'emerald' as LinkColor,
@@ -47,6 +48,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
         setFormData({
           title: editLink.title,
           url: editLink.url,
+          testUrl: editLink.testUrl || '',
           description: editLink.description || '',
           tags: editLink.tags,
           color: editLink.color,
@@ -56,6 +58,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
         setFormData({
           title: '',
           url: '',
+          testUrl: '',
           description: '',
           tags: [],
           color: 'emerald',
@@ -89,7 +92,6 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tagToRemove) }));
   };
 
-  // 既存のタグから、まだ選択されていないものを抽出
   const suggestedTags = allTags.filter(t => !formData.tags.includes(t));
 
   return (
@@ -106,7 +108,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2 col-span-2 sm:col-span-1">
+            <div className="space-y-2 col-span-2">
               <Label htmlFor="title" className="text-base font-semibold">タイトル</Label>
               <Input 
                 id="title" 
@@ -119,7 +121,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             </div>
             
             <div className="space-y-2 col-span-2 sm:col-span-1">
-              <Label htmlFor="url" className="text-base font-semibold">URL</Label>
+              <Label htmlFor="url" className="text-base font-semibold">学習サイト URL</Label>
               <Input 
                 id="url" 
                 value={formData.url} 
@@ -127,6 +129,20 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 placeholder="https://example.com" 
                 className="rounded-2xl py-6 border-emerald-100 focus:border-emerald-500"
                 required
+              />
+            </div>
+
+            <div className="space-y-2 col-span-2 sm:col-span-1">
+              <Label htmlFor="testUrl" className="text-base font-semibold flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-blue-600" />
+                確認テスト URL
+              </Label>
+              <Input 
+                id="testUrl" 
+                value={formData.testUrl} 
+                onChange={e => setFormData(prev => ({ ...prev, testUrl: e.target.value }))}
+                placeholder="https://example.com/test.html" 
+                className="rounded-2xl py-6 border-blue-100 focus:border-blue-500"
               />
             </div>
 
@@ -257,4 +273,3 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
     </Dialog>
   );
 };
-

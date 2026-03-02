@@ -59,6 +59,11 @@
           "description": "The URL of the learning resource.",
           "format": "uri"
         },
+        "testUrl": {
+          "type": "string",
+          "description": "The URL of the confirmation test (HTML file etc).",
+          "format": "uri"
+        },
         "description": {
           "type": "string",
           "description": "Summary or description."
