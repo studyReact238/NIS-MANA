@@ -75,7 +75,7 @@ interface Sparkle {
 }
 
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
-  const { isAdmin, isServerAdmin, updateStatus, deleteLink, duplicateLink } = useLinks();
+  const { isAdmin, isServerAdmin, updateStatus, deleteLink, duplicateLink, toggleTag, selectedTags } = useLinks();
   const { user } = useUser();
   const firestore = useFirestore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -305,9 +305,15 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 <Badge 
                   key={tag} 
                   variant="secondary" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleTag(tag);
+                  }}
                   className={cn(
-                    "rounded-full px-3 py-1 text-[10px] font-black border-2",
-                    colorData.badge
+                    "rounded-full px-3 py-1 text-[10px] font-black border-2 cursor-pointer transition-all",
+                    selectedTags.includes(tag) 
+                      ? "bg-emerald-700 text-white border-emerald-800" 
+                      : cn(colorData.badge, "hover:bg-opacity-80")
                   )}
                 >
                   #{tag}
@@ -443,7 +449,14 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">タグ</h4>
               <div className="flex flex-wrap gap-2">
                 {link.tags.map(tag => (
-                  <Badge key={tag} className="px-4 py-1.5 rounded-full bg-white border-2 border-emerald-100 text-emerald-800 font-black">
+                  <Badge 
+                    key={tag} 
+                    onClick={() => {
+                      setDetailOpen(false);
+                      toggleTag(tag);
+                    }}
+                    className="px-4 py-1.5 rounded-full bg-white border-2 border-emerald-100 text-emerald-800 font-black cursor-pointer hover:bg-emerald-50 transition-colors"
+                  >
                     #{tag}
                   </Badge>
                 ))}
