@@ -203,6 +203,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const progressRef = doc(firestore, 'users', user.uid, 'progress', id);
     const linkRef = doc(firestore, 'learningLinks', id);
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
+    const learnerRef = doc(firestore, 'learningLinks', id, 'learners', user.uid);
     const activityRef = collection(firestore, 'activities');
     
     setDoc(progressRef, { 
@@ -219,6 +220,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteDoc(completionRef);
     } else if (oldStatus === 'learning') {
       updates.learningCount = increment(-1);
+      deleteDoc(learnerRef);
     }
 
     // 新しいステータスのカウントを増やす
@@ -238,6 +240,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
+      setDoc(learnerRef, {
+        email: user.email,
+        startedAt: Date.now()
+      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create' })));
+
       addDoc(activityRef, {
         userEmail: user.email,
         linkTitle: link.title,

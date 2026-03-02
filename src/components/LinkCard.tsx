@@ -117,6 +117,13 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
 
   const { data: completions, isLoading: isCompletionsLoading } = useCollection<any>(completionsRef);
 
+  const learnersRef = useMemoFirebase(() => {
+    if (!firestore || !isServerAdmin || !link.id || !detailOpen) return null;
+    return collection(firestore, 'learningLinks', link.id, 'learners');
+  }, [firestore, isServerAdmin, link.id, detailOpen]);
+
+  const { data: learners, isLoading: isLearnersLoading } = useCollection<any>(learnersRef);
+
   const Icon = getIcon(link.icon);
   const colorData = getColorData(link.color);
 
@@ -470,43 +477,77 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
             </div>
 
             {isServerAdmin && (
-              <div className="space-y-4 pt-6 border-t-2 border-dashed border-emerald-200">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest flex items-center gap-2">
-                    <Users className="w-4 h-4" /> 受講完了者リスト（管理者のみ）
-                  </h4>
-                  <Badge variant="outline" className="text-[10px] font-bold border-emerald-200">
-                    {completions?.length || 0} 名
-                  </Badge>
+              <div className="space-y-6 pt-6 border-t-2 border-dashed border-emerald-200">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-black text-blue-900 uppercase tracking-widest flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" /> 学習中のユーザー
+                    </h4>
+                    <Badge variant="outline" className="text-[10px] font-bold border-blue-200 text-blue-700">
+                      {learners?.length || 0} 名
+                    </Badge>
+                  </div>
+                  <div className="bg-blue-50/30 rounded-3xl border-2 border-blue-100/50 overflow-hidden">
+                    <ScrollArea className="h-32">
+                      <div className="p-4 space-y-2">
+                        {isLearnersLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <BookOpen className="w-5 h-5 text-blue-200 animate-pulse" />
+                          </div>
+                        ) : learners && learners.length > 0 ? (
+                          learners.map((l: any) => (
+                            <div key={l.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-blue-50 shadow-sm">
+                              <span className="text-xs font-bold text-blue-900">{l.email}</span>
+                              <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
+                                <Calendar className="w-3 h-3" />
+                                {l.startedAt ? format(l.startedAt, 'MM/dd HH:mm', { locale: ja }) : '記録なし'}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-6">
+                            <p className="text-xs text-slate-400 font-bold italic">学習中のユーザーはいません</p>
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 </div>
-                
-                <div className="bg-emerald-50/30 rounded-3xl border-2 border-emerald-100/50 overflow-hidden">
-                  <ScrollArea className="h-48">
-                    <div className="p-4 space-y-2">
-                      {isCompletionsLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <Users className="w-6 h-6 text-emerald-200 animate-pulse" />
-                        </div>
-                      ) : completions && completions.length > 0 ? (
-                        completions.map((c: any) => (
-                          <div key={c.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-emerald-50 shadow-sm">
-                            <div className="flex flex-col">
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" /> 受講完了したユーザー
+                    </h4>
+                    <Badge variant="outline" className="text-[10px] font-bold border-emerald-200 text-emerald-700">
+                      {completions?.length || 0} 名
+                    </Badge>
+                  </div>
+                  <div className="bg-emerald-50/30 rounded-3xl border-2 border-emerald-100/50 overflow-hidden">
+                    <ScrollArea className="h-32">
+                      <div className="p-4 space-y-2">
+                        {isCompletionsLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Users className="w-5 h-5 text-emerald-200 animate-pulse" />
+                          </div>
+                        ) : completions && completions.length > 0 ? (
+                          completions.map((c: any) => (
+                            <div key={c.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-emerald-50 shadow-sm">
                               <span className="text-xs font-bold text-emerald-900">{c.email}</span>
                               <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
                                 <Calendar className="w-3 h-3" />
-                                {format(c.completedAt, 'yyyy/MM/dd HH:mm', { locale: ja })}
+                                {format(c.completedAt, 'MM/dd HH:mm', { locale: ja })}
                               </div>
                             </div>
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          ))
+                        ) : (
+                          <div className="text-center py-6">
+                            <p className="text-xs text-slate-400 font-bold italic">受講完了したユーザーはいません</p>
                           </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-10">
-                          <p className="text-xs text-slate-400 font-bold italic">受講完了者はまだいません</p>
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 </div>
               </div>
             )}

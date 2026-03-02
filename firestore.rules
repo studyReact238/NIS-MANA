@@ -28,8 +28,15 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // 受講者名簿
+    // 受講完了者名簿
     match /learningLinks/{linkId}/completions/{userId} {
+      allow list: if isAdmin();
+      allow get: if isAdmin() || isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // 学習中ユーザー名簿
+    match /learningLinks/{linkId}/learners/{userId} {
       allow list: if isAdmin();
       allow get: if isAdmin() || isOwner(userId);
       allow write: if isOwner(userId);
