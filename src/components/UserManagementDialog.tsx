@@ -68,8 +68,9 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
   
-  // ユーザー詳細表示用のステータス
+  // ユーザー詳細・削除用のステータス
   const [selectedUser, setSelectedUser] = useState<{id: string, email: string} | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
 
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -87,7 +88,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const { data: users, isLoading: isUsersLoading } = useCollection<any>(usersRef);
   const { data: admins, isLoading: isAdminsLoading } = useCollection<any>(adminsRef);
 
-  // 選択されたユーザーの進捗データを取得
   const userProgressRef = useMemoFirebase(() => {
     if (!firestore || !selectedUser) return null;
     return collection(firestore, 'users', selectedUser.id, 'progress');
@@ -95,7 +95,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   const { data: selectedUserProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // 進捗データをリンク情報とマージ
   const userLearningLinks = React.useMemo(() => {
     if (!selectedUserProgress || !links) return [];
     return selectedUserProgress
@@ -193,15 +192,16 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
     }
   };
 
-  const handleDeleteUser = async (userId: string, userEmail: string) => {
-    if (!firestore || !window.confirm(`${userEmail} を削除しますか？`)) return;
+  const confirmDeleteUser = async () => {
+    if (!firestore || !userToDelete) return;
     try {
-      await deleteDoc(doc(firestore, 'users', userId));
-      await deleteDoc(doc(firestore, 'admins', userId));
-      toast({ title: "削除完了", description: "ユーザー情報を削除しました。" });
-      if (selectedUser?.id === userId) setSelectedUser(null);
+      await deleteDoc(doc(firestore, 'users', userToDelete.id));
+      await deleteDoc(doc(firestore, 'admins', userToDelete.id));
+      toast({ title: "削除完了", description: `${userToDelete.email} のデータを削除しました。` });
+      if (selectedUser?.id === userToDelete.id) setSelectedUser(null);
+      setUserToDelete(null);
     } catch (e: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `users/${userId}`, operation: 'delete' }));
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `users/${userToDelete.id}`, operation: 'delete' }));
     }
   };
 
@@ -209,7 +209,10 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
     <>
       <Dialog open={open} onOpenChange={(val) => {
         onOpenChange(val);
-        if (!val) setSelectedUser(null);
+        if (!val) {
+          setSelectedUser(null);
+          setUserToDelete(null);
+        }
       }}>
         <DialogContent className="max-w-4xl rounded-4xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="mb-6 shrink-0">
@@ -223,7 +226,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 flex-1 overflow-hidden">
-            {/* 左カラム: 登録・メンテナンス (4/12) */}
             <div className="md:col-span-4 space-y-6 overflow-y-auto pr-2">
               <div className="space-y-4">
                 <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest border-b border-emerald-100 pb-2">新規ユーザー登録</h3>
@@ -274,10 +276,8 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
               </div>
             </div>
 
-            {/* 右カラム: ユーザーリスト または ユーザー詳細 (8/12) */}
             <div className="md:col-span-8 flex flex-col overflow-hidden bg-slate-50/50 rounded-3xl border border-emerald-50">
               {!selectedUser ? (
-                // ユーザー一覧表示
                 <div className="flex flex-col h-full overflow-hidden">
                   <div className="p-4 border-b border-emerald-100 bg-white/80 flex items-center justify-between shrink-0">
                     <h3 className="text-sm font-black text-emerald-900 uppercase tracking-widest flex items-center gap-2">
@@ -312,7 +312,12 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                             >
                               <Eye className="w-3.5 h-3.5 mr-1.5" /> 進捗
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(u.id, u.email)} className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => setUserToDelete(u)} 
+                              className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                            >
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
@@ -322,7 +327,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                   </ScrollArea>
                 </div>
               ) : (
-                // ユーザー詳細表示
                 <div className="flex flex-col h-full overflow-hidden">
                   <div className="p-4 border-b border-emerald-100 bg-white/80 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
@@ -419,6 +423,27 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
           <AlertDialogFooter className="mt-8">
             <AlertDialogCancel className="rounded-2xl h-12 px-8 font-bold border-2 border-emerald-200">キャンセル</AlertDialogCancel>
             <AlertDialogAction onClick={handleRegisterUser} className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 font-bold h-12 px-8">登録する</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(val) => !val && setUserToDelete(null)}>
+        <AlertDialogContent className="rounded-4xl border-2 border-emerald-100 p-8">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-bold text-emerald-950">ユーザーを削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-emerald-800 font-medium">
+              「{userToDelete?.email}」のプロファイルと学習記録を削除します。この操作は取り消せません。
+              <br /><span className="text-xs text-rose-500">※Firebase Authの認証情報は別途削除が必要です。</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-8">
+            <AlertDialogCancel className="rounded-2xl h-12 px-8 font-bold border-2 border-emerald-200">キャンセル</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteUser} 
+              className="rounded-2xl bg-rose-600 hover:bg-rose-700 font-bold h-12 px-8 text-white shadow-lg shadow-rose-200"
+            >
+              削除する
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
