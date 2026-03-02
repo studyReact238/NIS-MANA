@@ -10,7 +10,6 @@ import { UserManagementDialog } from '@/components/UserManagementDialog';
 import { Timeline } from '@/components/Timeline';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -29,7 +28,8 @@ import {
   Users,
   Target,
   Zap,
-  BookOpen
+  BookOpen,
+  Circle
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -91,11 +91,23 @@ export const Dashboard: React.FC = () => {
 
   const progressStats = useMemo(() => {
     const total = links.length;
+    if (total === 0) return { 
+      total: 0, 
+      completed: 0, completedP: 0,
+      learning: 0, learningP: 0,
+      unstarted: 0, unstartedP: 0
+    };
+
     const completed = links.filter(l => l.status === 'completed').length;
     const learning = links.filter(l => l.status === 'learning').length;
     const unstarted = links.filter(l => l.status === 'unstarted').length;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    return { total, completed, learning, unstarted, percentage };
+
+    return { 
+      total, 
+      completed, completedP: Math.round((completed / total) * 100),
+      learning, learningP: Math.round((learning / total) * 100),
+      unstarted, unstartedP: Math.round((unstarted / total) * 100)
+    };
   }, [links]);
 
   return (
@@ -206,52 +218,48 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-3xl border border-emerald-100 p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
-              <Target className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">受講完了</p>
-              <p className="text-lg font-black text-emerald-950">{progressStats.percentage}%</p>
-            </div>
+      {/* コンパクトな学習進捗セクション */}
+      <div className="bg-white rounded-3xl border border-emerald-100 p-5 sm:p-6 shadow-sm mb-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-sm font-black text-emerald-900 uppercase tracking-widest">現在の学習進捗</h2>
           </div>
-          <div className="text-right">
-            <p className="text-xs font-bold text-emerald-800">{progressStats.completed}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-3xl border border-emerald-100 p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
-              <BookOpen className="w-5 h-5" />
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <span className="text-xs font-bold text-slate-600">受講済み: <span className="text-emerald-700">{progressStats.completed}</span> ({progressStats.completedP}%)</span>
             </div>
-            <div>
-              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">学習中</p>
-              <p className="text-lg font-black text-emerald-950">{progressStats.learning}</p>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+              <span className="text-xs font-bold text-slate-600">学習中: <span className="text-blue-700">{progressStats.learning}</span> ({progressStats.learningP}%)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
+              <span className="text-xs font-bold text-slate-600">未着手: <span className="text-slate-700">{progressStats.unstarted}</span> ({progressStats.unstartedP}%)</span>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-3xl border border-emerald-100 p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-600">
-              <XCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">未着手</p>
-              <p className="text-lg font-black text-emerald-950">{progressStats.unstarted}</p>
-            </div>
-          </div>
+
+        {/* 3色スタックドプログレスバー */}
+        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+          <div 
+            style={{ width: `${progressStats.completedP}%` }} 
+            className="bg-emerald-500 h-full transition-all duration-500 ease-out relative group"
+          />
+          <div 
+            style={{ width: `${progressStats.learningP}%` }} 
+            className="bg-blue-500 h-full transition-all duration-500 ease-out relative group border-l border-white/20"
+          />
+          <div 
+            style={{ width: `${progressStats.unstartedP}%` }} 
+            className="bg-slate-300 h-full transition-all duration-500 ease-out relative group border-l border-white/20"
+          />
         </div>
-        <div className="bg-white rounded-3xl border border-emerald-100 p-4 shadow-sm flex items-center gap-3">
-          <div className="flex-1 space-y-2">
-             <div className="flex justify-between items-center px-1">
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">進捗率</span>
-                <span className="text-[10px] font-black text-emerald-700">{progressStats.percentage}%</span>
-             </div>
-             <Progress value={progressStats.percentage} className="h-2 bg-emerald-50" />
-          </div>
-        </div>
+        
+        {progressStats.total === 0 && (
+          <p className="text-[10px] text-center text-slate-400 font-bold italic">表示できるリンクがありません</p>
+        )}
       </div>
 
       <Tabs defaultValue="links" className="space-y-6">
@@ -282,7 +290,7 @@ export const Dashboard: React.FC = () => {
               <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full max-w-2xl">
                 <TabsList className="grid grid-cols-4 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
                   <TabsTrigger value="all" className="rounded-xl font-bold text-[10px] sm:text-xs">すべて</TabsTrigger>
-                  <TabsTrigger value="unstarted" className="rounded-xl font-bold text-[10px] sm:text-xs">未着手</TabsTrigger>
+                  <TabsTrigger value="unstarted" className="rounded-xl font-bold text-[10px] sm:text-xs text-slate-600">未着手</TabsTrigger>
                   <TabsTrigger value="learning" className="rounded-xl font-bold text-[10px] sm:text-xs text-blue-700">学習中</TabsTrigger>
                   <TabsTrigger value="completed" className="rounded-xl font-bold text-[10px] sm:text-xs text-emerald-700">受講済み</TabsTrigger>
                 </TabsList>
