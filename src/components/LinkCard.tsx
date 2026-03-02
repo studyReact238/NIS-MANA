@@ -304,7 +304,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
               {link.tags.map(tag => (
                 <Badge 
                   key={tag} 
-                  variant="secondary" 
+                  variant="outline" 
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleTag(tag);
@@ -312,7 +312,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                   className={cn(
                     "rounded-full px-3 py-1 text-[10px] font-black border-2 cursor-pointer transition-all",
                     selectedTags.includes(tag) 
-                      ? "bg-emerald-700 text-white border-emerald-800" 
+                      ? "bg-emerald-600 text-white border-emerald-700 shadow-md" 
                       : cn(colorData.badge, "hover:bg-opacity-80")
                   )}
                 >
@@ -451,11 +451,17 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit }) => {
                 {link.tags.map(tag => (
                   <Badge 
                     key={tag} 
+                    variant="outline"
                     onClick={() => {
                       setDetailOpen(false);
                       toggleTag(tag);
                     }}
-                    className="px-4 py-1.5 rounded-full bg-white border-2 border-emerald-100 text-emerald-800 font-black cursor-pointer hover:bg-emerald-50 transition-colors"
+                    className={cn(
+                      "px-4 py-1.5 rounded-full text-xs font-black cursor-pointer transition-all border-2",
+                      selectedTags.includes(tag) 
+                        ? "bg-emerald-600 text-white border-emerald-700 shadow-md" 
+                        : "bg-white border-emerald-100 text-emerald-800 hover:bg-emerald-50"
+                    )}
                   >
                     #{tag}
                   </Badge>
