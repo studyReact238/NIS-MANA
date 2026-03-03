@@ -151,7 +151,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkId: docRef.id,
         linkTitle: data.title,
         timestamp: Date.now(),
-        userEmail: user.email,
+        userEmail: user.email || 'Unknown',
         isAdmin: !!isServerAdmin
       });
     }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
@@ -170,7 +170,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           linkId: id,
           linkTitle: cleanUpdates.title || '（タイトル不明）',
           timestamp: Date.now(),
-          userEmail: user.email,
+          userEmail: user.email || 'Unknown',
           isAdmin: !!isServerAdmin
         });
       })
@@ -230,7 +230,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
 
       addDoc(activityRef, {
-        userEmail: user.email,
+        userEmail: user.email || 'Unknown',
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
@@ -245,7 +245,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create' })));
 
       addDoc(activityRef, {
-        userEmail: user.email,
+        userEmail: user.email || 'Unknown',
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),

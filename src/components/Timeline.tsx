@@ -14,7 +14,7 @@ export const Timeline: React.FC = () => {
   const { activities, timelineLimit, setTimelineLimit } = useLinks();
 
   const formatDisplayName = (email?: string) => {
-    if (!email) return '不明さん';
+    if (!email || email === 'Unknown') return '不明さん';
     return `${email.split('@')[0]}さん`;
   };
 
@@ -40,7 +40,9 @@ export const Timeline: React.FC = () => {
 
   const getActivityText = (activity: any) => {
     const userName = formatDisplayName(activity.userEmail);
-    const adminBadge = activity.isAdmin ? <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 inline ml-1 align-middle" /> : null;
+    const adminBadge = activity.isAdmin ? (
+      <ShieldCheck className="w-4 h-4 text-emerald-600 inline-block ml-1 align-middle" />
+    ) : null;
     
     switch (activity.type) {
       case 'completion':
@@ -76,7 +78,12 @@ export const Timeline: React.FC = () => {
           </>
         );
       default:
-        return activity.linkTitle;
+        return (
+          <>
+            <span className="font-bold text-slate-900">{userName}</span>
+            {adminBadge}: {activity.linkTitle}
+          </>
+        );
     }
   };
 
