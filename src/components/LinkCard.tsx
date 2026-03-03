@@ -27,8 +27,7 @@ import {
   Circle,
   ClipboardCheck,
   User,
-  ShieldCheck,
-  Loader2
+  ShieldCheck
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -209,7 +208,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
 
   const formatDisplayName = (email?: string) => {
     if (isCreatorLoading) return '読み込み中...';
-    if (!email) return '不明なユーザー';
+    if (!email || email === '不明なユーザー' || email === '') return '匿名ユーザーさん';
     return `${email.split('@')[0]}さん`;
   };
 
@@ -412,7 +411,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                   <User className="w-3.5 h-3.5" />
                   <span className="truncate max-w-[150px] inline-flex items-center gap-1">
                     投稿者: {formatDisplayName(creatorData?.email)}
-                    {isCreatorAdmin && !isAdminDataLoading && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                    {!isAdminDataLoading && isCreatorAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />}
                   </span>
                 </div>
               </div>
@@ -470,7 +469,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                 <User className="w-4 h-4" />
                 投稿者: {formatDisplayName(creatorData?.email)}
-                {isCreatorAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
+                {!isAdminDataLoading && isCreatorAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
               </div>
             </div>
           </DialogHeader>
@@ -560,7 +559,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                         ) : learners && learners.length > 0 ? (
                           learners.map((l: any) => (
                             <div key={l.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-blue-50 shadow-sm">
-                              <span className="text-xs font-bold text-blue-900">{l.email ? `${l.email.split('@')[0]}さん` : 'ユーザーさん'}</span>
+                              <span className="text-xs font-bold text-blue-900">{l.email ? `${l.email.split('@')[0]}さん` : '匿名ユーザーさん'}</span>
                               <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
                                 <Calendar className="w-3 h-3" />
                                 {l.startedAt ? format(l.startedAt, 'MM/dd HH:mm', { locale: ja }) : '記録なし'}
@@ -596,7 +595,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                         ) : completions && completions.length > 0 ? (
                           completions.map((c: any) => (
                             <div key={c.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-emerald-50 shadow-sm">
-                              <span className="text-xs font-bold text-emerald-900">{c.email ? `${c.email.split('@')[0]}さん` : 'ユーザーさん'}</span>
+                              <span className="text-xs font-bold text-emerald-900">{c.email ? `${c.email.split('@')[0]}さん` : '匿名ユーザーさん'}</span>
                               <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
                                 <Calendar className="w-3 h-3" />
                                 {format(c.completedAt, 'MM/dd HH:mm', { locale: ja })}

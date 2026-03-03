@@ -15,7 +15,7 @@ import { doc } from 'firebase/firestore';
 const TimelineItem = ({ activity }: { activity: any }) => {
   const firestore = useFirestore();
   
-  // リンクカードと同じ仕組み: データベースから最新のユーザー情報を取得
+  // リンクカードと全く同じ仕組み: ログに保存されたUIDを使って最新情報を取得
   const userId = activity.userId;
   
   const userRef = useMemoFirebase(() => {
@@ -25,7 +25,7 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 管理者かどうかをデータベースから直接チェック（リンクカードと同じ仕組み）
+  // 管理者権限をデータベースから直接チェック
   const adminRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return doc(firestore, 'admins', userId);
@@ -33,17 +33,26 @@ const TimelineItem = ({ activity }: { activity: any }) => {
 
   const { data: adminData, isLoading: isAdminLoading } = useDoc<any>(adminRef);
   
-  // 表示名の決定: データベースの最新情報 > ログの保存情報 > フォールバック
-  const displayName = React.useMemo(() => {
-    const email = userData?.email || activity.userEmail;
-    if (!email || email === '不明なユーザー') {
-      return 'ゲストさん';
-    }
-    return `${email.split('@')[0]}さん`;
-  }, [userData?.email, activity.userEmail]);
-
-  // 管理者判定: データベースの権限（最新）を最優先
+  // 管理者マークの表示判定
   const isUserAdmin = !!adminData;
+
+  const getDisplayName = () => {
+    if (isUserLoading) return '読み込み中...';
+    
+    // 1. 最新のデータベース情報（users/{userId}）がある場合
+    if (userData?.email) {
+      return `${userData.email.split('@')[0]}さん`;
+    }
+    
+    // 2. ログに直接保存されているメールアドレスがある場合（古いログ用）
+    const logEmail = activity.userEmail;
+    if (logEmail && logEmail !== '不明なユーザー' && logEmail !== '') {
+      return `${logEmail.split('@')[0]}さん`;
+    }
+    
+    // 3. 全ての情報が不足している場合
+    return '匿名ユーザーさん';
+  };
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -64,18 +73,6 @@ const TimelineItem = ({ activity }: { activity: any }) => {
       default: return 'bg-slate-50 border-slate-200 text-slate-600';
     }
   };
-
-  if (isUserLoading || isAdminLoading) {
-    return (
-      <div className="relative flex items-start gap-6 h-16">
-        <div className="w-11 h-11 rounded-2xl bg-slate-100 animate-pulse shrink-0" />
-        <div className="flex-1 space-y-2 py-1">
-          <div className="h-3 bg-slate-100 rounded w-24 animate-pulse" />
-          <div className="h-4 bg-slate-100 rounded w-48 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative flex items-start gap-6 group">
@@ -114,9 +111,10 @@ const TimelineItem = ({ activity }: { activity: any }) => {
               activity.type === 'learning_started' ? "text-blue-900" :
               activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
             )}>
-              {displayName}
+              {getDisplayName()}
             </span>
-            {isUserAdmin && (
+            {/* 管理者の場合は盾アイコンを表示 */}
+            {!isAdminLoading && isUserAdmin && (
               <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-50 shrink-0" />
             )}
           </div>
