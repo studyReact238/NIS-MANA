@@ -53,15 +53,15 @@ service cloud.firestore {
 
     // ユーザープロファイル
     match /users/{userId} {
-      // 投稿者情報を表示するため、サインインしていれば誰でも取得(get)は可能にする
-      // リスト表示も投稿者名の解決に必要
-      allow get, list: if isSignedIn();
+      // 投稿者情報を表示するため、サインインしていれば誰でも取得(get)・リスト表示(list)を可能にする
+      allow read: if isSignedIn();
       allow create, update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 
     // 管理者名簿
     match /admins/{userId} {
+      // 管理者マークを表示するため、サインインしていれば誰でも取得(get)可能にする
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
