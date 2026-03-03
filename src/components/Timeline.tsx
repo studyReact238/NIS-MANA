@@ -5,17 +5,17 @@ import React from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
-const TimelineItem = ({ activity, adminList }: { activity: any, adminList: any[] }) => {
+const TimelineItem = ({ activity }: { activity: any }) => {
   const firestore = useFirestore();
   
-  // 最新のユーザー情報を取得するための参照
+  // リンクカードと同じ仕組み: UIDから最新のユーザー情報を取得
   const userId = activity.userId;
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
@@ -24,12 +24,14 @@ const TimelineItem = ({ activity, adminList }: { activity: any, adminList: any[]
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 管理者判定: コンテキストから取得済みの管理者リストと照合
-  const isUserAdmin = React.useMemo(() => {
-    if (activity.isAdmin === true) return true; // ログに保存されている情報を優先
-    if (!userId || !adminList) return false;
-    return adminList.some(admin => admin.id === userId);
-  }, [activity.isAdmin, userId, adminList]);
+  // 管理者かどうかをチェック
+  const adminRef = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return doc(firestore, 'admins', userId);
+  }, [firestore, userId]);
+
+  const { data: adminData } = useDoc<any>(adminRef);
+  const isUserAdmin = !!adminData;
 
   const formatDisplayName = (emailInput?: string) => {
     if (!emailInput) return 'ユーザーさん';
@@ -49,9 +51,8 @@ const TimelineItem = ({ activity, adminList }: { activity: any, adminList: any[]
     );
   }
 
-  // 表示名: データベースの最新情報 > ログの保存情報
-  const emailForName = userData?.email || activity.userEmail;
-  const displayName = formatDisplayName(emailForName);
+  // 表示名: データベースの最新メール > ログの保存メール
+  const displayName = formatDisplayName(userData?.email || activity.userEmail);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -82,7 +83,7 @@ const TimelineItem = ({ activity, adminList }: { activity: any, adminList: any[]
         {getActivityIcon(activity.type)}
       </div>
       
-      <div className="flex-1 pt-1 min-0">
+      <div className="flex-1 pt-1 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-2">
              <span className={cn(
@@ -146,7 +147,7 @@ const TimelineItem = ({ activity, adminList }: { activity: any, adminList: any[]
 };
 
 export const Timeline: React.FC = () => {
-  const { activities, timelineLimit, setTimelineLimit, adminDocs } = useLinks();
+  const { activities, timelineLimit, setTimelineLimit } = useLinks();
 
   const limitOptions = [
     { label: '10件', value: 10 },
@@ -196,7 +197,6 @@ export const Timeline: React.FC = () => {
                 <TimelineItem 
                   key={activity.id} 
                   activity={activity} 
-                  adminList={adminDocs || []} 
                 />
               ))}
             </div>

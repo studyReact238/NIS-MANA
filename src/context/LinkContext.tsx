@@ -134,7 +134,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logActivity = (type: string, linkId: string, linkTitle: string) => {
     if (!firestore || !user) return;
     const activityRef = collection(firestore, 'activities');
-    // 最新の管理者状態をその場で判定
     const isAdminUser = adminDocs?.some(a => a.id === user.uid) || false;
 
     addDoc(activityRef, {
@@ -143,7 +142,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       linkTitle,
       timestamp: Date.now(),
       userId: user.uid,
-      userEmail: user.email,
+      userEmail: user.email || '',
       isAdmin: isAdminUser
     }).catch(e => {
       console.error('Activity logging failed:', e);
