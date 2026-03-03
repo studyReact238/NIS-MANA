@@ -51,7 +51,9 @@ service cloud.firestore {
 
     // ユーザープロファイル
     match /users/{userId} {
-      allow get, create, update: if isOwner(userId) || isAdmin();
+      // 投稿者情報を表示するため、サインインしていれば誰でも取得(get)は可能にする
+      allow get: if isSignedIn();
+      allow create, update: if isOwner(userId) || isAdmin();
       allow list, delete: if isAdmin();
     }
 
