@@ -26,7 +26,8 @@ import {
   BookOpen,
   Circle,
   ClipboardCheck,
-  User
+  User,
+  ShieldCheck
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -120,6 +121,15 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
   }, [firestore, link.createdBy]);
 
   const { data: creatorData } = useDoc<any>(creatorDocRef);
+
+  // 投稿者が管理者かどうかをチェック
+  const creatorAdminRef = useMemoFirebase(() => {
+    if (!firestore || !link.createdBy) return null;
+    return doc(firestore, 'admins', link.createdBy);
+  }, [firestore, link.createdBy]);
+
+  const { data: creatorAdminData } = useDoc<any>(creatorAdminRef);
+  const isCreatorAdmin = !!creatorAdminData;
 
   const completionsRef = useMemoFirebase(() => {
     if (!firestore || !isServerAdmin || !link.id || !detailOpen) return null;
@@ -402,6 +412,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 <div className="flex items-center gap-1.5 opacity-80">
                   <User className="w-3.5 h-3.5" />
                   <span className="truncate max-w-[150px]">投稿者: {formatDisplayName(creatorData?.email)}</span>
+                  {isCreatorAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 ml-0.5" />}
                 </div>
               </div>
               
@@ -455,10 +466,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 <Clock className="w-4 h-4" />
                 最終更新: {format(link.updatedAt, 'yyyy年MM月dd日 HH:mm', { locale: ja })}
               </DialogDescription>
-              <DialogDescription className="flex items-center gap-2 text-emerald-600 font-bold">
+              <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                 <User className="w-4 h-4" />
                 投稿者: {formatDisplayName(creatorData?.email)}
-              </DialogDescription>
+                {isCreatorAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
+              </div>
             </div>
           </DialogHeader>
 

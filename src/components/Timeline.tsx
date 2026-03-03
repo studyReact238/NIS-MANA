@@ -5,7 +5,7 @@ import React from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen } from 'lucide-react';
+import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -40,33 +40,38 @@ export const Timeline: React.FC = () => {
 
   const getActivityText = (activity: any) => {
     const userName = formatDisplayName(activity.userEmail || activity.adminEmail);
+    const adminBadge = activity.isAdmin ? <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 inline ml-1 align-middle" /> : null;
     
     switch (activity.type) {
       case 'completion':
         return (
           <>
-            <span className="font-bold text-emerald-900">{userName}</span> が
+            <span className="font-bold text-emerald-900">{userName}</span>
+            {adminBadge} が
             「<span className="font-bold text-emerald-700">{activity.linkTitle}</span>」の受講を完了しました！
           </>
         );
       case 'learning_started':
         return (
           <>
-            <span className="font-bold text-blue-900">{userName}</span> が
+            <span className="font-bold text-blue-900">{userName}</span>
+            {adminBadge} が
             「<span className="font-bold text-blue-700">{activity.linkTitle}</span>」の学習を開始しました！
           </>
         );
       case 'link_added':
         return (
           <>
-            <span className="font-bold text-blue-900">{userName}</span> が
+            <span className="font-bold text-blue-900">{userName}</span>
+            {adminBadge} が
             新しいリンク「<span className="font-bold text-blue-700">{activity.linkTitle}</span>」を追加しました。
           </>
         );
       case 'link_updated':
         return (
           <>
-            <span className="font-bold text-amber-900">{userName}</span> が
+            <span className="font-bold text-amber-900">{userName}</span>
+            {adminBadge} が
             「<span className="font-bold text-amber-700">{activity.linkTitle}</span>」の情報を更新しました。
           </>
         );

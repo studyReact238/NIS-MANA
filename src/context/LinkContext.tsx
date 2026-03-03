@@ -70,7 +70,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
-  const [timelineLimit, setTimelineLimit] = useState(10); // 初期値を10に変更
+  const [timelineLimit, setTimelineLimit] = useState(10);
 
   // ログイン中ユーザーのドキュメントを更新（最終ログイン日時を含む）
   useEffect(() => {
@@ -151,7 +151,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkId: docRef.id,
         linkTitle: data.title,
         timestamp: Date.now(),
-        userEmail: user.email
+        userEmail: user.email,
+        isAdmin: !!isServerAdmin
       });
     }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
   };
@@ -169,7 +170,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           linkId: id,
           linkTitle: cleanUpdates.title || '（タイトル不明）',
           timestamp: Date.now(),
-          userEmail: user.email
+          userEmail: user.email,
+          isAdmin: !!isServerAdmin
         });
       })
       .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
@@ -232,7 +234,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
-        type: 'completion'
+        type: 'completion',
+        isAdmin: !!isServerAdmin
       });
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
@@ -246,7 +249,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
-        type: 'learning_started'
+        type: 'learning_started',
+        isAdmin: !!isServerAdmin
       });
     }
 
