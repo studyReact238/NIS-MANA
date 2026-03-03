@@ -15,30 +15,32 @@ import { doc } from 'firebase/firestore';
 const TimelineItem = ({ activity }: { activity: any }) => {
   const firestore = useFirestore();
   
-  // ユーザー情報を動的に取得
+  // ユーザー情報を最新のデータベースから取得 (LinkCardと同じ方式)
   const userRef = useMemoFirebase(() => {
     if (!firestore || !activity.userId) return null;
     return doc(firestore, 'users', activity.userId);
   }, [firestore, activity.userId]);
   const { data: userData } = useDoc<any>(userRef);
 
-  // 管理者情報を動的に取得
+  // 管理者情報を最新のデータベースから取得
   const adminRef = useMemoFirebase(() => {
     if (!firestore || !activity.userId) return null;
     return doc(firestore, 'admins', activity.userId);
   }, [firestore, activity.userId]);
   const { data: adminData } = useDoc<any>(adminRef);
 
-  const email = userData?.email || activity.userEmail;
-  const isAdmin = !!adminData || activity.isAdmin === true;
-
+  // 表示名のフォーマット
   const formatDisplayName = (email?: string) => {
-    if (!email || email === 'Unknown') return 'ユーザーさん';
-    const name = email.split('@')[0];
-    return `${name}さん`;
+    if (!email) return 'ユーザーさん';
+    return `${email.split('@')[0]}さん`;
   };
 
+  // メールアドレスはDBの値を優先し、なければログの値をフォールバック
+  const email = userData?.email || activity.userEmail;
   const userName = formatDisplayName(email);
+  
+  // 管理者判定 (DBに存在するか、またはログにisAdminフラグがあるか)
+  const isUserAdmin = !!adminData || activity.isAdmin === true;
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -86,19 +88,19 @@ const TimelineItem = ({ activity }: { activity: any }) => {
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
             <Clock className="w-3 h-3" />
-            {format(activity.timestamp, 'MM/dd HH:mm', { locale: ja })}
+            {activity.timestamp ? format(activity.timestamp, 'MM/dd HH:mm', { locale: ja }) : '---'}
           </div>
         </div>
         <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-x-1">
           <span className={cn(
-            "font-bold",
+            "font-bold flex items-center gap-1",
             activity.type === 'completion' ? "text-emerald-900" :
             activity.type === 'learning_started' ? "text-blue-900" :
             activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
           )}>
             {userName}
+            {isUserAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-50" />}
           </span>
-          {isAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
           <span className="ml-1">が</span>
           {activity.type === 'completion' ? (
             <>

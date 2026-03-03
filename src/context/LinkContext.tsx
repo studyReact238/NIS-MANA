@@ -131,10 +131,27 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = isServerAdmin === true && isAdminManual;
 
+  const logActivity = (type: string, linkId: string, linkTitle: string) => {
+    if (!firestore || !user) return;
+    const activityRef = collection(firestore, 'activities');
+    const isAdminUser = adminDocs?.some(a => a.id === user.uid) || false;
+
+    addDoc(activityRef, {
+      type,
+      linkId,
+      linkTitle,
+      timestamp: Date.now(),
+      userId: user.uid,
+      userEmail: user.email,
+      isAdmin: isAdminUser
+    }).catch(e => {
+      console.error('Activity logging failed:', e);
+    });
+  };
+
   const addLink = (data: any) => {
     if (!firestore || !user) return;
     const colRef = collection(firestore, 'learningLinks');
-    const activityRef = collection(firestore, 'activities');
     const newLink = { 
       ...data, 
       createdBy: user.uid, 
@@ -147,15 +164,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     addDoc(colRef, newLink).then((docRef) => {
-      addDoc(activityRef, {
-        type: 'link_added',
-        linkId: docRef.id,
-        linkTitle: data.title,
-        timestamp: Date.now(),
-        userId: user.uid,
-        userEmail: user.email, // 念のため保存
-        isAdmin: adminDocs?.some(a => a.id === user.uid) || false
-      });
+      logActivity('link_added', docRef.id, data.title);
     }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
   };
 
@@ -163,19 +172,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!firestore || !user) return;
     const { status, userVote, id: _, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
-    const activityRef = collection(firestore, 'activities');
 
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
       .then(() => {
-        addDoc(activityRef, {
-          type: 'link_updated',
-          linkId: id,
-          linkTitle: cleanUpdates.title || '（タイトル不明）',
-          timestamp: Date.now(),
-          userId: user.uid,
-          userEmail: user.email,
-          isAdmin: adminDocs?.some(a => a.id === user.uid) || false
-        });
+        logActivity('link_updated', id, cleanUpdates.title || '（タイトル不明）');
       })
       .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
   };
@@ -205,7 +205,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const linkRef = doc(firestore, 'learningLinks', id);
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     const learnerRef = doc(firestore, 'learningLinks', id, 'learners', user.uid);
-    const activityRef = collection(firestore, 'activities');
     
     setDoc(progressRef, { 
       status: nextStatus, 
@@ -229,15 +228,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         completedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
 
-      addDoc(activityRef, {
-        userId: user.uid,
-        userEmail: user.email,
-        linkTitle: link.title,
-        linkId: link.id,
-        timestamp: Date.now(),
-        type: 'completion',
-        isAdmin: adminDocs?.some(a => a.id === user.uid) || false
-      });
+      logActivity('completion', link.id, link.title);
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
       setDoc(learnerRef, {
@@ -245,15 +236,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         startedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create' })));
 
-      addDoc(activityRef, {
-        userId: user.uid,
-        userEmail: user.email,
-        linkTitle: link.title,
-        linkId: link.id,
-        timestamp: Date.now(),
-        type: 'learning_started',
-        isAdmin: adminDocs?.some(a => a.id === user.uid) || false
-      });
+      logActivity('learning_started', link.id, link.title);
     }
 
     if (Object.keys(updates).length > 0) {
