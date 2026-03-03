@@ -9,25 +9,36 @@ import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck } from 'lu
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
-export const Timeline: React.FC = () => {
-  const { activities, timelineLimit, setTimelineLimit } = useLinks();
+const TimelineItem = ({ activity }: { activity: any }) => {
+  const firestore = useFirestore();
+  
+  // ユーザー情報を動的に取得
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !activity.userId) return null;
+    return doc(firestore, 'users', activity.userId);
+  }, [firestore, activity.userId]);
+  const { data: userData } = useDoc<any>(userRef);
+
+  // 管理者情報を動的に取得
+  const adminRef = useMemoFirebase(() => {
+    if (!firestore || !activity.userId) return null;
+    return doc(firestore, 'admins', activity.userId);
+  }, [firestore, activity.userId]);
+  const { data: adminData } = useDoc<any>(adminRef);
+
+  const email = userData?.email || activity.userEmail;
+  const isAdmin = !!adminData || activity.isAdmin === true;
 
   const formatDisplayName = (email?: string) => {
-    // メールアドレスが空、または「Unknown」「ユーザー」系の場合の処理
-    if (!email || email === 'Unknown' || email === 'Unknown User' || email === '') {
-       return 'ユーザーさん';
-    }
-    
-    // user-XXXX 形式の場合
-    if (email.startsWith('user-')) {
-       return `${email.split('-')[1]}さん`;
-    }
-
-    // 通常のメールアドレスの場合（@より前を抽出）
+    if (!email || email === 'Unknown') return 'ユーザーさん';
     const name = email.split('@')[0];
     return `${name}さん`;
   };
+
+  const userName = formatDisplayName(email);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -49,72 +60,76 @@ export const Timeline: React.FC = () => {
     }
   };
 
-  const getActivityText = (activity: any) => {
-    const userName = formatDisplayName(activity.userEmail);
-    const isAdmin = activity.isAdmin === true;
-    
-    // 名前と管理者バッジをまとめた要素
-    const UserBadge = (
-      <span className="inline-flex items-center gap-1">
-        <span className={cn(
-          "font-bold",
-          activity.type === 'completion' ? "text-emerald-900" :
-          activity.type === 'learning_started' ? "text-blue-900" :
-          activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
-        )}>
-          {userName}
-        </span>
-        {isAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
-      </span>
-    );
-    
-    switch (activity.type) {
-      case 'completion':
-        return (
-          <div className="flex flex-wrap items-center gap-x-1">
-            {UserBadge}
-            <span className="ml-1">が</span>
-            <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>
-            <span>の受講を完了しました！</span>
+  return (
+    <div className="relative flex items-start gap-6 group">
+      <div className={cn(
+        "relative z-10 w-11 h-11 rounded-2xl flex items-center justify-center border-2 shadow-sm transition-all group-hover:scale-110",
+        getActivityColor(activity.type)
+      )}>
+        {getActivityIcon(activity.type)}
+      </div>
+      
+      <div className="flex-1 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+             <span className={cn(
+               "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-white border",
+               activity.type === 'completion' ? 'text-emerald-600 border-emerald-100' :
+               activity.type === 'learning_started' ? 'text-blue-600 border-blue-100' :
+               activity.type === 'link_added' ? 'text-blue-600 border-blue-100' :
+               'text-amber-600 border-amber-100'
+             )}>
+               {activity.type === 'completion' ? '受講完了' : 
+                activity.type === 'learning_started' ? '学習開始' :
+                activity.type === 'link_added' ? '新着追加' : '情報更新'}
+             </span>
           </div>
-        );
-      case 'learning_started':
-        return (
-          <div className="flex flex-wrap items-center gap-x-1">
-            {UserBadge}
-            <span className="ml-1">が</span>
-            <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
-            <span>の学習を開始しました！</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+            <Clock className="w-3 h-3" />
+            {format(activity.timestamp, 'MM/dd HH:mm', { locale: ja })}
           </div>
-        );
-      case 'link_added':
-        return (
-          <div className="flex flex-wrap items-center gap-x-1">
-            {UserBadge}
-            <span className="ml-1">が</span>
-            <span>新しいリンク</span>
-            <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
-            <span>を追加しました。</span>
-          </div>
-        );
-      case 'link_updated':
-        return (
-          <div className="flex flex-wrap items-center gap-x-1">
-            {UserBadge}
-            <span className="ml-1">が</span>
-            <span className="font-bold text-amber-700">「{activity.linkTitle}」</span>
-            <span>の情報を更新しました。</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex flex-wrap items-center gap-x-1">
-            {UserBadge}
-            <span className="ml-1">: {activity.linkTitle}</span>
-          </div>
-        );
-    }
-  };
+        </div>
+        <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-x-1">
+          <span className={cn(
+            "font-bold",
+            activity.type === 'completion' ? "text-emerald-900" :
+            activity.type === 'learning_started' ? "text-blue-900" :
+            activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
+          )}>
+            {userName}
+          </span>
+          {isAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
+          <span className="ml-1">が</span>
+          {activity.type === 'completion' ? (
+            <>
+              <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>
+              <span>の受講を完了しました！</span>
+            </>
+          ) : activity.type === 'learning_started' ? (
+            <>
+              <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
+              <span>の学習を開始しました！</span>
+            </>
+          ) : activity.type === 'link_added' ? (
+            <>
+              <span>新しいリンク</span>
+              <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
+              <span>を追加しました。</span>
+            </>
+          ) : (
+            <>
+              <span className="font-bold text-amber-700">「{activity.linkTitle}」</span>
+              <span>の情報を更新しました。</span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const Timeline: React.FC = () => {
+  const { activities, timelineLimit, setTimelineLimit } = useLinks();
 
   const limitOptions = [
     { label: '10件', value: 10 },
@@ -161,39 +176,7 @@ export const Timeline: React.FC = () => {
           {activities.length > 0 ? (
             <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-5 before:w-1 before:bg-emerald-50 before:rounded-full">
               {activities.map((activity) => (
-                <div key={activity.id} className="relative flex items-start gap-6 group">
-                  <div className={cn(
-                    "relative z-10 w-11 h-11 rounded-2xl flex items-center justify-center border-2 shadow-sm transition-all group-hover:scale-110",
-                    getActivityColor(activity.type)
-                  )}>
-                    {getActivityIcon(activity.type)}
-                  </div>
-                  
-                  <div className="flex-1 pt-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                         <span className={cn(
-                           "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-white border",
-                           activity.type === 'completion' ? 'text-emerald-600 border-emerald-100' :
-                           activity.type === 'learning_started' ? 'text-blue-600 border-blue-100' :
-                           activity.type === 'link_added' ? 'text-blue-600 border-blue-100' :
-                           'text-amber-600 border-amber-100'
-                         )}>
-                           {activity.type === 'completion' ? '受講完了' : 
-                            activity.type === 'learning_started' ? '学習開始' :
-                            activity.type === 'link_added' ? '新着追加' : '情報更新'}
-                         </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
-                        <Clock className="w-3 h-3" />
-                        {format(activity.timestamp, 'MM/dd HH:mm', { locale: ja })}
-                      </div>
-                    </div>
-                    <div className="text-sm text-slate-600 leading-relaxed">
-                      {getActivityText(activity)}
-                    </div>
-                  </div>
-                </div>
+                <TimelineItem key={activity.id} activity={activity} />
               ))}
             </div>
           ) : (

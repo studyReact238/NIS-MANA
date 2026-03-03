@@ -72,7 +72,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
 
-  // ログイン中ユーザーのドキュメントを更新
   useEffect(() => {
     if (!firestore || !user) return;
     
@@ -91,7 +90,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isServerAdmin = useMemo(() => {
     if (!user) return false;
-    if (!adminDocs) return null; // まだ読み込み中
+    if (!adminDocs) return null;
     return adminDocs.some(admin => admin.id === user.uid);
   }, [user, adminDocs]);
 
@@ -132,20 +131,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = isServerAdmin === true && isAdminManual;
 
-  // 活動ログのためのユーザー情報を取得する関数
-  const getLogUserInfo = () => {
-    if (!user) return { email: 'Unknown', isAdmin: false };
-    
-    // adminDocsから直接検索して最新の権限状態を確認
-    const isActuallyAdmin = adminDocs?.some(a => a.id === user.uid) || false;
-    const email = user.email || `user-${user.uid.substring(0, 5)}`;
-    
-    return {
-      email,
-      isAdmin: isActuallyAdmin
-    };
-  };
-
   const addLink = (data: any) => {
     if (!firestore || !user) return;
     const colRef = collection(firestore, 'learningLinks');
@@ -161,16 +146,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       downvoteCount: 0
     };
     
-    const logInfo = getLogUserInfo();
-
     addDoc(colRef, newLink).then((docRef) => {
       addDoc(activityRef, {
         type: 'link_added',
         linkId: docRef.id,
         linkTitle: data.title,
         timestamp: Date.now(),
-        userEmail: logInfo.email,
-        isAdmin: logInfo.isAdmin
+        userId: user.uid,
+        userEmail: user.email, // 念のため保存
+        isAdmin: adminDocs?.some(a => a.id === user.uid) || false
       });
     }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
   };
@@ -180,7 +164,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { status, userVote, id: _, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
     const activityRef = collection(firestore, 'activities');
-    const logInfo = getLogUserInfo();
 
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
       .then(() => {
@@ -189,8 +172,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           linkId: id,
           linkTitle: cleanUpdates.title || '（タイトル不明）',
           timestamp: Date.now(),
-          userEmail: logInfo.email,
-          isAdmin: logInfo.isAdmin
+          userId: user.uid,
+          userEmail: user.email,
+          isAdmin: adminDocs?.some(a => a.id === user.uid) || false
         });
       })
       .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
@@ -223,8 +207,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const learnerRef = doc(firestore, 'learningLinks', id, 'learners', user.uid);
     const activityRef = collection(firestore, 'activities');
     
-    const logInfo = getLogUserInfo();
-    
     setDoc(progressRef, { 
       status: nextStatus, 
       updatedAt: Date.now() 
@@ -243,32 +225,34 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (nextStatus === 'completed') {
       updates.completedCount = increment(1);
       setDoc(completionRef, {
-        email: logInfo.email,
+        email: user.email,
         completedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
 
       addDoc(activityRef, {
-        userEmail: logInfo.email,
+        userId: user.uid,
+        userEmail: user.email,
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
         type: 'completion',
-        isAdmin: logInfo.isAdmin
+        isAdmin: adminDocs?.some(a => a.id === user.uid) || false
       });
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
       setDoc(learnerRef, {
-        email: logInfo.email,
+        email: user.email,
         startedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create' })));
 
       addDoc(activityRef, {
-        userEmail: logInfo.email,
+        userId: user.uid,
+        userEmail: user.email,
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
         type: 'learning_started',
-        isAdmin: logInfo.isAdmin
+        isAdmin: adminDocs?.some(a => a.id === user.uid) || false
       });
     }
 
@@ -279,69 +263,41 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const recalculateAllCounts = async () => {
     if (!firestore) return;
-    
-    if (!isServerAdmin) {
-      throw new Error('権限がありません。');
-    }
+    if (!isServerAdmin) throw new Error('権限がありません。');
 
     try {
       const usersSnap = await getDocs(collection(firestore, 'users'));
       const linksSnap = await getDocs(collection(firestore, 'learningLinks'));
-      
       const countsMap = new Map<string, { learning: number, completed: number }>();
       const userEmailsMap = new Map<string, string>();
       
-      usersSnap.docs.forEach(d => {
-        userEmailsMap.set(d.id, d.data().email);
-      });
+      usersSnap.docs.forEach(d => userEmailsMap.set(d.id, d.data().email));
+      linksSnap.docs.forEach(d => countsMap.set(d.id, { learning: 0, completed: 0 }));
 
-      linksSnap.docs.forEach(d => {
-        countsMap.set(d.id, { learning: 0, completed: 0 });
-      });
-
-      const userIds = Array.from(userEmailsMap.keys());
-      if (user && !userIds.includes(user.uid)) userIds.push(user.uid);
-
-      for (const userId of userIds) {
-        const userEmail = userEmailsMap.get(userId) || (userId === user?.uid ? user?.email : 'Unknown User');
+      for (const userId of Array.from(userEmailsMap.keys())) {
+        const userEmail = userEmailsMap.get(userId);
         const progressSnap = await getDocs(collection(firestore, 'users', userId, 'progress'));
-        
         for (const pDoc of progressSnap.docs) {
           const linkId = pDoc.id;
-          const status = String(pDoc.data().status || '').toLowerCase();
+          const status = pDoc.data().status;
           const updatedAt = pDoc.data().updatedAt || Date.now();
-          
           const current = countsMap.get(linkId);
           if (current) {
             if (status === 'learning') {
               current.learning++;
-              const learnerRef = doc(firestore, 'learningLinks', linkId, 'learners', userId);
-              await setDoc(learnerRef, {
-                email: userEmail,
-                startedAt: updatedAt
-              }, { merge: true });
+              await setDoc(doc(firestore, 'learningLinks', linkId, 'learners', userId), { email: userEmail, startedAt: updatedAt }, { merge: true });
             } else if (status === 'completed') {
               current.completed++;
-              const completionRef = doc(firestore, 'learningLinks', linkId, 'completions', userId);
-              await setDoc(completionRef, {
-                email: userEmail,
-                completedAt: updatedAt
-              }, { merge: true });
+              await setDoc(doc(firestore, 'learningLinks', linkId, 'completions', userId), { email: userEmail, completedAt: updatedAt }, { merge: true });
             }
-            countsMap.set(linkId, current);
           }
         }
       }
 
       const batch = writeBatch(firestore);
       countsMap.forEach((counts, linkId) => {
-        const linkRef = doc(firestore, 'learningLinks', linkId);
-        batch.set(linkRef, {
-          learningCount: counts.learning,
-          completedCount: counts.completed
-        }, { merge: true });
+        batch.set(doc(firestore, 'learningLinks', linkId), { learningCount: counts.learning, completedCount: counts.completed }, { merge: true });
       });
-
       await batch.commit();
     } catch (error) {
       console.error('Recalculation failed:', error);
@@ -372,9 +328,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (l.tags || []).some(t => t.toLowerCase().includes(s))
       );
     }
-    if (statusFilter !== 'all') {
-      result = result.filter(l => l.status === statusFilter);
-    }
+    if (statusFilter !== 'all') result = result.filter(l => l.status === statusFilter);
     if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => (l.tags || []).includes(t)));
     if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
     if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
@@ -385,11 +339,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (sortBy === 'date-new') return (b.updatedAt || 0) - (a.updatedAt || 0);
       if (sortBy === 'date-old') return (a.updatedAt || 0) - (b.updatedAt || 0);
       if (sortBy === 'learning-high') return (b.learningCount || 0) - (a.learningCount || 0);
-      if (sortBy === 'rating-high') {
-        const scoreA = (a.upvoteCount || 0) - (a.downvoteCount || 0);
-        const scoreB = (b.upvoteCount || 0) - (b.downvoteCount || 0);
-        return scoreB - scoreA;
-      }
+      if (sortBy === 'rating-high') return ((b.upvoteCount || 0) - (b.downvoteCount || 0)) - ((a.upvoteCount || 0) - (a.downvoteCount || 0));
       return 0;
     });
     return result;
