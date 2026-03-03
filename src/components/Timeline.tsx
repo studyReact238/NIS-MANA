@@ -39,7 +39,7 @@ export const Timeline: React.FC = () => {
   };
 
   const getActivityText = (activity: any) => {
-    const userName = formatDisplayName(activity.userEmail || activity.adminEmail);
+    const userName = formatDisplayName(activity.userEmail);
     const adminBadge = activity.isAdmin ? <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 inline ml-1 align-middle" /> : null;
     
     switch (activity.type) {
@@ -153,9 +153,9 @@ export const Timeline: React.FC = () => {
                         {format(activity.timestamp, 'MM/dd HH:mm', { locale: ja })}
                       </div>
                     </div>
-                    <p className="text-sm text-slate-600 leading-relaxed">
+                    <div className="text-sm text-slate-600 leading-relaxed">
                       {getActivityText(activity)}
-                    </p>
+                    </div>
                   </div>
                 </div>
               ))}
