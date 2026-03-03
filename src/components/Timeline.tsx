@@ -17,6 +17,7 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   
   // リンクカードと同じ仕組み: データベースから最新のユーザー情報を取得
   const userId = activity.userId;
+  
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return doc(firestore, 'users', userId);
@@ -24,7 +25,7 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 管理者かどうかをデータベースから直接チェック
+  // 管理者かどうかをデータベースから直接チェック（リンクカードと同じ仕組み）
   const adminRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return doc(firestore, 'admins', userId);
@@ -32,15 +33,17 @@ const TimelineItem = ({ activity }: { activity: any }) => {
 
   const { data: adminData, isLoading: isAdminLoading } = useDoc<any>(adminRef);
   
-  // 表示名の決定: データベースの最新情報 > ログの保存情報
+  // 表示名の決定: データベースの最新情報 > ログの保存情報 > フォールバック
   const displayName = React.useMemo(() => {
     const email = userData?.email || activity.userEmail;
-    if (!email) return '不明なユーザー';
+    if (!email || email === '不明なユーザー') {
+      return 'ゲストさん';
+    }
     return `${email.split('@')[0]}さん`;
   }, [userData?.email, activity.userEmail]);
 
-  // 管理者判定: データベースの権限 > ログの保存権限
-  const isUserAdmin = !!adminData || !!activity.isAdmin;
+  // 管理者判定: データベースの権限（最新）を最優先
+  const isUserAdmin = !!adminData;
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -104,7 +107,7 @@ const TimelineItem = ({ activity }: { activity: any }) => {
           </div>
         </div>
         <div className="text-sm text-slate-600 leading-relaxed">
-          <div className="inline-flex items-center gap-1 align-baseline mr-1">
+          <div className="inline-flex items-center gap-1.5 align-baseline mr-1">
             <span className={cn(
               "font-bold",
               activity.type === 'completion' ? "text-emerald-900" :
