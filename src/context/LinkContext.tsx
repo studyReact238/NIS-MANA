@@ -72,7 +72,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
 
-  // ログイン中ユーザーのドキュメントを更新（最終ログイン日時を含む）
+  // ログイン中ユーザーのドキュメントを更新
   useEffect(() => {
     if (!firestore || !user) return;
     
@@ -145,13 +145,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       upvoteCount: 0,
       downvoteCount: 0
     };
+    
+    const userEmail = user.email || '';
+
     addDoc(colRef, newLink).then((docRef) => {
       addDoc(activityRef, {
         type: 'link_added',
         linkId: docRef.id,
         linkTitle: data.title,
         timestamp: Date.now(),
-        userEmail: user.email || 'Unknown',
+        userEmail: userEmail,
         isAdmin: !!isServerAdmin
       });
     }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
@@ -162,6 +165,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { status, userVote, id: _, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
     const activityRef = collection(firestore, 'activities');
+    const userEmail = user.email || '';
 
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
       .then(() => {
@@ -170,7 +174,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           linkId: id,
           linkTitle: cleanUpdates.title || '（タイトル不明）',
           timestamp: Date.now(),
-          userEmail: user.email || 'Unknown',
+          userEmail: userEmail,
           isAdmin: !!isServerAdmin
         });
       })
@@ -203,16 +207,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     const learnerRef = doc(firestore, 'learningLinks', id, 'learners', user.uid);
     const activityRef = collection(firestore, 'activities');
+    const userEmail = user.email || '';
     
     setDoc(progressRef, { 
       status: nextStatus, 
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
 
-    // 学習中・受講済みのカウント更新
     const updates: any = {};
 
-    // 以前のステータスのカウントを減らす
     if (oldStatus === 'completed') {
       updates.completedCount = increment(-1);
       deleteDoc(completionRef);
@@ -221,16 +224,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteDoc(learnerRef);
     }
 
-    // 新しいステータスのカウントを増やす
     if (nextStatus === 'completed') {
       updates.completedCount = increment(1);
       setDoc(completionRef, {
-        email: user.email,
+        email: userEmail,
         completedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
 
       addDoc(activityRef, {
-        userEmail: user.email || 'Unknown',
+        userEmail: userEmail,
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
@@ -240,12 +242,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
       setDoc(learnerRef, {
-        email: user.email,
+        email: userEmail,
         startedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create' })));
 
       addDoc(activityRef, {
-        userEmail: user.email || 'Unknown',
+        userEmail: userEmail,
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
@@ -263,7 +265,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!firestore) return;
     
     if (!isServerAdmin) {
-      throw new Error('権限がありません。管理者としてログインしているか確認してください。');
+      throw new Error('権限がありません。');
     }
 
     try {
@@ -273,17 +275,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const countsMap = new Map<string, { learning: number, completed: number }>();
       const userEmailsMap = new Map<string, string>();
       
-      // ユーザーのIDとメールアドレスをマッピング
       usersSnap.docs.forEach(d => {
         userEmailsMap.set(d.id, d.data().email);
       });
 
-      // 全てのリンクのカウントを0で初期化
       linksSnap.docs.forEach(d => {
         countsMap.set(d.id, { learning: 0, completed: 0 });
       });
 
-      // 全ユーザーの進捗を走査
       const userIds = Array.from(userEmailsMap.keys());
       if (user && !userIds.includes(user.uid)) userIds.push(user.uid);
 
@@ -300,7 +299,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (current) {
             if (status === 'learning') {
               current.learning++;
-              // 学習中ユーザー名簿を復元
               const learnerRef = doc(firestore, 'learningLinks', linkId, 'learners', userId);
               await setDoc(learnerRef, {
                 email: userEmail,
@@ -308,7 +306,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }, { merge: true });
             } else if (status === 'completed') {
               current.completed++;
-              // 受講完了ユーザー名簿を復元
               const completionRef = doc(firestore, 'learningLinks', linkId, 'completions', userId);
               await setDoc(completionRef, {
                 email: userEmail,
@@ -320,7 +317,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // バッチ処理でリンク本体の集計値を更新
       const batch = writeBatch(firestore);
       countsMap.forEach((counts, linkId) => {
         const linkRef = doc(firestore, 'learningLinks', linkId);

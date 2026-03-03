@@ -14,7 +14,7 @@ export const Timeline: React.FC = () => {
   const { activities, timelineLimit, setTimelineLimit } = useLinks();
 
   const formatDisplayName = (email?: string) => {
-    if (!email || email === 'Unknown') return '不明さん';
+    if (!email || email === 'Unknown' || email === '') return 'ゲストさん';
     return `${email.split('@')[0]}さん`;
   };
 
@@ -47,42 +47,52 @@ export const Timeline: React.FC = () => {
     switch (activity.type) {
       case 'completion':
         return (
-          <>
+          <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-emerald-900">{userName}</span>
-            {adminBadge} が
-            「<span className="font-bold text-emerald-700">{activity.linkTitle}</span>」の受講を完了しました！
-          </>
+            {adminBadge}
+            <span>が</span>
+            <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>
+            <span>の受講を完了しました！</span>
+          </div>
         );
       case 'learning_started':
         return (
-          <>
+          <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-blue-900">{userName}</span>
-            {adminBadge} が
-            「<span className="font-bold text-blue-700">{activity.linkTitle}</span>」の学習を開始しました！
-          </>
+            {adminBadge}
+            <span>が</span>
+            <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
+            <span>の学習を開始しました！</span>
+          </div>
         );
       case 'link_added':
         return (
-          <>
+          <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-blue-900">{userName}</span>
-            {adminBadge} が
-            新しいリンク「<span className="font-bold text-blue-700">{activity.linkTitle}</span>」を追加しました。
-          </>
+            {adminBadge}
+            <span>が</span>
+            <span>新しいリンク</span>
+            <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
+            <span>を追加しました。</span>
+          </div>
         );
       case 'link_updated':
         return (
-          <>
+          <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-amber-900">{userName}</span>
-            {adminBadge} が
-            「<span className="font-bold text-amber-700">{activity.linkTitle}</span>」の情報を更新しました。
-          </>
+            {adminBadge}
+            <span>が</span>
+            <span className="font-bold text-amber-700">「{activity.linkTitle}」</span>
+            <span>の情報を更新しました。</span>
+          </div>
         );
       default:
         return (
-          <>
+          <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-slate-900">{userName}</span>
-            {adminBadge}: {activity.linkTitle}
-          </>
+            {adminBadge}
+            <span>: {activity.linkTitle}</span>
+          </div>
         );
     }
   };
