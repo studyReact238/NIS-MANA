@@ -132,10 +132,18 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = isServerAdmin === true && isAdminManual;
 
-  // 記録用の管理者フラグを取得するヘルパー
-  const getIsAdminForLog = () => {
-    if (!user || !adminDocs) return false;
-    return adminDocs.some(a => a.id === user.uid);
+  // 活動ログのためのユーザー情報を取得する関数
+  const getLogUserInfo = () => {
+    if (!user) return { email: 'Unknown', isAdmin: false };
+    
+    // adminDocsから直接検索して最新の権限状態を確認
+    const isActuallyAdmin = adminDocs?.some(a => a.id === user.uid) || false;
+    const email = user.email || `user-${user.uid.substring(0, 5)}`;
+    
+    return {
+      email,
+      isAdmin: isActuallyAdmin
+    };
   };
 
   const addLink = (data: any) => {
@@ -153,8 +161,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       downvoteCount: 0
     };
     
-    const userEmail = user.email || `user-${user.uid.substring(0, 5)}`;
-    const isAdminLog = getIsAdminForLog();
+    const logInfo = getLogUserInfo();
 
     addDoc(colRef, newLink).then((docRef) => {
       addDoc(activityRef, {
@@ -162,8 +169,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkId: docRef.id,
         linkTitle: data.title,
         timestamp: Date.now(),
-        userEmail: userEmail,
-        isAdmin: isAdminLog
+        userEmail: logInfo.email,
+        isAdmin: logInfo.isAdmin
       });
     }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
   };
@@ -173,8 +180,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { status, userVote, id: _, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
     const activityRef = collection(firestore, 'activities');
-    const userEmail = user.email || `user-${user.uid.substring(0, 5)}`;
-    const isAdminLog = getIsAdminForLog();
+    const logInfo = getLogUserInfo();
 
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
       .then(() => {
@@ -183,8 +189,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           linkId: id,
           linkTitle: cleanUpdates.title || '（タイトル不明）',
           timestamp: Date.now(),
-          userEmail: userEmail,
-          isAdmin: isAdminLog
+          userEmail: logInfo.email,
+          isAdmin: logInfo.isAdmin
         });
       })
       .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
@@ -216,8 +222,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     const learnerRef = doc(firestore, 'learningLinks', id, 'learners', user.uid);
     const activityRef = collection(firestore, 'activities');
-    const userEmail = user.email || `user-${user.uid.substring(0, 5)}`;
-    const isAdminLog = getIsAdminForLog();
+    
+    const logInfo = getLogUserInfo();
     
     setDoc(progressRef, { 
       status: nextStatus, 
@@ -237,32 +243,32 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (nextStatus === 'completed') {
       updates.completedCount = increment(1);
       setDoc(completionRef, {
-        email: userEmail,
+        email: logInfo.email,
         completedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
 
       addDoc(activityRef, {
-        userEmail: userEmail,
+        userEmail: logInfo.email,
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
         type: 'completion',
-        isAdmin: isAdminLog
+        isAdmin: logInfo.isAdmin
       });
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
       setDoc(learnerRef, {
-        email: userEmail,
+        email: logInfo.email,
         startedAt: Date.now()
       }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create' })));
 
       addDoc(activityRef, {
-        userEmail: userEmail,
+        userEmail: logInfo.email,
         linkTitle: link.title,
         linkId: link.id,
         timestamp: Date.now(),
         type: 'learning_started',
-        isAdmin: isAdminLog
+        isAdmin: logInfo.isAdmin
       });
     }
 

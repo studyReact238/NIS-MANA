@@ -14,10 +14,17 @@ export const Timeline: React.FC = () => {
   const { activities, timelineLimit, setTimelineLimit } = useLinks();
 
   const formatDisplayName = (email?: string) => {
-    if (!email || email === 'Unknown' || email === '' || email.startsWith('user-')) {
-       if (email && email.startsWith('user-')) return `${email.split('-')[1]}さん`;
+    // メールアドレスが空、または「Unknown」「ユーザー」系の場合の処理
+    if (!email || email === 'Unknown' || email === 'Unknown User' || email === '') {
        return 'ユーザーさん';
     }
+    
+    // user-XXXX 形式の場合
+    if (email.startsWith('user-')) {
+       return `${email.split('-')[1]}さん`;
+    }
+
+    // 通常のメールアドレスの場合（@より前を抽出）
     const name = email.split('@')[0];
     return `${name}さん`;
   };
@@ -44,16 +51,28 @@ export const Timeline: React.FC = () => {
 
   const getActivityText = (activity: any) => {
     const userName = formatDisplayName(activity.userEmail);
-    const adminBadge = activity.isAdmin ? (
-      <ShieldCheck className="w-4 h-4 text-emerald-600 inline-block ml-1 align-middle" />
-    ) : null;
+    const isAdmin = activity.isAdmin === true;
+    
+    // 名前と管理者バッジをまとめた要素
+    const UserBadge = (
+      <span className="inline-flex items-center gap-1">
+        <span className={cn(
+          "font-bold",
+          activity.type === 'completion' ? "text-emerald-900" :
+          activity.type === 'learning_started' ? "text-blue-900" :
+          activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
+        )}>
+          {userName}
+        </span>
+        {isAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
+      </span>
+    );
     
     switch (activity.type) {
       case 'completion':
         return (
           <div className="flex flex-wrap items-center gap-x-1">
-            <span className="font-bold text-emerald-900">{userName}</span>
-            {adminBadge}
+            {UserBadge}
             <span className="ml-1">が</span>
             <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>
             <span>の受講を完了しました！</span>
@@ -62,8 +81,7 @@ export const Timeline: React.FC = () => {
       case 'learning_started':
         return (
           <div className="flex flex-wrap items-center gap-x-1">
-            <span className="font-bold text-blue-900">{userName}</span>
-            {adminBadge}
+            {UserBadge}
             <span className="ml-1">が</span>
             <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
             <span>の学習を開始しました！</span>
@@ -72,8 +90,7 @@ export const Timeline: React.FC = () => {
       case 'link_added':
         return (
           <div className="flex flex-wrap items-center gap-x-1">
-            <span className="font-bold text-blue-900">{userName}</span>
-            {adminBadge}
+            {UserBadge}
             <span className="ml-1">が</span>
             <span>新しいリンク</span>
             <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
@@ -83,8 +100,7 @@ export const Timeline: React.FC = () => {
       case 'link_updated':
         return (
           <div className="flex flex-wrap items-center gap-x-1">
-            <span className="font-bold text-amber-900">{userName}</span>
-            {adminBadge}
+            {UserBadge}
             <span className="ml-1">が</span>
             <span className="font-bold text-amber-700">「{activity.linkTitle}」</span>
             <span>の情報を更新しました。</span>
@@ -93,8 +109,7 @@ export const Timeline: React.FC = () => {
       default:
         return (
           <div className="flex flex-wrap items-center gap-x-1">
-            <span className="font-bold text-slate-900">{userName}</span>
-            {adminBadge}
+            {UserBadge}
             <span className="ml-1">: {activity.linkTitle}</span>
           </div>
         );
