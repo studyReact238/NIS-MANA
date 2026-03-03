@@ -16,8 +16,7 @@ import {
   limit,
   orderBy,
   getDocs,
-  writeBatch,
-  getDoc
+  writeBatch
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -55,6 +54,7 @@ interface LinkContextType {
   activities: any[];
   timelineLimit: number;
   setTimelineLimit: (val: number) => void;
+  adminDocs: any[] | null;
 }
 
 const LinkContext = createContext<LinkContextType | undefined>(undefined);
@@ -134,6 +134,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logActivity = (type: string, linkId: string, linkTitle: string) => {
     if (!firestore || !user) return;
     const activityRef = collection(firestore, 'activities');
+    // 最新の管理者状態をその場で判定
     const isAdminUser = adminDocs?.some(a => a.id === user.uid) || false;
 
     addDoc(activityRef, {
@@ -334,7 +335,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, updateStatus, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
-      activities: activities || [], timelineLimit, setTimelineLimit
+      activities: activities || [], timelineLimit, setTimelineLimit, adminDocs: adminDocs || []
     }}>
       {children}
     </LinkContext.Provider>

@@ -61,7 +61,7 @@ service cloud.firestore {
 
     // 管理者名簿
     match /admins/{userId} {
-      // 管理者マークを表示するため、サインインしていれば誰でも取得(get)可能にする
+      // 管理者マークを表示するため、サインインしていれば誰でも取得(get)・リスト表示(list)可能にする
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }

@@ -12,12 +12,11 @@ import { cn } from '@/lib/utils';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
-const TimelineItem = ({ activity }: { activity: any }) => {
+const TimelineItem = ({ activity, adminList }: { activity: any, adminList: any[] }) => {
   const firestore = useFirestore();
   
-  // 表示の瞬間に最新のユーザー情報を取得 (UID優先)
+  // 最新のユーザー情報を取得するための参照
   const userId = activity.userId;
-  
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return doc(firestore, 'users', userId);
@@ -25,26 +24,20 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 管理者かどうかもDBから最新情報を取得
-  const adminRef = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
-    return doc(firestore, 'admins', userId);
-  }, [firestore, userId]);
+  // 管理者判定: コンテキストから取得済みの管理者リストと照合
+  const isUserAdmin = React.useMemo(() => {
+    if (activity.isAdmin === true) return true; // ログに保存されている情報を優先
+    if (!userId || !adminList) return false;
+    return adminList.some(admin => admin.id === userId);
+  }, [activity.isAdmin, userId, adminList]);
 
-  const { data: adminData, isLoading: isAdminLoading } = useDoc<any>(adminRef);
-  const isUserAdmin = !!adminData;
-
-  const formatDisplayName = (input?: string) => {
-    if (!input) return 'ユーザーさん';
-    if (!input.includes('@')) {
-      return input.endsWith('さん') ? input : `${input}さん`;
-    }
-    const name = input.split('@')[0];
+  const formatDisplayName = (emailInput?: string) => {
+    if (!emailInput) return 'ユーザーさん';
+    const name = emailInput.split('@')[0];
     return `${name}さん`;
   };
 
-  // 読み込み中はスケルトンを表示（「ユーザーさん」を回避）
-  if (isUserLoading || isAdminLoading) {
+  if (isUserLoading) {
     return (
       <div className="relative flex items-start gap-6 h-16">
         <div className="w-11 h-11 rounded-2xl bg-slate-100 animate-pulse shrink-0" />
@@ -56,9 +49,9 @@ const TimelineItem = ({ activity }: { activity: any }) => {
     );
   }
 
-  // 表示名の決定: 最新DB情報 > 保存されたメールアドレス
-  const rawName = userData?.email || activity.userEmail;
-  const displayName = formatDisplayName(rawName);
+  // 表示名: データベースの最新情報 > ログの保存情報
+  const emailForName = userData?.email || activity.userEmail;
+  const displayName = formatDisplayName(emailForName);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -89,7 +82,7 @@ const TimelineItem = ({ activity }: { activity: any }) => {
         {getActivityIcon(activity.type)}
       </div>
       
-      <div className="flex-1 pt-1 min-w-0">
+      <div className="flex-1 pt-1 min-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-2">
              <span className={cn(
@@ -119,7 +112,9 @@ const TimelineItem = ({ activity }: { activity: any }) => {
             )}>
               {displayName}
             </span>
-            {isUserAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-50" />}
+            {isUserAdmin && (
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-50 ml-0.5" />
+            )}
           </div>
           <span className="ml-1">が</span>
           {activity.type === 'completion' ? (
@@ -151,7 +146,7 @@ const TimelineItem = ({ activity }: { activity: any }) => {
 };
 
 export const Timeline: React.FC = () => {
-  const { activities, timelineLimit, setTimelineLimit } = useLinks();
+  const { activities, timelineLimit, setTimelineLimit, adminDocs } = useLinks();
 
   const limitOptions = [
     { label: '10件', value: 10 },
@@ -198,7 +193,11 @@ export const Timeline: React.FC = () => {
           {activities.length > 0 ? (
             <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-5 before:w-1 before:bg-emerald-50 before:rounded-full">
               {activities.map((activity) => (
-                <TimelineItem key={activity.id} activity={activity} />
+                <TimelineItem 
+                  key={activity.id} 
+                  activity={activity} 
+                  adminList={adminDocs || []} 
+                />
               ))}
             </div>
           ) : (
