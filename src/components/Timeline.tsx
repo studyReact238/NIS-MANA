@@ -14,8 +14,9 @@ export const Timeline: React.FC = () => {
   const { activities, timelineLimit, setTimelineLimit } = useLinks();
 
   const formatDisplayName = (email?: string) => {
-    if (!email || email === 'Unknown' || email === '') return 'ゲストさん';
-    return `${email.split('@')[0]}さん`;
+    if (!email || email === 'Unknown' || email === 'ゲスト' || email === '') return 'ゲストさん';
+    const name = email.split('@')[0];
+    return `${name}さん`;
   };
 
   const getActivityIcon = (type: string) => {
