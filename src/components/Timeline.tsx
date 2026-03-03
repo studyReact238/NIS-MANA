@@ -15,9 +15,8 @@ import { doc } from 'firebase/firestore';
 const TimelineItem = ({ activity }: { activity: any }) => {
   const firestore = useFirestore();
   
-  // リンクカードと全く同じ仕組み: ログに保存されたUIDを使って最新情報を取得
+  // 1. 最新のユーザー情報をデータベースから取得
   const userId = activity.userId;
-  
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return doc(firestore, 'users', userId);
@@ -25,32 +24,31 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 管理者権限をデータベースから直接チェック
+  // 2. 最新の管理者権限をデータベースから取得
   const adminRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return doc(firestore, 'admins', userId);
   }, [firestore, userId]);
 
   const { data: adminData, isLoading: isAdminLoading } = useDoc<any>(adminRef);
-  
-  // 管理者マークの表示判定
   const isUserAdmin = !!adminData;
 
+  // 表示名の取得ロジック（リンクカードと統合）
   const getDisplayName = () => {
     if (isUserLoading) return '読み込み中...';
     
-    // 1. 最新のデータベース情報（users/{userId}）がある場合
-    if (userData?.email) {
-      return `${userData.email.split('@')[0]}さん`;
+    // A: データベースの最新メールアドレス
+    const email = userData?.email || activity.userEmail;
+    
+    if (email && email !== '不明なユーザー' && email !== '') {
+      return `${email.split('@')[0]}さん`;
     }
     
-    // 2. ログに直接保存されているメールアドレスがある場合（古いログ用）
-    const logEmail = activity.userEmail;
-    if (logEmail && logEmail !== '不明なユーザー' && logEmail !== '') {
-      return `${logEmail.split('@')[0]}さん`;
+    // B: UIDが判明している場合はUIDから生成
+    if (userId) {
+      return `ユーザー(${userId.substring(0, 4)})さん`;
     }
     
-    // 3. 全ての情報が不足している場合
     return '匿名ユーザーさん';
   };
 
@@ -103,21 +101,18 @@ const TimelineItem = ({ activity }: { activity: any }) => {
             {activity.timestamp ? format(activity.timestamp, 'MM/dd HH:mm', { locale: ja }) : '---'}
           </div>
         </div>
-        <div className="text-sm text-slate-600 leading-relaxed">
-          <div className="inline-flex items-center gap-1.5 align-baseline mr-1">
-            <span className={cn(
-              "font-bold",
-              activity.type === 'completion' ? "text-emerald-900" :
-              activity.type === 'learning_started' ? "text-blue-900" :
-              activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
-            )}>
-              {getDisplayName()}
-            </span>
-            {/* 管理者の場合は盾アイコンを表示 */}
+        <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-1">
+          <span className={cn(
+            "font-bold inline-flex items-center gap-1",
+            activity.type === 'completion' ? "text-emerald-900" :
+            activity.type === 'learning_started' ? "text-blue-900" :
+            activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
+          )}>
+            {getDisplayName()}
             {!isAdminLoading && isUserAdmin && (
-              <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-50 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-50 shrink-0" title="管理者" />
             )}
-          </div>
+          </span>
           <span>が</span>
           {activity.type === 'completion' ? (
             <>
