@@ -72,6 +72,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
 
+  // ログイン時にユーザー情報を確実に保存/更新
   useEffect(() => {
     if (!firestore || !user) return;
     
@@ -131,6 +132,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = isServerAdmin === true && isAdminManual;
 
+  // 活動ログの記録をより確実に
   const logActivity = (type: string, linkId: string, linkTitle: string) => {
     if (!firestore || !user) return;
     const activityRef = collection(firestore, 'activities');

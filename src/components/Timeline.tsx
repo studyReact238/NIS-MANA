@@ -15,7 +15,7 @@ import { doc } from 'firebase/firestore';
 const TimelineItem = ({ activity }: { activity: any }) => {
   const firestore = useFirestore();
   
-  // 1. 最新のユーザー情報をデータベースから取得
+  // 1. 最新のユーザー情報をデータベースから直接取得 (リンクカードと同じ仕組み)
   const userId = activity.userId;
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
@@ -24,27 +24,34 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 2. 最新の管理者権限をデータベースから取得
+  // 2. 最新の管理者権限をデータベースから直接取得 (リンクカードと同じ仕組み)
   const adminRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return doc(firestore, 'admins', userId);
   }, [firestore, userId]);
 
   const { data: adminData, isLoading: isAdminLoading } = useDoc<any>(adminRef);
-  const isUserAdmin = !!adminData;
+  
+  // 管理者判定: DBに存在する、またはログに記録されている
+  const isUserAdmin = !!adminData || !!activity.isAdmin;
 
-  // 表示名の取得ロジック（リンクカードと統合）
+  // 表示名の取得ロジック（リンクカードと完全に統一）
   const getDisplayName = () => {
-    if (isUserLoading) return '読み込み中...';
+    if (isUserLoading) return '...';
     
-    // A: データベースの最新メールアドレス
-    const email = userData?.email || activity.userEmail;
-    
-    if (email && email !== '不明なユーザー' && email !== '') {
-      return `${email.split('@')[0]}さん`;
+    // 優先順位1: DBの最新メールアドレス
+    const emailFromDb = userData?.email;
+    if (emailFromDb && emailFromDb !== '') {
+      return `${emailFromDb.split('@')[0]}さん`;
+    }
+
+    // 優先順位2: 活動ログに保存されていた当時のメールアドレス
+    const emailFromLog = activity.userEmail;
+    if (emailFromLog && emailFromLog !== '' && emailFromLog !== '不明なユーザー') {
+      return `${emailFromLog.split('@')[0]}さん`;
     }
     
-    // B: UIDが判明している場合はUIDから生成
+    // 優先順位3: UIDの一部を表示（これがあれば「匿名」とはならない）
     if (userId) {
       return `ユーザー(${userId.substring(0, 4)})さん`;
     }
@@ -103,12 +110,13 @@ const TimelineItem = ({ activity }: { activity: any }) => {
         </div>
         <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-1">
           <span className={cn(
-            "font-bold inline-flex items-center gap-1",
+            "font-bold inline-flex items-center gap-1.5",
             activity.type === 'completion' ? "text-emerald-900" :
             activity.type === 'learning_started' ? "text-blue-900" :
             activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
           )}>
             {getDisplayName()}
+            {/* 管理者マークの表示判定を確実に行う */}
             {!isAdminLoading && isUserAdmin && (
               <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-50 shrink-0" title="管理者" />
             )}
