@@ -33,14 +33,16 @@ service cloud.firestore {
     match /learningLinks/{linkId}/completions/{userId} {
       allow list: if isAdmin();
       allow get: if isAdmin() || isOwner(userId);
-      allow write: if isOwner(userId);
+      // 再集計(メンテナンス)のため、管理者も書き込み可能にする
+      allow write: if isOwner(userId) || isAdmin();
     }
 
     // 学習中ユーザー名簿
     match /learningLinks/{linkId}/learners/{userId} {
       allow list: if isAdmin();
       allow get: if isAdmin() || isOwner(userId);
-      allow write: if isOwner(userId);
+      // 再集計(メンテナンス)のため、管理者も書き込み可能にする
+      allow write: if isOwner(userId) || isAdmin();
     }
 
     // ユーザー個別の進捗管理
@@ -52,9 +54,10 @@ service cloud.firestore {
     // ユーザープロファイル
     match /users/{userId} {
       // 投稿者情報を表示するため、サインインしていれば誰でも取得(get)は可能にする
-      allow get: if isSignedIn();
+      // リスト表示も投稿者名の解決に必要
+      allow get, list: if isSignedIn();
       allow create, update: if isOwner(userId) || isAdmin();
-      allow list, delete: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // 管理者名簿

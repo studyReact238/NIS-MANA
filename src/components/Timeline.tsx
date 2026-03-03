@@ -5,7 +5,7 @@ import React from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen } from 'lucide-react';
+import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,36 +15,39 @@ import { doc } from 'firebase/firestore';
 const TimelineItem = ({ activity }: { activity: any }) => {
   const firestore = useFirestore();
   
-  // ユーザー情報を最新のデータベースからUIDで取得 (LinkCardと同じ確実な方式)
+  // 表示の瞬間に最新のユーザー情報を取得 (UID優先)
+  const userId = activity.userId;
+  
   const userRef = useMemoFirebase(() => {
-    if (!firestore || !activity.userId) return null;
-    return doc(firestore, 'users', activity.userId);
-  }, [firestore, activity.userId]);
+    if (!firestore || !userId) return null;
+    return doc(firestore, 'users', userId);
+  }, [firestore, userId]);
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
+  // 管理者かどうかもDBから最新情報を取得
+  const adminRef = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return doc(firestore, 'admins', userId);
+  }, [firestore, userId]);
+
+  const { data: adminData, isLoading: isAdminLoading } = useDoc<any>(adminRef);
+  const isUserAdmin = !!adminData;
+
   const formatDisplayName = (input?: string) => {
-    if (!input || input === 'ユーザーさん' || input === 'ゲストさん' || input === '不明さん') {
-      return 'ユーザーさん';
-    }
-    // すでに「さん」がついているか、メールアドレス形式でない場合
+    if (!input) return 'ユーザーさん';
     if (!input.includes('@')) {
       return input.endsWith('さん') ? input : `${input}さん`;
     }
-    // メールアドレスからドメインを除去して「さん」を付与
     const name = input.split('@')[0];
     return `${name}さん`;
   };
 
-  // 1. 最新のDB情報を優先 2. ログに保存された情報をフォールバック
-  const nameToFormat = userData?.email || activity.userEmail;
-  const userName = formatDisplayName(nameToFormat);
-
-  // 読み込み中は仮の名前を出さずにスケルトン表示
-  if (isUserLoading) {
+  // 読み込み中はスケルトンを表示（「ユーザーさん」を回避）
+  if (isUserLoading || isAdminLoading) {
     return (
-      <div className="relative flex items-start gap-6 h-16 opacity-50">
-        <div className="w-11 h-11 rounded-2xl bg-slate-100 animate-pulse" />
+      <div className="relative flex items-start gap-6 h-16">
+        <div className="w-11 h-11 rounded-2xl bg-slate-100 animate-pulse shrink-0" />
         <div className="flex-1 space-y-2 py-1">
           <div className="h-3 bg-slate-100 rounded w-24 animate-pulse" />
           <div className="h-4 bg-slate-100 rounded w-48 animate-pulse" />
@@ -52,6 +55,10 @@ const TimelineItem = ({ activity }: { activity: any }) => {
       </div>
     );
   }
+
+  // 表示名の決定: 最新DB情報 > 保存されたメールアドレス
+  const rawName = userData?.email || activity.userEmail;
+  const displayName = formatDisplayName(rawName);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -76,13 +83,13 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   return (
     <div className="relative flex items-start gap-6 group">
       <div className={cn(
-        "relative z-10 w-11 h-11 rounded-2xl flex items-center justify-center border-2 shadow-sm transition-all group-hover:scale-110",
+        "relative z-10 w-11 h-11 rounded-2xl flex items-center justify-center border-2 shadow-sm transition-all group-hover:scale-110 shrink-0",
         getActivityColor(activity.type)
       )}>
         {getActivityIcon(activity.type)}
       </div>
       
-      <div className="flex-1 pt-1">
+      <div className="flex-1 pt-1 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-2">
              <span className={cn(
@@ -103,14 +110,17 @@ const TimelineItem = ({ activity }: { activity: any }) => {
           </div>
         </div>
         <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-x-1">
-          <span className={cn(
-            "font-bold",
-            activity.type === 'completion' ? "text-emerald-900" :
-            activity.type === 'learning_started' ? "text-blue-900" :
-            activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
-          )}>
-            {userName}
-          </span>
+          <div className="inline-flex items-center gap-1 shrink-0">
+            <span className={cn(
+              "font-bold",
+              activity.type === 'completion' ? "text-emerald-900" :
+              activity.type === 'learning_started' ? "text-blue-900" :
+              activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
+            )}>
+              {displayName}
+            </span>
+            {isUserAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-50" />}
+          </div>
           <span className="ml-1">が</span>
           {activity.type === 'completion' ? (
             <>
