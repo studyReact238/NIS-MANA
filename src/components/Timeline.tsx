@@ -14,7 +14,10 @@ export const Timeline: React.FC = () => {
   const { activities, timelineLimit, setTimelineLimit } = useLinks();
 
   const formatDisplayName = (email?: string) => {
-    if (!email || email === 'Unknown' || email === 'ゲスト' || email === '') return 'ゲストさん';
+    if (!email || email === 'Unknown' || email === '' || email.startsWith('user-')) {
+       if (email && email.startsWith('user-')) return `${email.split('-')[1]}さん`;
+       return 'ユーザーさん';
+    }
     const name = email.split('@')[0];
     return `${name}さん`;
   };
@@ -51,7 +54,7 @@ export const Timeline: React.FC = () => {
           <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-emerald-900">{userName}</span>
             {adminBadge}
-            <span>が</span>
+            <span className="ml-1">が</span>
             <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>
             <span>の受講を完了しました！</span>
           </div>
@@ -61,7 +64,7 @@ export const Timeline: React.FC = () => {
           <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-blue-900">{userName}</span>
             {adminBadge}
-            <span>が</span>
+            <span className="ml-1">が</span>
             <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
             <span>の学習を開始しました！</span>
           </div>
@@ -71,7 +74,7 @@ export const Timeline: React.FC = () => {
           <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-blue-900">{userName}</span>
             {adminBadge}
-            <span>が</span>
+            <span className="ml-1">が</span>
             <span>新しいリンク</span>
             <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
             <span>を追加しました。</span>
@@ -82,7 +85,7 @@ export const Timeline: React.FC = () => {
           <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-amber-900">{userName}</span>
             {adminBadge}
-            <span>が</span>
+            <span className="ml-1">が</span>
             <span className="font-bold text-amber-700">「{activity.linkTitle}」</span>
             <span>の情報を更新しました。</span>
           </div>
@@ -92,7 +95,7 @@ export const Timeline: React.FC = () => {
           <div className="flex flex-wrap items-center gap-x-1">
             <span className="font-bold text-slate-900">{userName}</span>
             {adminBadge}
-            <span>: {activity.linkTitle}</span>
+            <span className="ml-1">: {activity.linkTitle}</span>
           </div>
         );
     }

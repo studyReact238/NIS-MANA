@@ -132,6 +132,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = isServerAdmin === true && isAdminManual;
 
+  // 記録用の管理者フラグを取得するヘルパー
+  const getIsAdminForLog = () => {
+    if (!user || !adminDocs) return false;
+    return adminDocs.some(a => a.id === user.uid);
+  };
+
   const addLink = (data: any) => {
     if (!firestore || !user) return;
     const colRef = collection(firestore, 'learningLinks');
@@ -147,7 +153,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       downvoteCount: 0
     };
     
-    const userEmail = user.email || 'Unknown';
+    const userEmail = user.email || `user-${user.uid.substring(0, 5)}`;
+    const isAdminLog = getIsAdminForLog();
 
     addDoc(colRef, newLink).then((docRef) => {
       addDoc(activityRef, {
@@ -156,7 +163,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkTitle: data.title,
         timestamp: Date.now(),
         userEmail: userEmail,
-        isAdmin: isServerAdmin === true // 明示的にbooleanで保存
+        isAdmin: isAdminLog
       });
     }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
   };
@@ -166,7 +173,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { status, userVote, id: _, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
     const activityRef = collection(firestore, 'activities');
-    const userEmail = user.email || 'Unknown';
+    const userEmail = user.email || `user-${user.uid.substring(0, 5)}`;
+    const isAdminLog = getIsAdminForLog();
 
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
       .then(() => {
@@ -176,7 +184,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           linkTitle: cleanUpdates.title || '（タイトル不明）',
           timestamp: Date.now(),
           userEmail: userEmail,
-          isAdmin: isServerAdmin === true
+          isAdmin: isAdminLog
         });
       })
       .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
@@ -208,7 +216,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     const learnerRef = doc(firestore, 'learningLinks', id, 'learners', user.uid);
     const activityRef = collection(firestore, 'activities');
-    const userEmail = user.email || 'Unknown';
+    const userEmail = user.email || `user-${user.uid.substring(0, 5)}`;
+    const isAdminLog = getIsAdminForLog();
     
     setDoc(progressRef, { 
       status: nextStatus, 
@@ -238,7 +247,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkId: link.id,
         timestamp: Date.now(),
         type: 'completion',
-        isAdmin: isServerAdmin === true
+        isAdmin: isAdminLog
       });
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
@@ -253,7 +262,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkId: link.id,
         timestamp: Date.now(),
         type: 'learning_started',
-        isAdmin: isServerAdmin === true
+        isAdmin: isAdminLog
       });
     }
 
