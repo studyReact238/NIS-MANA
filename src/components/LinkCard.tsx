@@ -197,6 +197,12 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
     }
   };
 
+  // メールアドレスから名前を抽出して「さん」を付ける
+  const formatDisplayName = (email?: string) => {
+    if (!email) return '不明さん';
+    return `${email.split('@')[0]}さん`;
+  };
+
   const hasTest = !!(link.testUrl || link.testHtml);
   const testHref = link.testHtml ? `/test-viewer?id=${link.id}` : (link.testUrl || '#');
 
@@ -395,7 +401,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </div>
                 <div className="flex items-center gap-1.5 opacity-80">
                   <User className="w-3.5 h-3.5" />
-                  <span className="truncate max-w-[150px]">投稿者: {creatorData?.email || '管理者'}</span>
+                  <span className="truncate max-w-[150px]">投稿者: {formatDisplayName(creatorData?.email)}</span>
                 </div>
               </div>
               
@@ -451,7 +457,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               </DialogDescription>
               <DialogDescription className="flex items-center gap-2 text-emerald-600 font-bold">
                 <User className="w-4 h-4" />
-                投稿者: {creatorData?.email || '管理者'}
+                投稿者: {formatDisplayName(creatorData?.email)}
               </DialogDescription>
             </div>
           </DialogHeader>
@@ -541,7 +547,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                         ) : learners && learners.length > 0 ? (
                           learners.map((l: any) => (
                             <div key={l.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-blue-50 shadow-sm">
-                              <span className="text-xs font-bold text-blue-900">{l.email}</span>
+                              <span className="text-xs font-bold text-blue-900">{formatDisplayName(l.email)}</span>
                               <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
                                 <Calendar className="w-3 h-3" />
                                 {l.startedAt ? format(l.startedAt, 'MM/dd HH:mm', { locale: ja }) : '記録なし'}
@@ -577,7 +583,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                         ) : completions && completions.length > 0 ? (
                           completions.map((c: any) => (
                             <div key={c.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-emerald-50 shadow-sm">
-                              <span className="text-xs font-bold text-emerald-900">{c.email}</span>
+                              <span className="text-xs font-bold text-emerald-900">{formatDisplayName(c.email)}</span>
                               <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
                                 <Calendar className="w-3 h-3" />
                                 {format(c.completedAt, 'MM/dd HH:mm', { locale: ja })}

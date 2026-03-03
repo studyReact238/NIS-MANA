@@ -13,6 +13,11 @@ import { cn } from '@/lib/utils';
 export const Timeline: React.FC = () => {
   const { activities, timelineLimit, setTimelineLimit } = useLinks();
 
+  const formatDisplayName = (email?: string) => {
+    if (!email) return '不明さん';
+    return `${email.split('@')[0]}さん`;
+  };
+
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'completion': return <CheckCircle2 className="w-5 h-5" />;
@@ -34,31 +39,35 @@ export const Timeline: React.FC = () => {
   };
 
   const getActivityText = (activity: any) => {
+    const userName = formatDisplayName(activity.userEmail || activity.adminEmail);
+    
     switch (activity.type) {
       case 'completion':
         return (
           <>
-            <span className="font-bold text-emerald-900">{activity.userEmail}</span> さんが
+            <span className="font-bold text-emerald-900">{userName}</span> が
             「<span className="font-bold text-emerald-700">{activity.linkTitle}</span>」の受講を完了しました！
           </>
         );
       case 'learning_started':
         return (
           <>
-            <span className="font-bold text-blue-900">{activity.userEmail}</span> さんが
+            <span className="font-bold text-blue-900">{userName}</span> が
             「<span className="font-bold text-blue-700">{activity.linkTitle}</span>」の学習を開始しました！
           </>
         );
       case 'link_added':
         return (
           <>
-            管理者が新しいリンク「<span className="font-bold text-blue-700">{activity.linkTitle}</span>」を追加しました。チェックしてみよう！
+            <span className="font-bold text-blue-900">{userName}</span> が
+            新しいリンク「<span className="font-bold text-blue-700">{activity.linkTitle}</span>」を追加しました。
           </>
         );
       case 'link_updated':
         return (
           <>
-            「<span className="font-bold text-amber-700">{activity.linkTitle}</span>」の情報が更新されました。
+            <span className="font-bold text-amber-900">{userName}</span> が
+            「<span className="font-bold text-amber-700">{activity.linkTitle}</span>」の情報を更新しました。
           </>
         );
       default:

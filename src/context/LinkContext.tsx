@@ -151,7 +151,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         linkId: docRef.id,
         linkTitle: data.title,
         timestamp: Date.now(),
-        adminEmail: user.email
+        userEmail: user.email
       });
     }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
   };
@@ -169,7 +169,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           linkId: id,
           linkTitle: cleanUpdates.title || '（タイトル不明）',
           timestamp: Date.now(),
-          adminEmail: user.email
+          userEmail: user.email
         });
       })
       .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
