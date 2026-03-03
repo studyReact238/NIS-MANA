@@ -5,7 +5,7 @@ import React from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,7 @@ import { doc } from 'firebase/firestore';
 const TimelineItem = ({ activity }: { activity: any }) => {
   const firestore = useFirestore();
   
-  // リンクカードと同じ仕組み: UIDから最新のユーザー情報を取得
+  // リンクカードと同じ仕組み: データベースから最新のユーザー情報を取得
   const userId = activity.userId;
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
@@ -24,35 +24,23 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 管理者かどうかをチェック
+  // 管理者かどうかをデータベースから直接チェック
   const adminRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
     return doc(firestore, 'admins', userId);
   }, [firestore, userId]);
 
-  const { data: adminData } = useDoc<any>(adminRef);
-  const isUserAdmin = !!adminData;
+  const { data: adminData, isLoading: isAdminLoading } = useDoc<any>(adminRef);
+  
+  // 表示名の決定: データベースの最新情報 > ログの保存情報
+  const displayName = React.useMemo(() => {
+    const email = userData?.email || activity.userEmail;
+    if (!email) return '不明なユーザー';
+    return `${email.split('@')[0]}さん`;
+  }, [userData?.email, activity.userEmail]);
 
-  const formatDisplayName = (emailInput?: string) => {
-    if (!emailInput) return 'ユーザーさん';
-    const name = emailInput.split('@')[0];
-    return `${name}さん`;
-  };
-
-  if (isUserLoading) {
-    return (
-      <div className="relative flex items-start gap-6 h-16">
-        <div className="w-11 h-11 rounded-2xl bg-slate-100 animate-pulse shrink-0" />
-        <div className="flex-1 space-y-2 py-1">
-          <div className="h-3 bg-slate-100 rounded w-24 animate-pulse" />
-          <div className="h-4 bg-slate-100 rounded w-48 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
-
-  // 表示名: データベースの最新メール > ログの保存メール
-  const displayName = formatDisplayName(userData?.email || activity.userEmail);
+  // 管理者判定: データベースの権限 > ログの保存権限
+  const isUserAdmin = !!adminData || !!activity.isAdmin;
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -73,6 +61,18 @@ const TimelineItem = ({ activity }: { activity: any }) => {
       default: return 'bg-slate-50 border-slate-200 text-slate-600';
     }
   };
+
+  if (isUserLoading || isAdminLoading) {
+    return (
+      <div className="relative flex items-start gap-6 h-16">
+        <div className="w-11 h-11 rounded-2xl bg-slate-100 animate-pulse shrink-0" />
+        <div className="flex-1 space-y-2 py-1">
+          <div className="h-3 bg-slate-100 rounded w-24 animate-pulse" />
+          <div className="h-4 bg-slate-100 rounded w-48 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex items-start gap-6 group">
@@ -103,8 +103,8 @@ const TimelineItem = ({ activity }: { activity: any }) => {
             {activity.timestamp ? format(activity.timestamp, 'MM/dd HH:mm', { locale: ja }) : '---'}
           </div>
         </div>
-        <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-x-1">
-          <div className="inline-flex items-center gap-1 shrink-0">
+        <div className="text-sm text-slate-600 leading-relaxed">
+          <div className="inline-flex items-center gap-1 align-baseline mr-1">
             <span className={cn(
               "font-bold",
               activity.type === 'completion' ? "text-emerald-900" :
@@ -114,10 +114,10 @@ const TimelineItem = ({ activity }: { activity: any }) => {
               {displayName}
             </span>
             {isUserAdmin && (
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-50 ml-0.5" />
+              <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-50 shrink-0" />
             )}
           </div>
-          <span className="ml-1">が</span>
+          <span>が</span>
           {activity.type === 'completion' ? (
             <>
               <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>

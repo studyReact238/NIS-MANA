@@ -27,7 +27,8 @@ import {
   Circle,
   ClipboardCheck,
   User,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -120,7 +121,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
     return doc(firestore, 'users', link.createdBy);
   }, [firestore, link.createdBy]);
 
-  const { data: creatorData } = useDoc<any>(creatorDocRef);
+  const { data: creatorData, isLoading: isCreatorLoading } = useDoc<any>(creatorDocRef);
 
   // 投稿者が管理者かどうかをチェック
   const creatorAdminRef = useMemoFirebase(() => {
@@ -128,7 +129,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
     return doc(firestore, 'admins', link.createdBy);
   }, [firestore, link.createdBy]);
 
-  const { data: creatorAdminData } = useDoc<any>(creatorAdminRef);
+  const { data: creatorAdminData, isLoading: isAdminDataLoading } = useDoc<any>(creatorAdminRef);
   const isCreatorAdmin = !!creatorAdminData;
 
   const completionsRef = useMemoFirebase(() => {
@@ -148,7 +149,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
   const Icon = getIcon(link.icon);
   const colorData = getColorData(link.color);
 
-  // 編集・削除権限の判定: 管理者モードがONか、自分が作成者の場合に許可
   const canManage = isAdmin || (user && user.uid === link.createdBy);
 
   const handleStatusChange = (newStatus: LinkStatus) => {
@@ -207,9 +207,9 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
     }
   };
 
-  // メールアドレスから名前を抽出して「さん」を付ける
   const formatDisplayName = (email?: string) => {
-    if (!email) return '不明さん';
+    if (isCreatorLoading) return '読み込み中...';
+    if (!email) return '不明なユーザー';
     return `${email.split('@')[0]}さん`;
   };
 
@@ -289,7 +289,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              {/* 管理者モード、または自分が作成者の場合にメニューを表示 */}
               {canManage && (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
@@ -411,8 +410,10 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </div>
                 <div className="flex items-center gap-1.5 opacity-80">
                   <User className="w-3.5 h-3.5" />
-                  <span className="truncate max-w-[150px]">投稿者: {formatDisplayName(creatorData?.email)}</span>
-                  {isCreatorAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 ml-0.5" />}
+                  <span className="truncate max-w-[150px] inline-flex items-center gap-1">
+                    投稿者: {formatDisplayName(creatorData?.email)}
+                    {isCreatorAdmin && !isAdminDataLoading && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                  </span>
                 </div>
               </div>
               
@@ -559,7 +560,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                         ) : learners && learners.length > 0 ? (
                           learners.map((l: any) => (
                             <div key={l.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-blue-50 shadow-sm">
-                              <span className="text-xs font-bold text-blue-900">{formatDisplayName(l.email)}</span>
+                              <span className="text-xs font-bold text-blue-900">{l.email ? `${l.email.split('@')[0]}さん` : 'ユーザーさん'}</span>
                               <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
                                 <Calendar className="w-3 h-3" />
                                 {l.startedAt ? format(l.startedAt, 'MM/dd HH:mm', { locale: ja }) : '記録なし'}
@@ -595,7 +596,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                         ) : completions && completions.length > 0 ? (
                           completions.map((c: any) => (
                             <div key={c.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-emerald-50 shadow-sm">
-                              <span className="text-xs font-bold text-emerald-900">{formatDisplayName(c.email)}</span>
+                              <span className="text-xs font-bold text-emerald-900">{c.email ? `${c.email.split('@')[0]}さん` : 'ユーザーさん'}</span>
                               <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
                                 <Calendar className="w-3 h-3" />
                                 {format(c.completedAt, 'MM/dd HH:mm', { locale: ja })}
