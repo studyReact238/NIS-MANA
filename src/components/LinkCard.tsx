@@ -138,6 +138,9 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
   const Icon = getIcon(link.icon);
   const colorData = getColorData(link.color);
 
+  // 編集・削除権限の判定: 管理者モードがONか、自分が作成者の場合に許可
+  const canManage = isAdmin || (user && user.uid === link.createdBy);
+
   const handleStatusChange = (newStatus: LinkStatus) => {
     if (newStatus === 'completed' && link.status !== 'completed') {
       setShowSparkles(true);
@@ -270,7 +273,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              {isAdmin && (
+              {/* 管理者モード、または自分が作成者の場合にメニューを表示 */}
+              {canManage && (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-white/50 border border-black/5">

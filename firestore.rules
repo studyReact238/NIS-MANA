@@ -18,8 +18,9 @@ service cloud.firestore {
     // グローバル共有リンク
     match /learningLinks/{linkId} {
       allow read: if isSignedIn();
-      allow create, delete: if isAdmin();
-      allow update: if isSignedIn();
+      allow create: if isSignedIn();
+      // 管理者、または作成者本人のみ更新・削除が可能
+      allow update, delete: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.createdBy);
     }
 
     // リンクへの投票

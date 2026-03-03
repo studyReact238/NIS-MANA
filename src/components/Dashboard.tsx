@@ -20,16 +20,12 @@ import {
   Tag as TagIcon,
   Palette,
   Layout,
-  XCircle,
   User,
   LogOut,
-  Loader2,
   Lock,
   Users,
   Target,
   Zap,
-  BookOpen,
-  Circle,
   ClipboardCheck
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -112,7 +108,6 @@ export const Dashboard: React.FC = () => {
   }, [links]);
 
   const testLinks = useMemo(() => {
-    // 確認テストタブでは「受講済み」のカードのみを表示
     return links.filter(l => l.status === 'completed');
   }, [links]);
 
@@ -176,8 +171,8 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 justify-end w-full md:w-auto">
-            {isAdmin && (
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              {isAdmin && (
                 <Button 
                   onClick={() => setUserManagementOpen(true)}
                   variant="outline"
@@ -186,16 +181,17 @@ export const Dashboard: React.FC = () => {
                   <span className="hidden sm:inline">ユーザー管理</span>
                   <Users className="w-3.5 h-3.5 sm:ml-2" />
                 </Button>
-                <Button 
-                  onClick={handleAdd} 
-                  className="rounded-full h-9 sm:h-10 px-4 sm:px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-xs border-2 border-emerald-800 transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5 sm:mr-2" /> 
-                  <span className="hidden sm:inline">新規追加</span>
-                  <span className="sm:hidden">追加</span>
-                </Button>
-              </div>
-            )}
+              )}
+              {/* 新規追加ボタンは全ユーザーに表示されるように変更 */}
+              <Button 
+                onClick={handleAdd} 
+                className="rounded-full h-9 sm:h-10 px-4 sm:px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-xs border-2 border-emerald-800 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5 sm:mr-2" /> 
+                <span className="hidden sm:inline">新規追加</span>
+                <span className="sm:hidden">追加</span>
+              </Button>
+            </div>
 
             {isServerAdmin && (
               <div className="flex items-center gap-2 sm:gap-3 bg-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-200 shadow-sm">
@@ -295,6 +291,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <TabsContent value="links" className="space-y-6">
+          {/* ... リンク集コンテンツ（変更なし） ... */}
           <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-5 sm:p-8 space-y-4">
             <div className="relative group max-w-3xl mx-auto">
               <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
