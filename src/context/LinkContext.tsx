@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
-import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus } from '@/types/link';
+import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus, RecommendationFilter } from '@/types/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { 
   collection, 
@@ -30,6 +30,8 @@ interface LinkContextType {
   setSearch: (val: string) => void;
   statusFilter: StatusFilter;
   setStatusFilter: (val: StatusFilter) => void;
+  recommendationFilter: RecommendationFilter;
+  setRecommendationFilter: (val: RecommendationFilter) => void;
   sortBy: SortOption;
   setSortBy: (val: SortOption) => void;
   selectedTags: string[];
@@ -67,6 +69,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [recommendationFilter, setRecommendationFilter] = useState<RecommendationFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-new');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
@@ -331,6 +334,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
     }
     if (statusFilter !== 'all') result = result.filter(l => l.status === statusFilter);
+    if (recommendationFilter === 'recommended') result = result.filter(l => l.isRecommended);
+    if (recommendationFilter === 'not-recommended') result = result.filter(l => !l.isRecommended);
+    
     if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => (l.tags || []).includes(t)));
     if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
     if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
@@ -345,11 +351,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return 0;
     });
     return result;
-  }, [links, search, statusFilter, sortBy, selectedTags, selectedColors, selectedIcons]);
+  }, [links, search, statusFilter, recommendationFilter, sortBy, selectedTags, selectedColors, selectedIcons]);
 
   return (
     <LinkContext.Provider value={{
       links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
+      recommendationFilter, setRecommendationFilter,
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, updateStatus, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,

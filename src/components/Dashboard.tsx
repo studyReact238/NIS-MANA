@@ -26,7 +26,11 @@ import {
   Users,
   Target,
   Zap,
-  ClipboardCheck
+  ClipboardCheck,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  AlertTriangle
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -44,7 +48,8 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from '@/components/ui/switch';
-import { StatusFilter, SortOption, LearningLink } from '@/types/link';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { StatusFilter, SortOption, LearningLink, RecommendationFilter } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -52,9 +57,9 @@ import { useToast } from '@/hooks/use-toast';
 export const Dashboard: React.FC = () => {
   const { 
     links, filteredLinks, isAdmin, isServerAdmin, setIsAdmin, search, setSearch, statusFilter, 
-    setStatusFilter, sortBy, setSortBy, selectedTags, toggleTag, clearTags,
-    selectedColors, toggleColor, clearColors, selectedIcons, toggleIcon, 
-    clearIcons, allTags, isLoading
+    setStatusFilter, recommendationFilter, setRecommendationFilter, sortBy, setSortBy, 
+    selectedTags, toggleTag, clearTags, selectedColors, toggleColor, clearColors, 
+    selectedIcons, toggleIcon, clearIcons, allTags, isLoading
   } = useLinks();
 
   const auth = useAuth();
@@ -64,6 +69,7 @@ export const Dashboard: React.FC = () => {
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
+  const [tagsExpanded, setTagsExpanded] = useState(false);
 
   const handleEdit = useCallback((link: LearningLink) => {
     setEditingLink(link);
@@ -182,7 +188,6 @@ export const Dashboard: React.FC = () => {
                   <Users className="w-3.5 h-3.5 sm:ml-2" />
                 </Button>
               )}
-              {/* 新規追加ボタンは全ユーザーに表示されるように変更 */}
               <Button 
                 onClick={handleAdd} 
                 className="rounded-full h-9 sm:h-10 px-4 sm:px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-xs border-2 border-emerald-800 transition-all"
@@ -291,7 +296,6 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <TabsContent value="links" className="space-y-6">
-          {/* ... リンク集コンテンツ（変更なし） ... */}
           <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-5 sm:p-8 space-y-4">
             <div className="relative group max-w-3xl mx-auto">
               <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
@@ -303,15 +307,33 @@ export const Dashboard: React.FC = () => {
               />
             </div>
 
-            <div className="flex justify-center pb-2">
-              <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full max-w-2xl">
-                <TabsList className="grid grid-cols-4 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
-                  <TabsTrigger value="all" className="rounded-xl font-bold text-[10px] sm:text-xs">すべて</TabsTrigger>
-                  <TabsTrigger value="unstarted" className="rounded-xl font-bold text-[10px] sm:text-xs text-slate-600">未着手</TabsTrigger>
-                  <TabsTrigger value="learning" className="rounded-xl font-bold text-[10px] sm:text-xs text-blue-700">学習中</TabsTrigger>
-                  <TabsTrigger value="completed" className="rounded-xl font-bold text-[10px] sm:text-xs text-emerald-700">受講済み</TabsTrigger>
-                </TabsList>
-              </Tabs>
+            <div className="flex flex-col sm:flex-row justify-center gap-4 pb-2">
+              <div className="flex flex-col gap-1.5 flex-1 max-w-md">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest pl-2">受講状況</span>
+                <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full">
+                  <TabsList className="grid grid-cols-4 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
+                    <TabsTrigger value="all" className="rounded-xl font-bold text-[10px] sm:text-xs">すべて</TabsTrigger>
+                    <TabsTrigger value="unstarted" className="rounded-xl font-bold text-[10px] sm:text-xs text-slate-600">未着手</TabsTrigger>
+                    <TabsTrigger value="learning" className="rounded-xl font-bold text-[10px] sm:text-xs text-blue-700">学習中</TabsTrigger>
+                    <TabsTrigger value="completed" className="rounded-xl font-bold text-[10px] sm:text-xs text-emerald-700">受講済み</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className="flex flex-col gap-1.5 flex-1 max-w-md">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest pl-2">推奨状況</span>
+                <Tabs value={recommendationFilter} onValueChange={(val) => setRecommendationFilter(val as RecommendationFilter)} className="w-full">
+                  <TabsList className="grid grid-cols-3 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
+                    <TabsTrigger value="all" className="rounded-xl font-bold text-[10px] sm:text-xs">すべて</TabsTrigger>
+                    <TabsTrigger value="recommended" className="rounded-xl font-bold text-[10px] sm:text-xs text-emerald-700 flex items-center justify-center gap-1">
+                      <Sparkles className="w-3 h-3" /> 推奨
+                    </TabsTrigger>
+                    <TabsTrigger value="not-recommended" className="rounded-xl font-bold text-[10px] sm:text-xs text-slate-500 flex items-center justify-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> 非推奨
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
             </div>
 
             <div className="space-y-4 pt-4 border-t border-emerald-100">
@@ -393,37 +415,53 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2 sm:gap-3">
-                <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px] pt-1">
-                  <TagIcon className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-bold">タグ:</span>
+              <Collapsible open={tagsExpanded} onOpenChange={setTagsExpanded} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-emerald-800 min-w-[60px] sm:min-w-[70px]">
+                    <TagIcon className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold">タグ絞り込み:</span>
+                    {selectedTags.length > 0 && (
+                      <Badge variant="secondary" className="h-5 px-2 bg-emerald-600 text-white text-[9px] font-black">
+                        {selectedTags.length}
+                      </Badge>
+                    )}
+                  </div>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-7 px-2 text-emerald-600 font-bold text-[10px] rounded-lg">
+                      {tagsExpanded ? <><ChevronUp className="w-3 h-3 mr-1" /> 閉じる</> : <><ChevronDown className="w-3 h-3 mr-1" /> 表示する</>}
+                    </Button>
+                  </CollapsibleTrigger>
                 </div>
-                <div className="flex flex-wrap gap-1.5 flex-1">
-                  {allTags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={cn(
-                        "px-3 py-1 rounded-full text-[9px] font-bold border-2 transition-all",
-                        selectedTags.includes(tag) 
-                          ? "bg-emerald-700 text-white border-emerald-800 shadow-sm" 
-                          : "bg-emerald-50/50 text-emerald-900 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200"
-                      )}
-                    >
-                      #{tag}
-                    </button>
-                  ))}
-                  {selectedTags.length > 0 && (
-                    <button onClick={clearTags} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
-                      クリア
-                    </button>
-                  )}
-                </div>
-              </div>
+                
+                <CollapsibleContent className="space-y-2 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                  <div className="flex flex-wrap gap-1.5 p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/50">
+                    {allTags.map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-[9px] font-bold border-2 transition-all",
+                          selectedTags.includes(tag) 
+                            ? "bg-emerald-700 text-white border-emerald-800 shadow-sm" 
+                            : "bg-white text-emerald-900 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200"
+                        )}
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                    {allTags.length === 0 && <span className="text-xs text-slate-400 italic">タグがまだありません</span>}
+                    {selectedTags.length > 0 && (
+                      <button onClick={clearTags} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
+                        すべてクリア
+                      </button>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </div>
 
-          <div className="flex items-center justify-between mb-4 px-2">
+          <div className="flex items-center justify-between mb-4 px-2 mt-6">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 font-black px-3 py-1 rounded-full text-[10px]">
                 {filteredLinks.length} <span className="ml-1 opacity-60">件のリンク</span>
