@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -26,8 +26,9 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
@@ -45,7 +46,9 @@ import {
   BookOpen,
   CheckCircle2,
   ExternalLink,
-  Clock
+  Clock,
+  User as UserIcon,
+  Save
 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -64,13 +67,20 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const { user } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState('');
   const [grantAdmin, setGrantAdmin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
   
-  const [selectedUser, setSelectedUser] = useState<{id: string, email: string} | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
+
+  // 編集用氏名ステート
+  const [editLastName, setEditLastName] = useState('');
+  const [editFirstName, setEditFirstName] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -87,6 +97,13 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   const { data: users, isLoading: isUsersLoading } = useCollection<any>(usersRef);
   const { data: admins, isLoading: isAdminsLoading } = useCollection<any>(adminsRef);
+
+  useEffect(() => {
+    if (selectedUser) {
+      setEditLastName(selectedUser.lastName || '');
+      setEditFirstName(selectedUser.firstName || '');
+    }
+  }, [selectedUser]);
 
   const sortedUsers = React.useMemo(() => {
     if (!users) return [];
@@ -168,6 +185,8 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
       await setDoc(userDocRef, {
         id: newUser.uid,
         email: newUser.email,
+        lastName: lastName,
+        firstName: firstName,
         createdAt: Date.now(),
         lastLoginAt: null
       });
@@ -180,12 +199,35 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
       }
 
       toast({ title: "ユーザー登録完了", description: `${email} を登録しました。` });
-      setEmail(''); setPassword(''); setGrantAdmin(false);
+      setEmail(''); setPassword(''); setLastName(''); setFirstName(''); setGrantAdmin(false);
     } catch (error: any) {
       if (secondaryApp) await deleteApp(secondaryApp);
       toast({ variant: "destructive", title: "登録失敗", description: error.message });
     } finally {
       setIsRegistering(false);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!firestore || !selectedUser) return;
+    setIsSavingProfile(true);
+    try {
+      const userDocRef = doc(firestore, 'users', selectedUser.id);
+      await updateDoc(userDocRef, {
+        lastName: editLastName,
+        firstName: editFirstName
+      });
+      toast({ title: "更新完了", description: "プロフィール情報を更新しました。" });
+      // 選択中のユーザー情報も更新（表示用）
+      setSelectedUser((prev: any) => ({ ...prev, lastName: editLastName, firstName: editFirstName }));
+    } catch (e: any) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+        path: `users/${selectedUser.id}`, 
+        operation: 'update',
+        requestResourceData: { lastName: editLastName, firstName: editFirstName }
+      }));
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -245,6 +287,13 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
     }
   };
 
+  const formatDisplayName = (u: any) => {
+    if (u.lastName || u.firstName) {
+      return `${u.lastName || ''} ${u.firstName || ''}`.trim();
+    }
+    return u.email?.split('@')[0] || 'ユーザー';
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={(val) => {
@@ -270,6 +319,16 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
               <div className="space-y-4">
                 <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest border-b border-emerald-100 pb-2">新規ユーザー登録</h3>
                 <form onSubmit={initiateRegister} className="space-y-4 pt-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lastName" className="text-[10px] font-bold text-slate-500">姓</Label>
+                      <Input id="lastName" placeholder="山田" value={lastName} onChange={(e) => setLastName(e.target.value)} className="rounded-xl h-9 border-emerald-100 text-xs" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="firstName" className="text-[10px] font-bold text-slate-500">名</Label>
+                      <Input id="firstName" placeholder="太郎" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="rounded-xl h-9 border-emerald-100 text-xs" />
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-email" className="text-xs font-bold text-slate-600">メールアドレス</Label>
                     <div className="relative">
@@ -335,14 +394,12 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                           <div key={u.id} className="group flex items-center justify-between p-3 bg-white rounded-2xl border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all">
                             <div className="flex flex-col min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-emerald-950 truncate">{u.email}</span>
+                                <span className="text-xs font-bold text-emerald-950 truncate">{formatDisplayName(u)}</span>
                                 {isAdminUser && <Badge className="bg-emerald-600 text-[8px] h-4 px-1.5 rounded-sm">Admin</Badge>}
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <Clock className="w-3 h-3 text-slate-400" />
-                                <span className="text-[10px] text-slate-400 font-medium">
-                                  最終ログイン: {u.lastLoginAt ? format(u.lastLoginAt, 'yyyy/MM/dd HH:mm', { locale: ja }) : '記録なし'}
-                                </span>
+                                <Mail className="w-3 h-3 text-slate-300" />
+                                <span className="text-[10px] text-slate-400 font-medium truncate">{u.email}</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
@@ -364,7 +421,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                                 onClick={() => setSelectedUser(u)} 
                                 className="h-8 px-3 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold text-[10px]"
                               >
-                                <Eye className="w-3.5 h-3.5 mr-1.5" /> 進捗
+                                <Eye className="w-3.5 h-3.5 mr-1.5" /> 詳細
                               </Button>
                               <Button 
                                 variant="ghost" 
@@ -389,22 +446,60 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                         <ArrowLeft className="w-4 h-4 text-emerald-700" />
                       </Button>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-body font-bold text-emerald-900 truncate">{selectedUser.email}</h3>
-                        <p className="text-[10px] text-slate-400 font-bold">ユーザーの学習進捗</p>
+                        <h3 className="text-sm font-body font-bold text-emerald-900 truncate">{formatDisplayName(selectedUser)}</h3>
+                        <p className="text-[10px] text-slate-400 font-bold">{selectedUser.email}</p>
                       </div>
                     </div>
                     {admins?.some(a => a.id === selectedUser.id) && <Badge className="bg-emerald-600 text-[9px] font-bold">管理者</Badge>}
                   </div>
                   
                   <ScrollArea className="flex-1">
-                    <div className="p-5 space-y-6">
+                    <div className="p-5 space-y-8">
+                      {/* プロフィール編集セクション */}
+                      <div className="space-y-4">
+                        <h4 className="text-[11px] font-black text-emerald-800 uppercase tracking-widest flex items-center gap-2">
+                          <UserIcon className="w-3.5 h-3.5" /> プロフィール編集
+                        </h4>
+                        <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] font-bold text-slate-500">姓</Label>
+                              <Input 
+                                value={editLastName} 
+                                onChange={(e) => setEditLastName(e.target.value)} 
+                                className="rounded-xl h-10 border-emerald-50 text-xs"
+                                placeholder="未登録"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] font-bold text-slate-500">名</Label>
+                              <Input 
+                                value={editFirstName} 
+                                onChange={(e) => setEditFirstName(e.target.value)} 
+                                className="rounded-xl h-10 border-emerald-50 text-xs"
+                                placeholder="未登録"
+                              />
+                            </div>
+                          </div>
+                          <Button 
+                            onClick={handleUpdateProfile} 
+                            disabled={isSavingProfile}
+                            className="w-full rounded-xl bg-emerald-600 h-10 font-bold text-xs"
+                          >
+                            {isSavingProfile ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
+                            氏名を更新する
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator className="bg-emerald-100/50" />
+
                       {isProgressLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-3">
+                        <div className="flex flex-col items-center justify-center py-10 gap-3">
                           <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-                          <p className="text-xs font-bold text-emerald-800">データを読み込み中...</p>
                         </div>
                       ) : (
-                        <>
+                        <div className="space-y-6">
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <h4 className="text-[11px] font-black text-blue-800 uppercase tracking-widest flex items-center gap-2">
@@ -454,7 +549,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                               )}
                             </div>
                           </div>
-                        </>
+                        </div>
                       )}
                     </div>
                   </ScrollArea>

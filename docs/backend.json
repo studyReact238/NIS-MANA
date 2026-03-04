@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -14,6 +13,14 @@
         "email": {
           "type": "string",
           "format": "email"
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's family name (姓)."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The user's given name (名)."
         }
       },
       "required": [

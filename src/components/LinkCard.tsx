@@ -122,7 +122,6 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
 
   const { data: creatorData, isLoading: isCreatorLoading } = useDoc<any>(creatorDocRef);
 
-  // 投稿者が管理者かどうかをチェック
   const creatorAdminRef = useMemoFirebase(() => {
     if (!firestore || !link.createdBy) return null;
     return doc(firestore, 'admins', link.createdBy);
@@ -206,10 +205,19 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
     }
   };
 
-  const formatDisplayName = (email?: string) => {
+  const formatDisplayName = (u: any) => {
     if (isCreatorLoading) return '読み込み中...';
-    if (!email || email === '不明なユーザー' || email === '') return '匿名ユーザーさん';
-    return `${email.split('@')[0]}さん`;
+    if (!u) return '匿名ユーザーさん';
+    
+    if (u.lastName || u.firstName) {
+      return `${u.lastName || ''} ${u.firstName || ''}`.trim() + 'さん';
+    }
+    
+    if (u.email) {
+      return `${u.email.split('@')[0]}さん`;
+    }
+    
+    return '匿名ユーザーさん';
   };
 
   const hasTest = !!(link.testUrl || link.testHtml);
@@ -410,7 +418,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 <div className="flex items-center gap-1.5 opacity-80">
                   <User className="w-3.5 h-3.5" />
                   <span className="truncate max-w-[150px] inline-flex items-center gap-1">
-                    投稿者: {formatDisplayName(creatorData?.email)}
+                    投稿者: {formatDisplayName(creatorData)}
                     {!isAdminDataLoading && isCreatorAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />}
                   </span>
                 </div>
@@ -468,7 +476,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               </DialogDescription>
               <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                 <User className="w-4 h-4" />
-                投稿者: {formatDisplayName(creatorData?.email)}
+                投稿者: {formatDisplayName(creatorData)}
                 {!isAdminDataLoading && isCreatorAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
               </div>
             </div>
