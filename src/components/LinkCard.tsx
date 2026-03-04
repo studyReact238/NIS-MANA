@@ -83,7 +83,7 @@ interface Sparkle {
 /**
  * リスト内でユーザー名を表示するためのサブコンポーネント
  */
-const UserListItem = ({ userId, email, timestamp, icon: Icon, timeLabel }: { userId: string, email: string, timestamp: number, icon: any, timeLabel: string }) => {
+const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { userId: string, email: string, timestamp: number, icon: any, adminDocs: any[] | null }) => {
   const firestore = useFirestore();
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
@@ -91,6 +91,8 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, timeLabel }: { use
   }, [firestore, userId]);
   
   const { data: userData, isLoading } = useDoc<any>(userRef);
+
+  const isUserAdmin = adminDocs?.some(a => a.id === userId);
 
   const getDisplayName = () => {
     if (isLoading) return '読み込み中...';
@@ -112,7 +114,12 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, timeLabel }: { use
         <div className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center">
           <Icon className="w-3.5 h-3.5 text-slate-400" />
         </div>
-        <span className="text-xs font-bold text-slate-800">{getDisplayName()}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-bold text-slate-800">{getDisplayName()}</span>
+          {!isLoading && isUserAdmin && (
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
         <Calendar className="w-3 h-3" />
@@ -123,7 +130,7 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, timeLabel }: { use
 };
 
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) => {
-  const { isAdmin, isServerAdmin, updateStatus, deleteLink, duplicateLink, toggleTag, selectedTags } = useLinks();
+  const { isAdmin, isServerAdmin, updateStatus, deleteLink, duplicateLink, toggleTag, selectedTags, adminDocs } = useLinks();
   const { user } = useUser();
   const firestore = useFirestore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -165,13 +172,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
 
   const { data: creatorData, isLoading: isCreatorLoading } = useDoc<any>(creatorDocRef);
 
-  const creatorAdminRef = useMemoFirebase(() => {
-    if (!firestore || !link.createdBy) return null;
-    return doc(firestore, 'admins', link.createdBy);
-  }, [firestore, link.createdBy]);
-
-  const { data: creatorAdminData, isLoading: isAdminDataLoading } = useDoc<any>(creatorAdminRef);
-  const isCreatorAdmin = !!creatorAdminData;
+  const isCreatorAdmin = adminDocs?.some(a => a.id === link.createdBy);
 
   const completionsRef = useMemoFirebase(() => {
     if (!firestore || !isServerAdmin || !link.id || !detailOpen) return null;
@@ -460,9 +461,9 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </div>
                 <div className="flex items-center gap-1.5 opacity-80">
                   <User className="w-3.5 h-3.5" />
-                  <span className="truncate max-w-[150px] inline-flex items-center gap-1">
+                  <span className="truncate max-w-[150px] inline-flex items-center gap-1.5">
                     投稿者: {formatDisplayName(creatorData)}
-                    {!isAdminDataLoading && isCreatorAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                    {isCreatorAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />}
                   </span>
                 </div>
               </div>
@@ -520,7 +521,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                 <User className="w-4 h-4" />
                 投稿者: {formatDisplayName(creatorData)}
-                {!isAdminDataLoading && isCreatorAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
+                {isCreatorAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />}
               </div>
             </div>
           </DialogHeader>
@@ -615,7 +616,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                               email={l.email} 
                               timestamp={l.startedAt} 
                               icon={BookOpen} 
-                              timeLabel="学習開始"
+                              adminDocs={adminDocs}
                             />
                           ))
                         ) : (
@@ -652,7 +653,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                               email={c.email} 
                               timestamp={c.completedAt} 
                               icon={CheckCircle2} 
-                              timeLabel="受講完了"
+                              adminDocs={adminDocs}
                             />
                           ))
                         ) : (

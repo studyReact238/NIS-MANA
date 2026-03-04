@@ -12,10 +12,10 @@ import { cn } from '@/lib/utils';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
-const TimelineItem = ({ activity }: { activity: any }) => {
+const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[] | null }) => {
   const firestore = useFirestore();
   
-  // 1. 最新のユーザー情報をデータベースから直接取得
+  // 最新のユーザー情報をデータベースから取得
   const userId = activity.userId;
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
@@ -24,38 +24,25 @@ const TimelineItem = ({ activity }: { activity: any }) => {
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 2. 最新の管理者権限をデータベースから直接取得
-  const adminRef = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
-    return doc(firestore, 'admins', userId);
-  }, [firestore, userId]);
-
-  const { data: adminData, isLoading: isAdminLoading } = useDoc<any>(adminRef);
-  
-  const isUserAdmin = !!adminData || !!activity.isAdmin;
+  // 管理者判定：コンテキストの管理者リスト、またはログの情報を参照
+  const isUserAdmin = adminDocs?.some(a => a.id === userId) || !!activity.isAdmin;
 
   const getDisplayName = () => {
     if (isUserLoading) return '読み込み中...';
     
-    // 優先順位1: データベースの姓名
+    // 姓名が登録されている場合はそれを優先
     if (userData?.lastName || userData?.firstName) {
       return `${userData.lastName || ''} ${userData.firstName || ''}`.trim() + 'さん';
     }
 
-    // 優先順位2: データベースの最新メールアドレス
-    const emailFromDb = userData?.email;
-    if (emailFromDb && emailFromDb !== '') {
-      return `${emailFromDb.split('@')[0]}さん`;
+    // 次にメールアドレス（最新）
+    if (userData?.email) {
+      return `${userData.email.split('@')[0]}さん`;
     }
 
-    // 優先順位3: 活動ログに保存されていた当時のメールアドレス
-    const emailFromLog = activity.userEmail;
-    if (emailFromLog && emailFromLog !== '' && emailFromLog !== '不明なユーザー') {
-      return `${emailFromLog.split('@')[0]}さん`;
-    }
-    
-    if (userId) {
-      return `ユーザー(${userId.substring(0, 4)})さん`;
+    // ログに残っている当時のメールアドレス
+    if (activity.userEmail && activity.userEmail !== '' && activity.userEmail !== '不明なユーザー') {
+      return `${activity.userEmail.split('@')[0]}さん`;
     }
     
     return '匿名ユーザーさん';
@@ -122,7 +109,7 @@ const TimelineItem = ({ activity }: { activity: any }) => {
             {activity.timestamp ? format(activity.timestamp, 'MM/dd HH:mm', { locale: ja }) : '---'}
           </div>
         </div>
-        <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-1">
+        <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span className={cn(
             "font-bold inline-flex items-center gap-1.5",
             activity.type === 'completion' ? "text-emerald-900" :
@@ -130,8 +117,8 @@ const TimelineItem = ({ activity }: { activity: any }) => {
             activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
           )}>
             {getDisplayName()}
-            {!isAdminLoading && isUserAdmin && (
-              <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-50 shrink-0" title="管理者" />
+            {isUserAdmin && (
+              <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />
             )}
           </span>
           <span>が</span>
@@ -164,7 +151,7 @@ const TimelineItem = ({ activity }: { activity: any }) => {
 };
 
 export const Timeline: React.FC = () => {
-  const { activities, timelineLimit, setTimelineLimit } = useLinks();
+  const { activities, timelineLimit, setTimelineLimit, adminDocs } = useLinks();
 
   const limitOptions = [
     { label: '10件', value: 10 },
@@ -214,6 +201,7 @@ export const Timeline: React.FC = () => {
                 <TimelineItem 
                   key={activity.id} 
                   activity={activity} 
+                  adminDocs={adminDocs}
                 />
               ))}
             </div>
