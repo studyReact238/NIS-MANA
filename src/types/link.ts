@@ -22,6 +22,7 @@ export interface LearningLink {
   learningCount: number;
   upvoteCount: number;
   downvoteCount: number;
+  isRecommended?: boolean; // 推奨コンテンツ判定
 }
 
 export type SortOption = 'title-asc' | 'title-desc' | 'date-new' | 'date-old' | 'rating-high' | 'learning-high';

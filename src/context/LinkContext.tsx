@@ -55,6 +55,7 @@ interface LinkContextType {
   timelineLimit: number;
   setTimelineLimit: (val: number) => void;
   adminDocs: any[] | null;
+  totalUserCount: number;
 }
 
 const LinkContext = createContext<LinkContextType | undefined>(undefined);
@@ -89,6 +90,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return collection(firestore, 'admins');
   }, [firestore]));
 
+  const { data: allUsers } = useCollection(useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]));
+
   const isServerAdmin = useMemo(() => {
     if (!user) return false;
     if (!adminDocs) return null;
@@ -119,20 +125,31 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const links = useMemo(() => {
     if (!rawLinks) return [];
     const progressMap = new Map(userProgress?.map(p => [p.id, p.status]) || []);
+    const totalUsers = allUsers?.length || 1;
     
-    return rawLinks.map(link => ({
-      ...link,
-      status: progressMap.get(link.id) || 'unstarted',
-      completedCount: Math.max(0, link.completedCount || 0),
-      learningCount: Math.max(0, link.learningCount || 0),
-      upvoteCount: Math.max(0, link.upvoteCount || 0),
-      downvoteCount: Math.max(0, link.downvoteCount || 0),
-    })) as LearningLink[];
-  }, [rawLinks, userProgress]);
+    return rawLinks.map(link => {
+      const upvotes = Math.max(0, link.upvoteCount || 0);
+      const downvotes = Math.max(0, link.downvoteCount || 0);
+      
+      // 推奨判定ロジック:
+      // 1. 高評価数が登録ユーザーの10%以上
+      // 2. 高評価数が低評価数より多い
+      const isRecommended = upvotes >= (totalUsers * 0.1) && upvotes > downvotes;
+
+      return {
+        ...link,
+        status: progressMap.get(link.id) || 'unstarted',
+        completedCount: Math.max(0, link.completedCount || 0),
+        learningCount: Math.max(0, link.learningCount || 0),
+        upvoteCount: upvotes,
+        downvoteCount: downvotes,
+        isRecommended
+      };
+    }) as LearningLink[];
+  }, [rawLinks, userProgress, allUsers]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
 
-  // 活動ログの記録をより確実に
   const logActivity = (type: string, linkId: string, linkTitle: string) => {
     if (!firestore || !user) return;
     const activityRef = collection(firestore, 'activities');
@@ -172,7 +189,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateLink = (id: string, updates: any) => {
     if (!firestore || !user) return;
-    const { status, userVote, id: _, ...cleanUpdates } = updates;
+    const { status, userVote, id: _, isRecommended: __, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
 
     updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
@@ -191,7 +208,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const duplicateLink = (id: string) => {
     const original = links.find(l => l.id === id);
     if (!original || !firestore || !user) return;
-    const { id: _, status: __, userVote: ___, createdAt: ____, updatedAt: _____, completedCount: ______, learningCount: _______, upvoteCount: ________, downvoteCount: _________, ...data } = original;
+    const { id: _, status: __, userVote: ___, createdAt: ____, updatedAt: _____, completedCount: ______, learningCount: _______, upvoteCount: ________, downvoteCount: _________, isRecommended: __________, ...data } = original;
     addLink({ ...data, title: `${original.title} のコピー` });
   };
 
@@ -336,7 +353,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
       duplicateLink, updateStatus, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
-      activities: activities || [], timelineLimit, setTimelineLimit, adminDocs: adminDocs || []
+      activities: activities || [], timelineLimit, setTimelineLimit, adminDocs: adminDocs || [],
+      totalUserCount: allUsers?.length || 0
     }}>
       {children}
     </LinkContext.Provider>

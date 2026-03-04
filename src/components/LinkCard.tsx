@@ -28,7 +28,9 @@ import {
   ClipboardCheck,
   User,
   ShieldCheck,
-  Loader2
+  Loader2,
+  Sparkles,
+  AlertTriangle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -273,13 +275,27 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
         "group relative overflow-hidden rounded-[2.5rem] transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 shadow-sm",
         cn(colorData.bg, colorData.border)
       )}>
+        <div className="absolute top-4 left-6 z-20 flex flex-col gap-2">
+           {link.isRecommended ? (
+             <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 shadow-lg px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-pulse">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
+             </Badge>
+           ) : (
+             <Badge variant="outline" className="bg-slate-100/80 text-slate-500 border-2 border-slate-200 shadow-sm px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
+             </Badge>
+           )}
+        </div>
+
         {link.status === 'completed' && (
           <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none z-0">
             <CheckCircle2 className="w-64 h-64 text-emerald-600/50" />
           </div>
         )}
 
-        <CardContent className="p-8 relative z-10">
+        <CardContent className="p-8 pt-16 relative z-10">
           <div className="flex justify-between items-start mb-6">
             <div className={cn(
               "w-14 h-14 rounded-2xl flex items-center justify-center shadow-md border border-black/5 bg-white"
@@ -505,10 +521,25 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-2xl rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
           <DialogHeader className="mb-6">
-            <div className={cn(
-              "w-16 h-16 rounded-2xl flex items-center justify-center shadow-md mb-4 bg-white border border-black/5"
-            )}>
-              <Icon className={cn("w-8 h-8", colorData.text)} />
+            <div className="flex items-center gap-3 mb-4">
+               <div className={cn(
+                "w-16 h-16 rounded-2xl flex items-center justify-center shadow-md bg-white border border-black/5"
+              )}>
+                <Icon className={cn("w-8 h-8", colorData.text)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                 {link.isRecommended ? (
+                   <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 px-3 py-1 rounded-full flex items-center gap-1.5 w-fit">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
+                   </Badge>
+                 ) : (
+                   <Badge variant="outline" className="bg-slate-100 text-slate-500 border-2 border-slate-200 px-3 py-1 rounded-full flex items-center gap-1.5 w-fit">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
+                   </Badge>
+                 )}
+              </div>
             </div>
             <DialogTitle className={cn("text-3xl font-bold leading-tight", colorData.darkText)}>
               {link.title}
