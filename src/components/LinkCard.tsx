@@ -27,7 +27,8 @@ import {
   Circle,
   ClipboardCheck,
   User,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -78,6 +79,48 @@ interface Sparkle {
   color: string;
   delay: number;
 }
+
+/**
+ * リスト内でユーザー名を表示するためのサブコンポーネント
+ */
+const UserListItem = ({ userId, email, timestamp, icon: Icon, timeLabel }: { userId: string, email: string, timestamp: number, icon: any, timeLabel: string }) => {
+  const firestore = useFirestore();
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return doc(firestore, 'users', userId);
+  }, [firestore, userId]);
+  
+  const { data: userData, isLoading } = useDoc<any>(userRef);
+
+  const getDisplayName = () => {
+    if (isLoading) return '読み込み中...';
+    if (userData?.lastName || userData?.firstName) {
+      return `${userData.lastName || ''} ${userData.firstName || ''}`.trim() + 'さん';
+    }
+    if (userData?.email) {
+      return `${userData.email.split('@')[0]}さん`;
+    }
+    if (email) {
+      return `${email.split('@')[0]}さん`;
+    }
+    return '匿名ユーザーさん';
+  };
+
+  return (
+    <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center">
+          <Icon className="w-3.5 h-3.5 text-slate-400" />
+        </div>
+        <span className="text-xs font-bold text-slate-800">{getDisplayName()}</span>
+      </div>
+      <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
+        <Calendar className="w-3 h-3" />
+        {timestamp ? format(timestamp, 'MM/dd HH:mm', { locale: ja }) : '---'}
+      </div>
+    </div>
+  );
+};
 
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) => {
   const { isAdmin, isServerAdmin, updateStatus, deleteLink, duplicateLink, toggleTag, selectedTags } = useLinks();
@@ -558,24 +601,25 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     </Badge>
                   </div>
                   <div className="bg-blue-50/30 rounded-3xl border-2 border-blue-100/50 overflow-hidden">
-                    <ScrollArea className="h-32">
+                    <ScrollArea className="h-48">
                       <div className="p-4 space-y-2">
                         {isLearnersLoading ? (
-                          <div className="flex items-center justify-center py-4">
-                            <BookOpen className="w-5 h-5 text-blue-200 animate-pulse" />
+                          <div className="flex items-center justify-center py-10">
+                            <Loader2 className="w-6 h-6 text-blue-200 animate-spin" />
                           </div>
                         ) : learners && learners.length > 0 ? (
                           learners.map((l: any) => (
-                            <div key={l.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-blue-50 shadow-sm">
-                              <span className="text-xs font-bold text-blue-900">{l.email ? `${l.email.split('@')[0]}さん` : '匿名ユーザーさん'}</span>
-                              <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
-                                <Calendar className="w-3 h-3" />
-                                {l.startedAt ? format(l.startedAt, 'MM/dd HH:mm', { locale: ja }) : '記録なし'}
-                              </div>
-                            </div>
+                            <UserListItem 
+                              key={l.id} 
+                              userId={l.id} 
+                              email={l.email} 
+                              timestamp={l.startedAt} 
+                              icon={BookOpen} 
+                              timeLabel="学習開始"
+                            />
                           ))
                         ) : (
-                          <div className="text-center py-6">
+                          <div className="text-center py-10 bg-white/50 rounded-2xl border border-dashed border-blue-100">
                             <p className="text-xs text-slate-400 font-bold italic">学習中のユーザーはいません</p>
                           </div>
                         )}
@@ -594,24 +638,25 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     </Badge>
                   </div>
                   <div className="bg-emerald-50/30 rounded-3xl border-2 border-emerald-100/50 overflow-hidden">
-                    <ScrollArea className="h-32">
+                    <ScrollArea className="h-48">
                       <div className="p-4 space-y-2">
                         {isCompletionsLoading ? (
-                          <div className="flex items-center justify-center py-4">
-                            <Users className="w-5 h-5 text-emerald-200 animate-pulse" />
+                          <div className="flex items-center justify-center py-10">
+                            <Loader2 className="w-6 h-6 text-emerald-200 animate-spin" />
                           </div>
                         ) : completions && completions.length > 0 ? (
                           completions.map((c: any) => (
-                            <div key={c.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-emerald-50 shadow-sm">
-                              <span className="text-xs font-bold text-emerald-900">{c.email ? `${c.email.split('@')[0]}さん` : '匿名ユーザーさん'}</span>
-                              <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
-                                <Calendar className="w-3 h-3" />
-                                {format(c.completedAt, 'MM/dd HH:mm', { locale: ja })}
-                              </div>
-                            </div>
+                            <UserListItem 
+                              key={c.id} 
+                              userId={c.id} 
+                              email={c.email} 
+                              timestamp={c.completedAt} 
+                              icon={CheckCircle2} 
+                              timeLabel="受講完了"
+                            />
                           ))
                         ) : (
-                          <div className="text-center py-6">
+                          <div className="text-center py-10 bg-white/50 rounded-2xl border border-dashed border-emerald-100">
                             <p className="text-xs text-slate-400 font-bold italic">受講完了したユーザーはいません</p>
                           </div>
                         )}
