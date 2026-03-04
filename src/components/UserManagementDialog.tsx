@@ -397,9 +397,17 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                                 <span className="text-xs font-bold text-emerald-950 truncate">{formatDisplayName(u)}</span>
                                 {isAdminUser && <Badge className="bg-emerald-600 text-[8px] h-4 px-1.5 rounded-sm">Admin</Badge>}
                               </div>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <Mail className="w-3 h-3 text-slate-300" />
-                                <span className="text-[10px] text-slate-400 font-medium truncate">{u.email}</span>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                                <div className="flex items-center gap-1.5">
+                                  <Mail className="w-3 h-3 text-slate-300" />
+                                  <span className="text-[10px] text-slate-400 font-medium truncate max-w-[120px]">{u.email}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="w-3 h-3 text-slate-300" />
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    {u.lastLoginAt ? format(u.lastLoginAt, 'MM/dd HH:mm', { locale: ja }) : '未ログイン'}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
