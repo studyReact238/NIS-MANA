@@ -81,7 +81,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 認証済みかつUIDが確定している場合のみ管理者を読み込む
   const adminDocsRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || isUserLoading) return null;
+    if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'admins');
   }, [firestore, user?.uid, isUserLoading]);
 
@@ -106,7 +106,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    if (!firestore || !user?.uid || isUserLoading) return;
+    if (!firestore || isUserLoading || !user?.uid) return;
     if (loginLoggedRef.current === user.uid) return;
 
     const sessionKey = `nisumana_login_logged_${user.uid}`;
@@ -129,7 +129,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [firestore, user?.uid, isUserLoading]);
 
   const allUsersRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || isUserLoading) return null;
+    if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'users');
   }, [firestore, user?.uid, isUserLoading]);
 
@@ -142,21 +142,22 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user?.uid, adminDocs]);
 
   const rawLinksRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || isUserLoading) return null;
+    if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'learningLinks');
   }, [firestore, user?.uid, isUserLoading]);
 
   const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(rawLinksRef);
 
   const userProgressRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || isUserLoading) return null;
+    if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'users', user.uid, 'progress');
   }, [firestore, user?.uid, isUserLoading]);
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
   const activitiesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || isUserLoading) return null;
+    // 完全に認証が確立され、UIDが取得できるまで待機
+    if (!firestore || isUserLoading || !user?.uid) return null;
     const baseCol = collection(firestore, 'activities');
     const q = timelineLimit > 0 
       ? query(baseCol, orderBy('timestamp', 'desc'), limit(timelineLimit))
@@ -316,7 +317,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
         
-        // 因果関係がわかるよう、昇格ログを最新（now + 1）、高評価をその前（now）にする
+        // タイムラインは降順表示なので、結果(promotion)を最新、原因(upvote)をそのすぐ後に配置
         if (!wasRecommended && isNowRecommended) {
           logActivity('promotion', id, link.title, now + 1);
         }

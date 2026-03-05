@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { format, isValid } from 'date-fns';
+import { format, isValid, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -35,18 +35,18 @@ interface UserActivityCalendarDialogProps {
 }
 
 export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProps> = ({ open, onOpenChange }) => {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const userActivitiesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !open) return null;
+    if (!firestore || isUserLoading || !user?.uid || !open) return null;
     return query(
       collection(firestore, 'activities'),
       where('userId', '==', user.uid),
       orderBy('timestamp', 'desc')
     );
-  }, [firestore, user?.uid, open]);
+  }, [firestore, user?.uid, isUserLoading, open]);
 
   const { data: userActivities, isLoading } = useCollection<any>(userActivitiesQuery);
 
