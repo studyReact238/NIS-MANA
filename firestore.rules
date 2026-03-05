@@ -1,11 +1,10 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // 基本的な認証チェック関数
     function isSignedIn() {
-      return request.auth != null && request.auth.uid != null;
+      return request.auth != null;
     }
 
     // 管理者チェック関数
@@ -17,9 +16,9 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // 1. activities (タイムライン) - 読み取り頻度が高いため最優先で定義
+    // 1. activities (タイムライン) - 最優先で定義し、認証済みユーザーに全読み取りを許可
     match /activities/{activityId} {
-      allow read, create: if isSignedIn();
+      allow list, get, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 

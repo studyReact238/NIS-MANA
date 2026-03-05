@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
@@ -101,7 +100,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userEmail: user.email || '',
       isAdmin: isAdminUser
     }).catch(e => {
-      // ログ出力は控える（エラーエミッターで処理されるため）
+      // ログ出力エラーは個別に処理
     });
   };
 
@@ -124,6 +123,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: user.email,
       lastLoginAt: Date.now()
     }, { merge: true }).then(() => {
+      // ユーザー情報の更新成功後にログを記録
       logActivity('login', '', 'システム');
     });
   }, [firestore, user?.uid, isUserLoading]);
@@ -158,7 +158,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // タイムラインの取得クエリ - 認証が完全に確定してからクエリを生成する
+  // タイムラインの取得クエリ - 認証とFirestoreの準備が完全に整うまで待機
   const activitiesQuery = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     
@@ -169,7 +169,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return query(activitiesCol, orderBy('timestamp', 'desc'));
     } catch (e) {
-      console.error("Timeline query construction failed:", e);
       return null;
     }
   }, [firestore, user?.uid, isUserLoading, timelineLimit]);
