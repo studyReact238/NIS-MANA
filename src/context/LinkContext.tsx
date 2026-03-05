@@ -161,7 +161,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // タイムラインの取得クエリ
   const activitiesQuery = useMemoFirebase(() => {
     // 完全に認証が確立され、UIDが取得でき、かつローディングが終わっていることを確認
-    if (!firestore || isUserLoading || !user?.uid) return null;
+    if (!firestore || isUserLoading || !user || !user.uid) return null;
     
     try {
       const baseCol = collection(firestore, 'activities');
