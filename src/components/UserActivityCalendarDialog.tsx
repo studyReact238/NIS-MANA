@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { format, isValid, startOfDay } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -40,7 +40,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const userActivitiesQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !open) return null;
+    if (!firestore || !user?.uid || !open) return null;
     return query(
       collection(firestore, 'activities'),
       where('userId', '==', user.uid),
@@ -70,7 +70,6 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   // 活動があった日のDateオブジェクト配列（modifiers用）
   const activityDates = useMemo(() => {
     return Array.from(activitiesByDate.keys()).map(dateStr => {
-      // 日付文字列からその日の0時0分（ローカル）のDateオブジェクトを作成
       const [year, month, day] = dateStr.split('-').map(Number);
       return new Date(year, month - 1, day);
     });
@@ -129,16 +128,9 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
                 hasActivity: activityDates
               }}
               modifiersClassNames={{
-                // 活動がある日にドットを表示するスタイル（擬似要素を使用）
                 hasActivity: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-emerald-500 aria-selected:after:bg-white"
               }}
             />
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-[10px] font-bold text-slate-500">活動あり</span>
-              </div>
-            </div>
           </div>
 
           <div className="md:col-span-7 flex flex-col bg-slate-50/50 rounded-3xl border border-emerald-50 overflow-hidden">
@@ -151,7 +143,6 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
                   <h3 className="text-sm font-bold text-emerald-950">
                     {selectedDate && isValid(selectedDate) ? format(selectedDate, 'yyyy年MM月dd日', { locale: ja }) : '日付を選択してください'}
                   </h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Selected Day Details</p>
                 </div>
               </div>
               <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-black">

@@ -26,11 +26,10 @@ service cloud.firestore {
         .hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt', 'isRecommended']);
     }
 
-    // タイムライン（不具合修正のため上位に移動し、権限を明示化）
+    // タイムライン（最優先で評価されるようトップに配置し、読み取り権限を確実に付与）
     match /activities/{activityId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow delete, update: if isAdmin();
+      allow read, create: if request.auth != null;
+      allow update, delete: if isAdmin();
     }
 
     // グローバル共有リンク
