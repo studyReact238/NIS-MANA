@@ -80,10 +80,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginLoggedRef = useRef<string | null>(null);
 
   // 認証済みの場合のみ管理者を読み込む
-  const { data: adminDocs } = useCollection(useMemoFirebase(() => {
+  const adminDocsRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'admins');
-  }, [firestore, user?.uid]));
+  }, [firestore, user?.uid]);
+
+  const { data: adminDocs } = useCollection(adminDocsRef);
 
   const logActivity = (type: string, linkId: string, linkTitle: string, timestamp?: number) => {
     if (!firestore || !user) return;
@@ -127,10 +129,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [firestore, user?.uid]);
 
   // 認証済みの場合のみユーザーリストを読み込む
-  const { data: allUsers } = useCollection(useMemoFirebase(() => {
+  const allUsersRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users');
-  }, [firestore, user?.uid]));
+  }, [firestore, user?.uid]);
+
+  const { data: allUsers } = useCollection(allUsersRef);
 
   const isServerAdmin = useMemo(() => {
     if (!user) return false;
@@ -139,16 +143,20 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user, adminDocs]);
 
   // 認証済みの場合のみ学習リンクを読み込む
-  const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(useMemoFirebase(() => {
+  const rawLinksRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'learningLinks');
-  }, [firestore, user?.uid]));
+  }, [firestore, user?.uid]);
+
+  const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(rawLinksRef);
 
   // 認証済みの場合のみ進捗を読み込む
-  const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(useMemoFirebase(() => {
+  const userProgressRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'progress');
-  }, [firestore, user?.uid]));
+  }, [firestore, user?.uid]);
+
+  const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
   // 認証済みの場合のみアクティビティを読み込む
   const activitiesQuery = useMemoFirebase(() => {

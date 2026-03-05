@@ -23,7 +23,14 @@ service cloud.firestore {
     // 統計カウントと更新日時のみの更新を許可
     function onlyStatsChanging() {
       return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt']);
+        .hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt', 'isRecommended']);
+    }
+
+    // タイムライン（不具合修正のため上位に移動し、権限を明示化）
+    match /activities/{activityId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow delete, update: if isAdmin();
     }
 
     // グローバル共有リンク
@@ -74,14 +81,6 @@ service cloud.firestore {
     match /admins/{userId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
-    }
-
-    // タイムライン
-    match /activities/{activityId} {
-      // 読み取り（get, list）を明示的に許可
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow delete, update: if isAdmin();
     }
   }
 }
