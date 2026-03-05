@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -54,7 +54,11 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
     if (!userActivities) return new Map<string, any[]>();
     const map = new Map<string, any[]>();
     userActivities.forEach(activity => {
-      const dateKey = format(activity.timestamp, 'yyyy-MM-dd');
+      if (!activity.timestamp) return;
+      const date = new Date(activity.timestamp);
+      if (!isValid(date)) return;
+      
+      const dateKey = format(date, 'yyyy-MM-dd');
       if (!map.has(dateKey)) {
         map.set(dateKey, []);
       }
@@ -86,25 +90,10 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   };
 
   const selectedDateActivities = useMemo(() => {
-    if (!selectedDate) return [];
+    if (!selectedDate || !isValid(selectedDate)) return [];
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
     return activitiesByDate.get(dateKey) || [];
   }, [selectedDate, activitiesByDate]);
-
-  const modifiers = useMemo(() => ({
-    hasActivity: (date: Date) => {
-      const dateKey = format(date, 'yyyy-MM-dd');
-      return activitiesByDate.has(dateKey);
-    }
-  }), [activitiesByDate]);
-
-  const modifiersStyles = {
-    hasActivity: {
-      fontWeight: 'bold',
-      textDecoration: 'underline',
-      color: '#059669'
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -126,20 +115,37 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
               selected={selectedDate}
               onSelect={setSelectedDate}
               locale={ja}
-              modifiers={modifiers}
-              modifiersStyles={modifiersStyles}
               className="rounded-2xl border bg-white shadow-sm"
               components={{
-                Day: ({ date, displayMonth, ...props }) => {
+                Day: (dayProps) => {
+                  const { day, ...props } = dayProps;
+                  const date = day.date;
+                  
+                  if (!date || !isValid(date)) return null;
+
                   const dateKey = format(date, 'yyyy-MM-dd');
                   const hasAct = activitiesByDate.has(dateKey);
+                  
+                  // react-day-picker v9 のデフォルトスタイルのためのクラス構築
+                  const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === dateKey;
+
                   return (
                     <div className="relative">
-                      <button {...props} className={cn(props.className, "relative")}>
+                      <button 
+                        {...props}
+                        onClick={() => setSelectedDate(date)}
+                        className={cn(
+                          "relative h-9 w-9 p-0 font-normal aria-selected:opacity-100 flex items-center justify-center rounded-md hover:bg-emerald-50 transition-colors",
+                          isSelected && "bg-emerald-600 text-white hover:bg-emerald-700"
+                        )}
+                      >
                         {date.getDate()}
                       </button>
                       {hasAct && (
-                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-500 rounded-full" />
+                        <div className={cn(
+                          "absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full",
+                          isSelected ? "bg-white" : "bg-emerald-500"
+                        )} />
                       )}
                     </div>
                   );
@@ -162,7 +168,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-emerald-950">
-                    {selectedDate ? format(selectedDate, 'yyyy年MM月dd日', { locale: ja }) : '日付を選択してください'}
+                    {selectedDate && isValid(selectedDate) ? format(selectedDate, 'yyyy年MM月dd日', { locale: ja }) : '日付を選択してください'}
                   </h3>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Selected Day Details</p>
                 </div>
