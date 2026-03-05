@@ -8,6 +8,7 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid != null;
     }
 
+    // 管理者チェック関数
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
@@ -17,16 +18,15 @@ service cloud.firestore {
     }
 
     // 1. activities (タイムライン)
-    // グローバルな読み取りが必要なため、最優先で定義
+    // グローバルな読み取りが必要なため、最優先で定義。認証済みなら誰でも読み取りと作成が可能。
     match /activities/{activityId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow get, list, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
     // 2. admins (管理者名簿)
     match /admins/{userId} {
-      allow read: if isSignedIn();
+      allow get, list: if isSignedIn();
       allow write: if isAdmin();
     }
 

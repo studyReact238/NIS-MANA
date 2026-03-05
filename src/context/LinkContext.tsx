@@ -101,7 +101,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userEmail: user.email || '',
       isAdmin: isAdminUser
     }).catch(e => {
-      console.warn('Activity logging failed:', e);
+      // ログ出力は控える（エラーエミッターで処理されるため）
     });
   };
 
@@ -160,7 +160,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // タイムラインの取得クエリ
   const activitiesQuery = useMemoFirebase(() => {
-    // 完全に認証が確立され、UIDが取得でき、かつローディングが終わっていることを確認
+    // 認証が確定し、UIDが利用可能な場合のみクエリを生成
     if (!firestore || isUserLoading || !user?.uid) return null;
     
     try {
@@ -170,7 +170,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return query(baseCol, orderBy('timestamp', 'desc'));
     } catch (e) {
-      console.error("Activities query build failed:", e);
       return null;
     }
   }, [firestore, user?.uid, isUserLoading, timelineLimit]);
@@ -374,7 +373,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       await batch.commit();
     } catch (error) {
-      console.error('Recalculation failed:', error);
       throw error;
     }
   };
