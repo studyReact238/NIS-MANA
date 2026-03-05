@@ -5,7 +5,7 @@ import React from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck, Loader2 } from 'lucide-react';
+import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck, ThumbsUp, Sparkles, LogIn } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,6 @@ import { doc } from 'firebase/firestore';
 const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[] | null }) => {
   const firestore = useFirestore();
   
-  // 最新のユーザー情報をデータベースから取得
   const userId = activity.userId;
   const userRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
@@ -24,23 +23,19 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
   
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
-  // 管理者判定：コンテキストの管理者リスト、またはログの情報を参照
   const isUserAdmin = adminDocs?.some(a => a.id === userId) || !!activity.isAdmin;
 
   const getDisplayName = () => {
     if (isUserLoading) return '読み込み中...';
     
-    // 姓名が登録されている場合はそれを優先
     if (userData?.lastName || userData?.firstName) {
       return `${userData.lastName || ''} ${userData.firstName || ''}`.trim() + 'さん';
     }
 
-    // 次にメールアドレス（最新）
     if (userData?.email) {
       return `${userData.email.split('@')[0]}さん`;
     }
 
-    // ログに残っている当時のメールアドレス
     if (activity.userEmail && activity.userEmail !== '' && activity.userEmail !== '不明なユーザー') {
       return `${activity.userEmail.split('@')[0]}さん`;
     }
@@ -54,7 +49,10 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
       case 'learning_started': return <BookOpen className="w-5 h-5" />;
       case 'link_added': return <Plus className="w-5 h-5" />;
       case 'link_updated': return <Edit3 className="w-5 h-5" />;
-      default: return <BookOpen className="w-5 h-5" />;
+      case 'login': return <LogIn className="w-5 h-5" />;
+      case 'upvote': return <ThumbsUp className="w-5 h-5" />;
+      case 'promotion': return <Sparkles className="w-5 h-5" />;
+      default: return <Zap className="w-5 h-5" />;
     }
   };
 
@@ -64,6 +62,9 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
       case 'learning_started': return 'bg-blue-50 border-blue-200 text-blue-600';
       case 'link_added': return 'bg-blue-50 border-blue-200 text-blue-600';
       case 'link_updated': return 'bg-amber-50 border-amber-200 text-amber-600';
+      case 'login': return 'bg-indigo-50 border-indigo-200 text-indigo-600';
+      case 'upvote': return 'bg-rose-50 border-rose-200 text-rose-600';
+      case 'promotion': return 'bg-emerald-600 border-emerald-700 text-white animate-pulse';
       default: return 'bg-slate-50 border-slate-200 text-slate-600';
     }
   };
@@ -97,11 +98,17 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
                activity.type === 'completion' ? 'text-emerald-600 border-emerald-100' :
                activity.type === 'learning_started' ? 'text-blue-600 border-blue-100' :
                activity.type === 'link_added' ? 'text-blue-600 border-blue-100' :
+               activity.type === 'login' ? 'text-indigo-600 border-indigo-100' :
+               activity.type === 'upvote' ? 'text-rose-600 border-rose-100' :
+               activity.type === 'promotion' ? 'text-emerald-700 border-emerald-200 font-black' :
                'text-amber-600 border-amber-100'
              )}>
                {activity.type === 'completion' ? '受講完了' : 
                 activity.type === 'learning_started' ? '学習開始' :
-                activity.type === 'link_added' ? '新着追加' : '情報更新'}
+                activity.type === 'link_added' ? '新着追加' : 
+                activity.type === 'login' ? 'ログイン' : 
+                activity.type === 'upvote' ? '高評価' :
+                activity.type === 'promotion' ? '推奨昇格' : '情報更新'}
              </span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
@@ -114,7 +121,9 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
             "font-bold inline-flex items-center gap-1.5",
             activity.type === 'completion' ? "text-emerald-900" :
             activity.type === 'learning_started' ? "text-blue-900" :
-            activity.type === 'link_added' ? "text-blue-900" : "text-amber-900"
+            activity.type === 'link_added' ? "text-blue-900" : 
+            activity.type === 'login' ? "text-indigo-900" :
+            activity.type === 'promotion' ? "text-emerald-950" : "text-amber-900"
           )}>
             {getDisplayName()}
             {isUserAdmin && (
@@ -137,6 +146,21 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
               <span>新しいリンク</span>
               <span className="font-bold text-blue-700">「{activity.linkTitle}」</span>
               <span>を追加しました。</span>
+            </>
+          ) : activity.type === 'login' ? (
+            <>
+              <span>システムにログインしました。</span>
+            </>
+          ) : activity.type === 'upvote' ? (
+            <>
+              <span className="font-bold text-rose-700">「{activity.linkTitle}」</span>
+              <span>に高評価をつけました！</span>
+            </>
+          ) : activity.type === 'promotion' ? (
+            <>
+              <span>ついに！</span>
+              <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>
+              <span>が推奨コンテンツに昇格しました！🎉</span>
             </>
           ) : (
             <>

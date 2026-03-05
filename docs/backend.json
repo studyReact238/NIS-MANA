@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -178,7 +179,7 @@
         "linkTitle": { "type": "string" },
         "linkId": { "type": "string" },
         "timestamp": { "type": "number" },
-        "type": { "type": "string", "enum": ["completion", "learning_started", "link_added", "link_updated"] }
+        "type": { "type": "string", "enum": ["completion", "learning_started", "link_added", "link_updated", "login", "upvote", "promotion"] }
       }
     }
   },

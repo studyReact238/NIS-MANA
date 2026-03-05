@@ -49,6 +49,7 @@ interface LinkContextType {
   deleteLink: (id: string) => void;
   duplicateLink: (id: string) => void;
   updateStatus: (id: string, status: LinkStatus) => void;
+  voteLink: (id: string, type: 'up' | 'down', currentVote?: 'up' | 'down' | null) => Promise<void>;
   recalculateAllCounts: () => Promise<void>;
   filteredLinks: LearningLink[];
   allTags: string[];
@@ -76,6 +77,24 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
 
+  const logActivity = (type: string, linkId: string, linkTitle: string) => {
+    if (!firestore || !user) return;
+    const activityRef = collection(firestore, 'activities');
+    const isAdminUser = adminDocs?.some(a => a.id === user.uid) || false;
+
+    addDoc(activityRef, {
+      type,
+      linkId,
+      linkTitle,
+      timestamp: Date.now(),
+      userId: user.uid,
+      userEmail: user.email || '',
+      isAdmin: isAdminUser
+    }).catch(e => {
+      console.error('Activity logging failed:', e);
+    });
+  };
+
   // ログイン時にユーザー情報を確実に保存/更新
   useEffect(() => {
     if (!firestore || !user) return;
@@ -85,8 +104,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: user.uid,
       email: user.email,
       lastLoginAt: Date.now()
-    }, { merge: true });
-  }, [firestore, user]);
+    }, { merge: true }).then(() => {
+      // ログインアクティビティを記録
+      logActivity('login', '', 'システム');
+    });
+  }, [firestore, user?.uid]);
 
   const { data: adminDocs } = useCollection(useMemoFirebase(() => {
     if (!firestore) return null;
@@ -125,18 +147,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: activities } = useCollection<any>(activitiesQuery);
 
+  const totalUsers = useMemo(() => allUsers?.length || 1, [allUsers]);
+
   const links = useMemo(() => {
     if (!rawLinks) return [];
     const progressMap = new Map(userProgress?.map(p => [p.id, p.status]) || []);
-    const totalUsers = allUsers?.length || 1;
     
     return rawLinks.map(link => {
       const upvotes = Math.max(0, link.upvoteCount || 0);
       const downvotes = Math.max(0, link.downvoteCount || 0);
       
-      // 推奨判定ロジック:
-      // 1. 高評価数が登録ユーザーの10%以上
-      // 2. 高評価数が低評価数より多い
       const isRecommended = upvotes >= (totalUsers * 0.1) && upvotes > downvotes;
 
       return {
@@ -149,27 +169,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isRecommended
       };
     }) as LearningLink[];
-  }, [rawLinks, userProgress, allUsers]);
+  }, [rawLinks, userProgress, totalUsers]);
 
   const isAdmin = isServerAdmin === true && isAdminManual;
-
-  const logActivity = (type: string, linkId: string, linkTitle: string) => {
-    if (!firestore || !user) return;
-    const activityRef = collection(firestore, 'activities');
-    const isAdminUser = adminDocs?.some(a => a.id === user.uid) || false;
-
-    addDoc(activityRef, {
-      type,
-      linkId,
-      linkTitle,
-      timestamp: Date.now(),
-      userId: user.uid,
-      userEmail: user.email || '',
-      isAdmin: isAdminUser
-    }).catch(e => {
-      console.error('Activity logging failed:', e);
-    });
-  };
 
   const addLink = (data: any) => {
     if (!firestore || !user) return;
@@ -266,6 +268,54 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const voteLink = async (id: string, type: 'up' | 'down', userVote?: 'up' | 'down' | null) => {
+    if (!firestore || !user) return;
+    const voteRef = doc(firestore, 'learningLinks', id, 'votes', user.uid);
+    const linkRef = doc(firestore, 'learningLinks', id);
+    const link = links.find(l => l.id === id);
+    if (!link) return;
+
+    // 現在の状態を把握
+    const currentUpvotes = link.upvoteCount;
+    const currentDownvotes = link.downvoteCount;
+    const wasRecommended = link.isRecommended;
+
+    if (userVote === type) {
+      // 投票取り消し
+      await deleteDoc(voteRef);
+      const updates: any = {
+        [`${type}voteCount`]: increment(-1)
+      };
+      await updateDoc(linkRef, updates);
+    } else {
+      // 新規投票または切り替え
+      const oldVote = userVote;
+      await setDoc(voteRef, { type, updatedAt: Date.now() }, { merge: true });
+      
+      const updates: any = {
+        [`${type}voteCount`]: increment(1)
+      };
+      if (oldVote) {
+        updates[`${oldVote}voteCount`] = increment(-1);
+      }
+      await updateDoc(linkRef, updates);
+
+      // 高評価のアクティビティを記録
+      if (type === 'up') {
+        logActivity('upvote', id, link.title);
+
+        // 推奨への昇格チェック（クライアントサイドで簡易判定）
+        const nextUpvotes = currentUpvotes + 1;
+        const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
+        const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
+
+        if (!wasRecommended && isNowRecommended) {
+          logActivity('promotion', id, link.title);
+        }
+      }
+    }
+  };
+
   const recalculateAllCounts = async () => {
     if (!firestore) return;
     if (!isServerAdmin) throw new Error('権限がありません。');
@@ -359,9 +409,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       recommendationFilter, setRecommendationFilter,
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, updateStatus, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
+      duplicateLink, updateStatus, voteLink, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
       activities: activities || [], timelineLimit, setTimelineLimit, adminDocs: adminDocs || [],
-      totalUserCount: allUsers?.length || 0
+      totalUserCount: totalUsers
     }}>
       {children}
     </LinkContext.Provider>

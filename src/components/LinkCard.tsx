@@ -61,9 +61,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, setDoc, updateDoc, increment, deleteDoc, collection } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { doc, deleteDoc, collection } from 'firebase/firestore';
 import Link from 'next/link';
 
 interface LinkCardProps {
@@ -82,9 +80,6 @@ interface Sparkle {
   delay: number;
 }
 
-/**
- * リスト内でユーザー名を表示するためのサブコンポーネント
- */
 const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { userId: string, email: string, timestamp: number, icon: any, adminDocs: any[] | null }) => {
   const firestore = useFirestore();
   const userRef = useMemoFirebase(() => {
@@ -132,7 +127,7 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { use
 };
 
 export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) => {
-  const { isAdmin, isServerAdmin, updateStatus, deleteLink, duplicateLink, toggleTag, selectedTags, adminDocs } = useLinks();
+  const { isAdmin, isServerAdmin, updateStatus, voteLink, deleteLink, duplicateLink, toggleTag, selectedTags, adminDocs } = useLinks();
   const { user } = useUser();
   const firestore = useFirestore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -203,36 +198,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
     updateStatus(link.id, newStatus);
   };
 
-  const handleVote = (type: 'up' | 'down') => {
-    if (!firestore || !user) return;
-    const voteRef = doc(firestore, 'learningLinks', link.id, 'votes', user.uid);
-    const linkRef = doc(firestore, 'learningLinks', link.id);
-
-    if (userVote === type) {
-      deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
-      
-      const currentVoteCount = (link as any)[`${type}voteCount`] || 0;
-      if (currentVoteCount > 0) {
-        updateDoc(linkRef, {
-          [`${type}voteCount`]: increment(-1)
-        }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
-      }
-    } else {
-      const oldVote = userVote;
-      setDoc(voteRef, { type, updatedAt: Date.now() }, { merge: true })
-        .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: { type } })));
-      
-      const updates: any = {
-        [`${type}voteCount`]: increment(1)
-      };
-      if (oldVote) {
-        const oldVoteCount = (link as any)[`${oldVote}voteCount`] || 0;
-        if (oldVoteCount > 0) {
-          updates[`${oldVote}voteCount`] = increment(-1);
-        }
-      }
-      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
-    }
+  const handleVoteAction = (type: 'up' | 'down') => {
+    voteLink(link.id, type, userVote);
   };
 
   const getStatusLabel = (status: LinkStatus) => {
@@ -442,7 +409,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                
                <div className="flex items-center gap-4 ml-auto">
                  <button 
-                   onClick={() => handleVote('up')}
+                   onClick={() => handleVoteAction('up')}
                    className={cn(
                      "flex items-center gap-1.5 transition-all hover:scale-110",
                      userVote === 'up' ? "text-emerald-600 scale-110" : "text-slate-400"
@@ -452,7 +419,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                    <span className="text-[10px] font-black">{Math.max(0, link.upvoteCount || 0)}</span>
                  </button>
                  <button 
-                   onClick={() => handleVote('down')}
+                   onClick={() => handleVoteAction('down')}
                    className={cn(
                      "flex items-center gap-1.5 transition-all hover:scale-110",
                      userVote === 'down' ? "text-rose-600 scale-110" : "text-slate-400"
