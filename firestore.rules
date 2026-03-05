@@ -17,9 +17,10 @@ service cloud.firestore {
     }
 
     // 1. activities (タイムライン)
-    // 最も頻繁にアクセスされ、かつ権限エラーが発生しやすいため、先頭で定義
+    // グローバルな読み取りが必要なため、最優先で定義
     match /activities/{activityId} {
-      allow read, create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
