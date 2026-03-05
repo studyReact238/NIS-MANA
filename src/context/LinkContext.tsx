@@ -155,13 +155,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
   const activitiesQuery = useMemoFirebase(() => {
-    // 完全に認証が確立されるまでクエリを発行しない
+    // 完全に認証が確立され、UIDが取得でき、Firestoreが準備できるまで待機
     if (!firestore || isUserLoading || !user?.uid) return null;
-    const baseCol = collection(firestore, 'activities');
-    const q = timelineLimit > 0 
-      ? query(baseCol, orderBy('timestamp', 'desc'), limit(timelineLimit))
-      : query(baseCol, orderBy('timestamp', 'desc'));
-    return q;
+    
+    try {
+      const baseCol = collection(firestore, 'activities');
+      const q = timelineLimit > 0 
+        ? query(baseCol, orderBy('timestamp', 'desc'), limit(timelineLimit))
+        : query(baseCol, orderBy('timestamp', 'desc'));
+      return q;
+    } catch (e) {
+      console.error("Activities query build failed:", e);
+      return null;
+    }
   }, [firestore, user?.uid, isUserLoading, timelineLimit]);
 
   const { data: activities } = useCollection<any>(activitiesQuery);
@@ -316,7 +322,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
         
-        // 昇格通知を先、高評価通知を後（タイムラインでは昇格が上、高評価が下になるよう）
+        // 昇格通知を最新、高評価をその次に配置
         if (!wasRecommended && isNowRecommended) {
           logActivity('promotion', id, link.title, now + 1);
         }

@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { format, isValid, startOfDay } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -40,13 +40,18 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const userActivitiesQuery = useMemoFirebase(() => {
-    // 完全に認証が確立され、UIDが取得できるまで待機
+    // 完全に認証が確立され、UIDが取得でき、Firestoreが準備できるまで待機
     if (!firestore || isUserLoading || !user?.uid || !open) return null;
-    return query(
-      collection(firestore, 'activities'),
-      where('userId', '==', user.uid),
-      orderBy('timestamp', 'desc')
-    );
+    try {
+      return query(
+        collection(firestore, 'activities'),
+        where('userId', '==', user.uid),
+        orderBy('timestamp', 'desc')
+      );
+    } catch (e) {
+      console.error("User activities query failed:", e);
+      return null;
+    }
   }, [firestore, user?.uid, isUserLoading, open]);
 
   const { data: userActivities, isLoading } = useCollection<any>(userActivitiesQuery);
@@ -68,7 +73,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
     return map;
   }, [userActivities]);
 
-  // 活動があった日のDateオブジェクト配列（modifiers用）
+  // 活動があった日のDateオブジェクト配列
   const activityDates = useMemo(() => {
     return Array.from(activitiesByDate.keys()).map(dateStr => {
       const [year, month, day] = dateStr.split('-').map(Number);
