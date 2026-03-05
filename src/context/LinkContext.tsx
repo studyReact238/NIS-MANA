@@ -160,6 +160,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // タイムラインの取得クエリ - 認証とFirestoreの準備が完全に整うまで待機
   const activitiesQuery = useMemoFirebase(() => {
+    // 完全に認証が確立され、UIDが取得でき、Firestoreが準備できるまで待機
     if (!firestore || isUserLoading || !user?.uid) return null;
     
     try {
