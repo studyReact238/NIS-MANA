@@ -245,7 +245,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write', requestResourceData: { status: nextStatus } })));
 
-    const updates: any = { updatedAt: Date.now() };
+    // ユーザー個別のステータス変更では、グローバルなリンクのupdatedAtは更新しない
+    const updates: any = {};
 
     if (oldStatus === 'completed') {
       updates.completedCount = increment(-1);
@@ -267,7 +268,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logActivity('learning_started', link.id, link.title);
     }
 
-    if (Object.keys(updates).length > 1) {
+    if (Object.keys(updates).length > 0) {
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
     }
   };
@@ -283,11 +284,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentDownvotes = link.downvoteCount;
     const wasRecommended = link.isRecommended;
 
+    // 投票アクションではリンクのupdatedAtは更新しない（並べ替え順序を維持するため）
     if (userVote === type) {
-      // 投票取り消し: 許可されるフィールドのみを確実に送信
+      // 投票取り消し
       const updates = {
-        [`${type}voteCount`]: increment(-1),
-        updatedAt: Date.now()
+        [`${type}voteCount`]: increment(-1)
       };
       
       deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
@@ -300,8 +301,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setDoc(voteRef, voteData, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: voteData })));
       
       const updates: any = {
-        [`${type}voteCount`]: increment(1),
-        updatedAt: Date.now()
+        [`${type}voteCount`]: increment(1)
       };
       if (oldVote) {
         updates[`${oldVote}voteCount`] = increment(-1);

@@ -15,15 +15,15 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // 作成者かどうかのチェック（フィールドの存在を確認してから比較）
+    // 作成者かどうかのチェック
     function isCreator() {
       return isSignedIn() && resource.data != null && resource.data.get('createdBy', '') == request.auth.uid;
     }
 
-    // 統計カウントと更新日時、および推奨フラグのみの更新を許可
+    // 統計カウントと更新日時のみの更新を許可
     function onlyStatsChanging() {
       return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt', 'isRecommended']);
+        .hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt']);
     }
 
     // グローバル共有リンク
@@ -32,7 +32,7 @@ service cloud.firestore {
       allow create: if isSignedIn();
       
       // 管理者または作成者は全フィールド更新可能。
-      // 一般ユーザーは統計カウントと更新日時のみ更新可能。
+      // 一般ユーザーは統計カウントのみ更新可能（更新日時は含めても含めなくても良い）。
       allow update: if isAdmin() 
                     || isCreator()
                     || (isSignedIn() && onlyStatsChanging());
