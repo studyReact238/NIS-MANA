@@ -49,7 +49,7 @@ interface LinkContextType {
   deleteLink: (id: string) => void;
   duplicateLink: (id: string) => void;
   updateStatus: (id: string, status: LinkStatus) => void;
-  voteLink: (id: string, type: 'up' | 'down', currentVote?: 'up' | 'down' | null) => Promise<void>;
+  voteLink: (id: string, type: 'up' | 'down', currentVote?: 'up' | 'down' | null) => void;
   recalculateAllCounts: () => Promise<void>;
   filteredLinks: LearningLink[];
   allTags: string[];
@@ -77,7 +77,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
 
-  // ログインログの重複記録を防ぐためのガード（メモリ内）
   const loginLoggedRef = useRef<string | null>(null);
 
   const { data: adminDocs } = useCollection(useMemoFirebase(() => {
@@ -99,25 +98,21 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userEmail: user.email || '',
       isAdmin: isAdminUser
     }).catch(e => {
-      console.error('Activity logging failed:', e);
+      // Quietly log to console for debugging activities, but don't surface to UI necessarily
+      console.warn('Activity logging failed:', e);
     });
   };
 
-  // ログイン時にユーザー情報を保存し、ログイン通知を記録
   useEffect(() => {
     if (!firestore || !user) return;
-    
-    // 現在のUIDですでにこのコンポーネントインスタンス内で処理済みなら無視
     if (loginLoggedRef.current === user.uid) return;
 
     const sessionKey = `nisumana_login_logged_${user.uid}`;
-    // セッション全体ですでに記録済みなら無視
     if (sessionStorage.getItem(sessionKey)) {
       loginLoggedRef.current = user.uid;
       return;
     }
 
-    // 非同期処理が走る前に即座にフラグを立てる（二重実行を確実に防ぐ）
     loginLoggedRef.current = user.uid;
     sessionStorage.setItem(sessionKey, 'true');
 
@@ -127,10 +122,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: user.email,
       lastLoginAt: Date.now()
     }, { merge: true }).then(() => {
-      // データベース更新後にアクティビティを記録
       logActivity('login', '', 'システム');
     });
-  }, [firestore, user?.uid, adminDocs]); // adminDocsも追加して権限確定後にログが飛ぶように調整
+  }, [firestore, user?.uid]);
 
   const { data: allUsers } = useCollection(useMemoFirebase(() => {
     if (!firestore) return null;
@@ -250,82 +244,74 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDoc(progressRef, { 
       status: nextStatus, 
       updatedAt: Date.now() 
-    }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write' })));
+    }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write', requestResourceData: { status: nextStatus } })));
 
-    const updates: any = {};
+    const updates: any = { updatedAt: Date.now() };
 
     if (oldStatus === 'completed') {
       updates.completedCount = increment(-1);
-      deleteDoc(completionRef);
+      deleteDoc(completionRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'delete' })));
     } else if (oldStatus === 'learning') {
       updates.learningCount = increment(-1);
-      deleteDoc(learnerRef);
+      deleteDoc(learnerRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'delete' })));
     }
 
     if (nextStatus === 'completed') {
       updates.completedCount = increment(1);
-      setDoc(completionRef, {
-        email: user.email,
-        completedAt: Date.now()
-      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create' })));
-
+      const cData = { email: user.email, completedAt: Date.now() };
+      setDoc(completionRef, cData).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create', requestResourceData: cData })));
       logActivity('completion', link.id, link.title);
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
-      setDoc(learnerRef, {
-        email: user.email,
-        startedAt: Date.now()
-      }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create' })));
-
+      const lData = { email: user.email, startedAt: Date.now() };
+      setDoc(learnerRef, lData).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create', requestResourceData: lData })));
       logActivity('learning_started', link.id, link.title);
     }
 
-    if (Object.keys(updates).length > 0) {
-      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update' })));
+    if (Object.keys(updates).length > 1) { // updatedAt以外のフィールドがある場合
+      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
     }
   };
 
-  const voteLink = async (id: string, type: 'up' | 'down', userVote?: 'up' | 'down' | null) => {
+  const voteLink = (id: string, type: 'up' | 'down', userVote?: 'up' | 'down' | null) => {
     if (!firestore || !user) return;
     const voteRef = doc(firestore, 'learningLinks', id, 'votes', user.uid);
     const linkRef = doc(firestore, 'learningLinks', id);
     const link = links.find(l => l.id === id);
     if (!link) return;
 
-    // 現在の状態を把握
     const currentUpvotes = link.upvoteCount;
     const currentDownvotes = link.downvoteCount;
     const wasRecommended = link.isRecommended;
 
     if (userVote === type) {
       // 投票取り消し
-      await deleteDoc(voteRef);
+      deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
       const updates: any = {
-        [`${type}voteCount`]: increment(-1)
+        [`${type}voteCount`]: increment(-1),
+        updatedAt: Date.now()
       };
-      await updateDoc(linkRef, updates);
+      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
     } else {
       // 新規投票または切り替え
       const oldVote = userVote;
-      await setDoc(voteRef, { type, updatedAt: Date.now() }, { merge: true });
+      const voteData = { type, updatedAt: Date.now() };
+      setDoc(voteRef, voteData, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: voteData })));
       
       const updates: any = {
-        [`${type}voteCount`]: increment(1)
+        [`${type}voteCount`]: increment(1),
+        updatedAt: Date.now()
       };
       if (oldVote) {
         updates[`${oldVote}voteCount`] = increment(-1);
       }
-      await updateDoc(linkRef, updates);
+      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
 
-      // 高評価のアクティビティを記録
       if (type === 'up') {
         logActivity('upvote', id, link.title);
-
-        // 推奨への昇格チェック（クライアントサイドで簡易判定）
         const nextUpvotes = currentUpvotes + 1;
         const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
-
         if (!wasRecommended && isNowRecommended) {
           logActivity('promotion', id, link.title);
         }

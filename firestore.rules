@@ -19,7 +19,14 @@ service cloud.firestore {
     match /learningLinks/{linkId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.createdBy);
+      
+      // 管理者または作成者は全フィールド更新可能。
+      // 一般ユーザーは統計カウント（upvote, downvote, learning, completed）と更新日時のみ更新可能。
+      allow update: if isAdmin() 
+                    || (isSignedIn() && request.auth.uid == resource.data.createdBy)
+                    || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt']));
+      
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.createdBy);
     }
 
     // リンクへの投票
@@ -29,7 +36,6 @@ service cloud.firestore {
     }
 
     // 受講完了者名簿・学習中ユーザー名簿
-    // 管理者による一括メンテナンス（再集計）を許可
     match /learningLinks/{linkId}/completions/{userId} {
       allow read: if isSignedIn();
       allow write: if isOwner(userId) || isAdmin();
@@ -41,7 +47,6 @@ service cloud.firestore {
     }
 
     // ユーザー個別の進捗管理
-    // 管理者が統計のために読み取ることを許可
     match /users/{userId}/progress/{linkId} {
       allow read: if isOwner(userId) || isAdmin();
       allow write: if isOwner(userId);
