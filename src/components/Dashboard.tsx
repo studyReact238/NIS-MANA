@@ -84,6 +84,10 @@ export const Dashboard: React.FC = () => {
   const handleLogout = async () => {
     try {
       if (auth) {
+        // ログイン記録フラグをリセット（再ログイン時にタイムラインに表示されるようにするため）
+        if (user) {
+          sessionStorage.removeItem(`nisumana_login_logged_${user.uid}`);
+        }
         await signOut(auth);
         toast({ title: "ログアウトしました", description: "またのご利用をお待ちしております。" });
       }
