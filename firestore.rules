@@ -16,10 +16,9 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // 1. activities (タイムライン)
-    // 認証済みユーザーにリスト取得と単体取得を許可
+    // 1. activities (タイムライン) - 最優先で評価されるよう先頭に配置
     match /activities/{activityId} {
-      allow get, list, create: if isSignedIn();
+      allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 

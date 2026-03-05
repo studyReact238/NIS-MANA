@@ -155,7 +155,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
   const activitiesQuery = useMemoFirebase(() => {
-    // 完全に認証が確立され、UIDが取得でき、Firestoreが準備できるまで待機
+    // 完全に認証が確立され、UIDが取得でき、かつローディングが終わっていることを確認
     if (!firestore || isUserLoading || !user?.uid) return null;
     
     try {
