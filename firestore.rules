@@ -32,7 +32,7 @@ service cloud.firestore {
       allow create: if isSignedIn();
       
       // 管理者または作成者は全フィールド更新可能。
-      // 一般ユーザーは統計カウントのみ更新可能（更新日時は含めても含めなくても良い）。
+      // 一般ユーザーは統計カウントのみ更新可能。
       allow update: if isAdmin() 
                     || isCreator()
                     || (isSignedIn() && onlyStatsChanging());
@@ -78,6 +78,7 @@ service cloud.firestore {
 
     // タイムライン
     match /activities/{activityId} {
+      // 読み取り（get, list）を明示的に許可
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow delete, update: if isAdmin();
