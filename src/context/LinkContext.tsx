@@ -80,6 +80,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 管理者リストの取得
   const adminDocsRef = useMemoFirebase(() => {
+    // 完全に認証が確立され、UIDが取得でき、Firestoreが準備できるまで待機
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'admins');
   }, [firestore, user?.uid, isUserLoading]);
