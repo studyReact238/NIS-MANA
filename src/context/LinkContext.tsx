@@ -95,10 +95,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // ログイン時にユーザー情報を確実に保存/更新
+  // ログイン時にユーザー情報を保存し、ログイン通知を記録（重複防止済み）
   useEffect(() => {
     if (!firestore || !user) return;
     
+    // セッション中（ブラウザのタブを閉じるまで）1回のみ記録するように制御
+    const sessionKey = `nisumana_login_logged_${user.uid}`;
+    if (sessionStorage.getItem(sessionKey)) return;
+
     const userRef = doc(firestore, 'users', user.uid);
     setDoc(userRef, {
       id: user.uid,
@@ -107,6 +111,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, { merge: true }).then(() => {
       // ログインアクティビティを記録
       logActivity('login', '', 'システム');
+      // 記録済みフラグを立てる
+      sessionStorage.setItem(sessionKey, 'true');
     });
   }, [firestore, user?.uid]);
 
