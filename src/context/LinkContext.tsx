@@ -158,18 +158,18 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // タイムラインの取得クエリ
+  // タイムラインの取得クエリ - 認証が完全に確定してからクエリを生成する
   const activitiesQuery = useMemoFirebase(() => {
-    // 認証が確定し、UIDが利用可能な場合のみクエリを生成
     if (!firestore || isUserLoading || !user?.uid) return null;
     
     try {
-      const baseCol = collection(firestore, 'activities');
+      const activitiesCol = collection(firestore, 'activities');
       if (timelineLimit > 0) {
-        return query(baseCol, orderBy('timestamp', 'desc'), limit(timelineLimit));
+        return query(activitiesCol, orderBy('timestamp', 'desc'), limit(timelineLimit));
       }
-      return query(baseCol, orderBy('timestamp', 'desc'));
+      return query(activitiesCol, orderBy('timestamp', 'desc'));
     } catch (e) {
+      console.error("Timeline query construction failed:", e);
       return null;
     }
   }, [firestore, user?.uid, isUserLoading, timelineLimit]);
