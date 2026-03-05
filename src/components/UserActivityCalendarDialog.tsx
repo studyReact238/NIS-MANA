@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { format, isValid } from 'date-fns';
+import { format, isValid, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -66,6 +66,15 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
     });
     return map;
   }, [userActivities]);
+
+  // 活動があった日のDateオブジェクト配列（modifiers用）
+  const activityDates = useMemo(() => {
+    return Array.from(activitiesByDate.keys()).map(dateStr => {
+      // 日付文字列からその日の0時0分（ローカル）のDateオブジェクトを作成
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    });
+  }, [activitiesByDate]);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -116,40 +125,12 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
               onSelect={setSelectedDate}
               locale={ja}
               className="rounded-2xl border bg-white shadow-sm"
-              components={{
-                Day: (dayProps) => {
-                  const { day, ...props } = dayProps;
-                  const date = day.date;
-                  
-                  if (!date || !isValid(date)) return null;
-
-                  const dateKey = format(date, 'yyyy-MM-dd');
-                  const hasAct = activitiesByDate.has(dateKey);
-                  
-                  // react-day-picker v9 のデフォルトスタイルのためのクラス構築
-                  const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === dateKey;
-
-                  return (
-                    <div className="relative">
-                      <button 
-                        {...props}
-                        onClick={() => setSelectedDate(date)}
-                        className={cn(
-                          "relative h-9 w-9 p-0 font-normal aria-selected:opacity-100 flex items-center justify-center rounded-md hover:bg-emerald-50 transition-colors",
-                          isSelected && "bg-emerald-600 text-white hover:bg-emerald-700"
-                        )}
-                      >
-                        {date.getDate()}
-                      </button>
-                      {hasAct && (
-                        <div className={cn(
-                          "absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full",
-                          isSelected ? "bg-white" : "bg-emerald-500"
-                        )} />
-                      )}
-                    </div>
-                  );
-                }
+              modifiers={{
+                hasActivity: activityDates
+              }}
+              modifiersClassNames={{
+                // 活動がある日にドットを表示するスタイル（擬似要素を使用）
+                hasActivity: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-emerald-500 aria-selected:after:bg-white"
               }}
             />
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2">
