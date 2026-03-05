@@ -98,7 +98,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userEmail: user.email || '',
       isAdmin: isAdminUser
     }).catch(e => {
-      // Quietly log to console for debugging activities, but don't surface to UI necessarily
       console.warn('Activity logging failed:', e);
     });
   };
@@ -268,7 +267,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logActivity('learning_started', link.id, link.title);
     }
 
-    if (Object.keys(updates).length > 1) { // updatedAt以外のフィールドがある場合
+    if (Object.keys(updates).length > 1) {
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
     }
   };
@@ -285,17 +284,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const wasRecommended = link.isRecommended;
 
     if (userVote === type) {
-      // 投票取り消し
-      deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
-      const updates: any = {
+      // 投票取り消し: 許可されるフィールドのみを確実に送信
+      const updates = {
         [`${type}voteCount`]: increment(-1),
         updatedAt: Date.now()
       };
+      
+      deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
     } else {
       // 新規投票または切り替え
       const oldVote = userVote;
       const voteData = { type, updatedAt: Date.now() };
+      
       setDoc(voteRef, voteData, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: voteData })));
       
       const updates: any = {

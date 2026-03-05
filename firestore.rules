@@ -15,18 +15,29 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    // 作成者かどうかのチェック（フィールドの存在を確認してから比較）
+    function isCreator() {
+      return isSignedIn() && resource.data != null && resource.data.get('createdBy', '') == request.auth.uid;
+    }
+
+    // 統計カウントと更新日時、および推奨フラグのみの更新を許可
+    function onlyStatsChanging() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt', 'isRecommended']);
+    }
+
     // グローバル共有リンク
     match /learningLinks/{linkId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       
       // 管理者または作成者は全フィールド更新可能。
-      // 一般ユーザーは統計カウント（upvote, downvote, learning, completed）と更新日時のみ更新可能。
+      // 一般ユーザーは統計カウントと更新日時のみ更新可能。
       allow update: if isAdmin() 
-                    || (isSignedIn() && request.auth.uid == resource.data.createdBy)
-                    || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt']));
+                    || isCreator()
+                    || (isSignedIn() && onlyStatsChanging());
       
-      allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.createdBy);
+      allow delete: if isAdmin() || isCreator();
     }
 
     // リンクへの投票
