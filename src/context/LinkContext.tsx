@@ -79,7 +79,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginLoggedRef = useRef<string | null>(null);
 
-  // 認証済みの場合のみ管理者を読み込む
+  // 認証済みかつUIDが確定している場合のみ管理者を読み込む
   const adminDocsRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return collection(firestore, 'admins');
@@ -158,14 +158,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // 認証済みの場合のみアクティビティを読み込む
+  // 認証済みかつUIDが確定している場合のみアクティビティを読み込む
   const activitiesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    const baseQuery = collection(firestore, 'activities');
+    const baseCol = collection(firestore, 'activities');
     if (timelineLimit > 0) {
-      return query(baseQuery, orderBy('timestamp', 'desc'), limit(timelineLimit));
+      return query(baseCol, orderBy('timestamp', 'desc'), limit(timelineLimit));
     }
-    return query(baseQuery, orderBy('timestamp', 'desc'));
+    return query(baseCol, orderBy('timestamp', 'desc'));
   }, [firestore, user?.uid, timelineLimit]);
 
   const { data: activities } = useCollection<any>(activitiesQuery);
@@ -285,7 +285,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const voteLink = (id: string, type: 'up' | 'down', userVote?: 'up' | 'down' | null) => {
+  const voteLink = (id: string, type: 'up' | 'down', currentVote?: 'up' | 'down' | null) => {
     if (!firestore || !user?.uid) return;
     const voteRef = doc(firestore, 'learningLinks', id, 'votes', user.uid);
     const linkRef = doc(firestore, 'learningLinks', id);
@@ -293,10 +293,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!link) return;
 
     const currentUpvotes = link.upvoteCount;
-    const currentDownvotes = link.downvotesCount;
+    const currentDownvotes = link.downvoteCount;
     const wasRecommended = link.isRecommended;
 
-    if (userVote === type) {
+    if (currentVote === type) {
       const updates = {
         [`${type}voteCount`]: increment(-1)
       };
@@ -304,7 +304,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
     } else {
-      const oldVote = userVote;
+      const oldVote = currentVote;
       const voteData = { type, updatedAt: Date.now() };
       
       setDoc(voteRef, voteData, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: voteData })));

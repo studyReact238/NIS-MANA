@@ -15,20 +15,9 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // 作成者かどうかのチェック
-    function isCreator() {
-      return isSignedIn() && resource.data != null && resource.data.get('createdBy', '') == request.auth.uid;
-    }
-
-    // 統計カウントと更新日時のみの更新を許可
-    function onlyStatsChanging() {
-      return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt', 'isRecommended']);
-    }
-
-    // タイムライン（最優先で評価されるようトップに配置し、読み取り権限を確実に付与）
+    // タイムライン (activities): 認証済みユーザーに一覧取得・詳細取得・作成を許可
     match /activities/{activityId} {
-      allow read, create: if request.auth != null;
+      allow get, list, create: if request.auth != null;
       allow update, delete: if isAdmin();
     }
 
@@ -40,10 +29,10 @@ service cloud.firestore {
       // 管理者または作成者は全フィールド更新可能。
       // 一般ユーザーは統計カウントのみ更新可能。
       allow update: if isAdmin() 
-                    || isCreator()
-                    || (isSignedIn() && onlyStatsChanging());
+                    || (isSignedIn() && resource.data.get('createdBy', '') == request.auth.uid)
+                    || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt', 'isRecommended']));
       
-      allow delete: if isAdmin() || isCreator();
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.get('createdBy', '') == request.auth.uid);
     }
 
     // リンクへの投票
