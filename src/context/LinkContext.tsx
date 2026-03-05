@@ -79,6 +79,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginLoggedRef = useRef<string | null>(null);
 
+  // 管理者リストの取得
   const adminDocsRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'admins');
@@ -127,6 +128,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [firestore, user?.uid, isUserLoading]);
 
+  // 全ユーザーリスト（推奨ロジック計算用）
   const allUsersRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'users');
@@ -140,6 +142,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return adminDocs.some(admin => admin.id === user.uid);
   }, [user?.uid, adminDocs]);
 
+  // リンクマスターの取得
   const rawLinksRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'learningLinks');
@@ -147,6 +150,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(rawLinksRef);
 
+  // ユーザー自身の進捗
   const userProgressRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'users', user.uid, 'progress');
@@ -154,16 +158,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
+  // タイムラインの取得クエリ
   const activitiesQuery = useMemoFirebase(() => {
     // 完全に認証が確立され、UIDが取得でき、かつローディングが終わっていることを確認
     if (!firestore || isUserLoading || !user?.uid) return null;
     
     try {
       const baseCol = collection(firestore, 'activities');
-      const q = timelineLimit > 0 
-        ? query(baseCol, orderBy('timestamp', 'desc'), limit(timelineLimit))
-        : query(baseCol, orderBy('timestamp', 'desc'));
-      return q;
+      if (timelineLimit > 0) {
+        return query(baseCol, orderBy('timestamp', 'desc'), limit(timelineLimit));
+      }
+      return query(baseCol, orderBy('timestamp', 'desc'));
     } catch (e) {
       console.error("Activities query build failed:", e);
       return null;
@@ -322,7 +327,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
         
-        // 昇格通知を最新、高評価をその次に配置
         if (!wasRecommended && isNowRecommended) {
           logActivity('promotion', id, link.title, now + 1);
         }

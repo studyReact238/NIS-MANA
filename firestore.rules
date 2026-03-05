@@ -16,7 +16,8 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // 1. activities (タイムライン) - 最優先で評価されるよう先頭に配置
+    // 1. activities (タイムライン)
+    // 最も頻繁に、かつログイン直後にアクセスされるため、ルールの先頭で確実に許可する
     match /activities/{activityId} {
       allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();
