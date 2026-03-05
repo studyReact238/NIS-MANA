@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus, RecommendationFilter } from '@/types/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { 
@@ -77,6 +77,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
 
+  // ログインログの重複記録を防ぐためのガード（メモリ内）
+  const loginLoggedRef = useRef<string | null>(null);
+
+  const { data: adminDocs } = useCollection(useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'admins');
+  }, [firestore]));
+
   const logActivity = (type: string, linkId: string, linkTitle: string) => {
     if (!firestore || !user) return;
     const activityRef = collection(firestore, 'activities');
@@ -95,13 +103,23 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // ログイン時にユーザー情報を保存し、ログイン通知を記録（重複防止済み）
+  // ログイン時にユーザー情報を保存し、ログイン通知を記録
   useEffect(() => {
     if (!firestore || !user) return;
     
-    // セッション中（ブラウザのタブを閉じるまで）1回のみ記録するように制御
+    // 現在のUIDですでにこのコンポーネントインスタンス内で処理済みなら無視
+    if (loginLoggedRef.current === user.uid) return;
+
     const sessionKey = `nisumana_login_logged_${user.uid}`;
-    if (sessionStorage.getItem(sessionKey)) return;
+    // セッション全体ですでに記録済みなら無視
+    if (sessionStorage.getItem(sessionKey)) {
+      loginLoggedRef.current = user.uid;
+      return;
+    }
+
+    // 非同期処理が走る前に即座にフラグを立てる（二重実行を確実に防ぐ）
+    loginLoggedRef.current = user.uid;
+    sessionStorage.setItem(sessionKey, 'true');
 
     const userRef = doc(firestore, 'users', user.uid);
     setDoc(userRef, {
@@ -109,17 +127,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: user.email,
       lastLoginAt: Date.now()
     }, { merge: true }).then(() => {
-      // ログインアクティビティを記録
+      // データベース更新後にアクティビティを記録
       logActivity('login', '', 'システム');
-      // 記録済みフラグを立てる
-      sessionStorage.setItem(sessionKey, 'true');
     });
-  }, [firestore, user?.uid]);
-
-  const { data: adminDocs } = useCollection(useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'admins');
-  }, [firestore]));
+  }, [firestore, user?.uid, adminDocs]); // adminDocsも追加して権限確定後にログが飛ぶように調整
 
   const { data: allUsers } = useCollection(useMemoFirebase(() => {
     if (!firestore) return null;
