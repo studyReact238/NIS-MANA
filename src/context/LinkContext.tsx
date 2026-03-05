@@ -302,6 +302,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (oldVote) {
         updates[`${oldVote}voteCount`] = increment(-1);
       }
+      // 投票時は updatedAt を更新しない
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
 
       if (type === 'up') {
@@ -310,12 +311,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
         
         const now = Date.now();
-        // 昇格のログを先に（少し古い時間で）記録することで、タイムライン（降順）で下に表示されるようにする
+        // 1. 高評価を先に記録（少し前の時間）
+        logActivity('upvote', id, link.title, now);
+
+        // 2. 昇格を後に記録（最新の時間）することで、タイムライン（降順）で「昇格」が一番上に来るようにする
         if (!wasRecommended && isNowRecommended) {
-          logActivity('promotion', id, link.title, now);
+          logActivity('promotion', id, link.title, now + 1);
         }
-        // 高評価のログを後に（新しい時間で）記録することで、タイムラインの上に来るようにする
-        logActivity('upvote', id, link.title, now + 1);
       }
     }
   };
