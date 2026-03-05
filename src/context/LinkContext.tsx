@@ -317,7 +317,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
         
-        // タイムラインは降順表示なので、結果(promotion)を最新、原因(upvote)をそのすぐ後に配置
         if (!wasRecommended && isNowRecommended) {
           logActivity('promotion', id, link.title, now + 1);
         }

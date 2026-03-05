@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { format, isValid, startOfDay } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +40,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const userActivitiesQuery = useMemoFirebase(() => {
+    // 完全に認証が確立され、UIDが取得できるまで待機
     if (!firestore || isUserLoading || !user?.uid || !open) return null;
     return query(
       collection(firestore, 'activities'),
