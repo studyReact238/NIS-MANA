@@ -75,12 +75,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
+  
+  // 初期化完了フラグ
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const loginLoggedRef = useRef<string | null>(null);
 
-  // 管理者リストの取得
+  // 管理者リスト
   const adminDocsRef = useMemoFirebase(() => {
-    // 完全に認証が確立され、UIDが取得でき、Firestoreが準備できるまで待機
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'admins');
   }, [firestore, user?.uid, isUserLoading]);
@@ -100,36 +102,37 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId: user.uid,
       userEmail: user.email || '',
       isAdmin: isAdminUser
-    }).catch(e => {
-      // ログ出力エラーは個別に処理
-    });
+    }).catch(() => {});
   };
 
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid) return;
-    if (loginLoggedRef.current === user.uid) return;
-
-    const sessionKey = `nisumana_login_logged_${user.uid}`;
+    
+    const sessionKey = `nisumana_init_done_${user.uid}`;
+    
+    // すでにこのセッションで初期化済みならフラグを立てて終了
     if (sessionStorage.getItem(sessionKey)) {
-      loginLoggedRef.current = user.uid;
+      setIsInitialized(true);
       return;
     }
 
-    loginLoggedRef.current = user.uid;
-    sessionStorage.setItem(sessionKey, 'true');
-
+    // ユーザー情報の更新とログインログ
     const userRef = doc(firestore, 'users', user.uid);
     setDoc(userRef, {
       id: user.uid,
       email: user.email,
       lastLoginAt: Date.now()
     }, { merge: true }).then(() => {
-      // ユーザー情報の更新成功後にログを記録
       logActivity('login', '', 'システム');
+      sessionStorage.setItem(sessionKey, 'true');
+      setIsInitialized(true);
+    }).catch(() => {
+      // 権限エラー等で失敗してもアプリは動かす
+      setIsInitialized(true);
     });
   }, [firestore, user?.uid, isUserLoading]);
 
-  // 全ユーザーリスト（推奨ロジック計算用）
+  // 全ユーザー
   const allUsersRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'users');
@@ -138,12 +141,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: allUsers } = useCollection(allUsersRef);
 
   const isServerAdmin = useMemo(() => {
-    if (!user?.uid) return false;
-    if (!adminDocs) return null;
+    if (!user?.uid || !adminDocs) return false;
     return adminDocs.some(admin => admin.id === user.uid);
   }, [user?.uid, adminDocs]);
 
-  // リンクマスターの取得
+  // リンク
   const rawLinksRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'learningLinks');
@@ -151,7 +153,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(rawLinksRef);
 
-  // ユーザー自身の進捗
+  // 進捗
   const userProgressRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'users', user.uid, 'progress');
@@ -159,10 +161,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // タイムラインの取得クエリ - 認証とFirestoreの準備が完全に整うまで待機
+  // タイムライン - 初期化(isInitialized)が完了するまで絶対にリクエストしない
   const activitiesQuery = useMemoFirebase(() => {
-    // 完全に認証が確立され、UIDが取得でき、Firestoreが準備できるまで待機
-    if (!firestore || isUserLoading || !user?.uid) return null;
+    if (!firestore || !isInitialized || !user?.uid) return null;
     
     try {
       const activitiesCol = collection(firestore, 'activities');
@@ -173,7 +174,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       return null;
     }
-  }, [firestore, user?.uid, isUserLoading, timelineLimit]);
+  }, [firestore, isInitialized, user?.uid, timelineLimit]);
 
   const { data: activities } = useCollection<any>(activitiesQuery);
 
@@ -427,7 +428,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       recommendationFilter, setRecommendationFilter,
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, updateStatus, voteLink, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading,
+      duplicateLink, updateStatus, voteLink, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading || !isInitialized,
       activities: activities || [], timelineLimit, setTimelineLimit, adminDocs: adminDocs || [],
       totalUserCount: totalUsers
     }}>
