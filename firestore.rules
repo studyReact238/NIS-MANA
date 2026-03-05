@@ -3,8 +3,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // 基本的な認証・認可チェック関数
     function isSignedIn() {
-      return request.auth != null;
+      // authオブジェクトとuidが確実に存在することを確認
+      return request.auth != null && request.auth.uid != null;
     }
 
     function isOwner(userId) {
@@ -15,19 +17,20 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // activities (タイムライン) - 認証済みユーザーに読み取りと作成を許可
+    // 1. activities (タイムライン) - 最優先で評価
+    // 認証済みユーザーに読み取り（一覧・単体）と作成を許可
     match /activities/{activityId} {
       allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
-    // 管理者名簿
+    // 2. admins (管理者名簿)
     match /admins/{userId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
-    // グローバル共有リンク
+    // 3. learningLinks (グローバル共有リンク)
     match /learningLinks/{linkId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
@@ -38,36 +41,35 @@ service cloud.firestore {
                     || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvoteCount', 'downvoteCount', 'learningCount', 'completedCount', 'updatedAt', 'isRecommended']));
       
       allow delete: if isAdmin() || (isSignedIn() && resource.data.get('createdBy', '') == request.auth.uid);
+
+      // サブコレクション（投票、完了者、学習者）
+      match /votes/{userId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId);
+      }
+
+      match /completions/{userId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      match /learners/{userId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId) || isAdmin();
+      }
     }
 
-    // リンクへの投票
-    match /learningLinks/{linkId}/votes/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isOwner(userId);
-    }
-
-    // 受講完了者名簿・学習中ユーザー名簿
-    match /learningLinks/{linkId}/completions/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isOwner(userId) || isAdmin();
-    }
-
-    match /learningLinks/{linkId}/learners/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isOwner(userId) || isAdmin();
-    }
-
-    // ユーザー個別の進捗管理
-    match /users/{userId}/progress/{linkId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow write: if isOwner(userId);
-    }
-
-    // ユーザープロファイル
+    // 4. users (ユーザープロファイル)
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create, update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
+
+      // ユーザー個別の進捗管理
+      match /progress/{linkId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isOwner(userId);
+      }
     }
   }
 }

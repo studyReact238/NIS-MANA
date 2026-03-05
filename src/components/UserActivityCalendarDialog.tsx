@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { format, isValid } from 'date-fns';
+import { format, isValid, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -124,7 +124,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
               selected={selectedDate}
               onSelect={setSelectedDate}
               locale={ja}
-              className="rounded-2xl border bg-white shadow-sm"
+              className="rounded-2xl border bg-white shadow-sm p-3"
               modifiers={{
                 hasActivity: activityDates
               }}

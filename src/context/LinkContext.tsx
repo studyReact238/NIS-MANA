@@ -44,8 +44,8 @@ interface LinkContextType {
   toggleIcon: (icon: string) => void;
   clearIcons: () => void;
   
-  addLink: (link: Omit<LearningLink, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'status' | 'completedCount' | 'learningCount' | 'upvoteCount' | 'downvoteCount' | 'userVote'>) => void;
-  updateLink: (id: string, updates: Partial<LearningLink>) => void;
+  addLink: (data: any) => void;
+  updateLink: (id: string, updates: any) => void;
   deleteLink: (id: string) => void;
   duplicateLink: (id: string) => void;
   updateStatus: (id: string, status: LinkStatus) => void;
@@ -79,7 +79,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginLoggedRef = useRef<string | null>(null);
 
-  // 認証済みかつUIDが確定している場合のみ管理者を読み込む
   const adminDocsRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'admins');
@@ -156,7 +155,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
   const activitiesQuery = useMemoFirebase(() => {
-    // 完全に認証が確立され、UIDが取得できるまで待機
+    // 完全に認証が確立されるまでクエリを発行しない
     if (!firestore || isUserLoading || !user?.uid) return null;
     const baseCol = collection(firestore, 'activities');
     const q = timelineLimit > 0 
@@ -317,6 +316,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
         
+        // 昇格通知を先、高評価通知を後（タイムラインでは昇格が上、高評価が下になるよう）
         if (!wasRecommended && isNowRecommended) {
           logActivity('promotion', id, link.title, now + 1);
         }
