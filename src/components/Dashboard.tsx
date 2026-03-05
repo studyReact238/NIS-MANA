@@ -7,6 +7,7 @@ import { LinkCard } from '@/components/LinkCard';
 import { LinkDialog } from '@/components/LinkDialog';
 import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
 import { UserManagementDialog } from '@/components/UserManagementDialog';
+import { UserActivityCalendarDialog } from '@/components/UserActivityCalendarDialog';
 import { Timeline } from '@/components/Timeline';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,8 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  AlertTriangle
+  AlertTriangle,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -68,6 +70,7 @@ export const Dashboard: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [userManagementOpen, setUserManagementOpen] = useState(false);
+  const [activityCalendarOpen, setActivityCalendarOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
   const [tagsExpanded, setTagsExpanded] = useState(false);
 
@@ -84,7 +87,6 @@ export const Dashboard: React.FC = () => {
   const handleLogout = async () => {
     try {
       if (auth) {
-        // ログイン記録フラグをリセット（再ログイン時にタイムラインに表示されるようにするため）
         if (user) {
           sessionStorage.removeItem(`nisumana_login_logged_${user.uid}`);
         }
@@ -163,6 +165,12 @@ export const Dashboard: React.FC = () => {
                     <p className="text-xs font-bold text-emerald-950 truncate">{user?.email}</p>
                   </div>
                   <DropdownMenuItem 
+                    onSelect={() => setActivityCalendarOpen(true)}
+                    className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
+                  >
+                    <CalendarIcon className="w-4 h-4 mr-2 text-emerald-600" /> アクティビティ
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
                     onSelect={() => setPasswordDialogOpen(true)}
                     className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
                   >
@@ -226,6 +234,12 @@ export const Dashboard: React.FC = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[180px] shadow-2xl border-2 border-emerald-100">
+                  <DropdownMenuItem 
+                    onSelect={() => setActivityCalendarOpen(true)}
+                    className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
+                  >
+                    <CalendarIcon className="w-4 h-4 mr-2 text-emerald-600" /> アクティビティ
+                  </DropdownMenuItem>
                   <DropdownMenuItem 
                     onSelect={() => setPasswordDialogOpen(true)}
                     className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
@@ -548,6 +562,11 @@ export const Dashboard: React.FC = () => {
           onOpenChange={setUserManagementOpen}
         />
       )}
+
+      <UserActivityCalendarDialog
+        open={activityCalendarOpen}
+        onOpenChange={setActivityCalendarOpen}
+      />
     </div>
   );
 };
