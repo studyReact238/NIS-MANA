@@ -84,7 +84,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return collection(firestore, 'admins');
   }, [firestore]));
 
-  const logActivity = (type: string, linkId: string, linkTitle: string) => {
+  const logActivity = (type: string, linkId: string, linkTitle: string, timestamp?: number) => {
     if (!firestore || !user) return;
     const activityRef = collection(firestore, 'activities');
     const isAdminUser = adminDocs?.some(a => a.id === user.uid) || false;
@@ -93,7 +93,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       type,
       linkId,
       linkTitle,
-      timestamp: Date.now(),
+      timestamp: timestamp || Date.now(),
       userId: user.uid,
       userEmail: user.email || '',
       isAdmin: isAdminUser
@@ -245,7 +245,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: Date.now() 
     }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write', requestResourceData: { status: nextStatus } })));
 
-    // ユーザー個別のステータス変更では、グローバルなリンクのupdatedAtは更新しない
     const updates: any = {};
 
     if (oldStatus === 'completed') {
@@ -284,9 +283,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentDownvotes = link.downvoteCount;
     const wasRecommended = link.isRecommended;
 
-    // 投票アクションではリンクのupdatedAtは更新しない（並べ替え順序を維持するため）
     if (userVote === type) {
-      // 投票取り消し
       const updates = {
         [`${type}voteCount`]: increment(-1)
       };
@@ -294,7 +291,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
     } else {
-      // 新規投票または切り替え
       const oldVote = userVote;
       const voteData = { type, updatedAt: Date.now() };
       
@@ -309,13 +305,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
 
       if (type === 'up') {
-        logActivity('upvote', id, link.title);
         const nextUpvotes = currentUpvotes + 1;
         const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
+        
+        const now = Date.now();
+        // 昇格のログを先に（少し古い時間で）記録することで、タイムライン（降順）で下に表示されるようにする
         if (!wasRecommended && isNowRecommended) {
-          logActivity('promotion', id, link.title);
+          logActivity('promotion', id, link.title, now);
         }
+        // 高評価のログを後に（新しい時間で）記録することで、タイムラインの上に来るようにする
+        logActivity('upvote', id, link.title, now + 1);
       }
     }
   };

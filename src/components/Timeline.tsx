@@ -117,20 +117,25 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
           </div>
         </div>
         <div className="text-sm text-slate-600 leading-relaxed flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <span className={cn(
-            "font-bold inline-flex items-center gap-1.5",
-            activity.type === 'completion' ? "text-emerald-900" :
-            activity.type === 'learning_started' ? "text-blue-900" :
-            activity.type === 'link_added' ? "text-blue-900" : 
-            activity.type === 'login' ? "text-indigo-900" :
-            activity.type === 'promotion' ? "text-emerald-950" : "text-amber-900"
-          )}>
-            {getDisplayName()}
-            {isUserAdmin && (
-              <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />
-            )}
-          </span>
-          <span>が</span>
+          {activity.type !== 'promotion' && (
+            <>
+              <span className={cn(
+                "font-bold inline-flex items-center gap-1.5",
+                activity.type === 'completion' ? "text-emerald-900" :
+                activity.type === 'learning_started' ? "text-blue-900" :
+                activity.type === 'link_added' ? "text-blue-900" : 
+                activity.type === 'login' ? "text-indigo-900" :
+                activity.type === 'upvote' ? "text-rose-900" : "text-amber-900"
+              )}>
+                {getDisplayName()}
+                {isUserAdmin && (
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />
+                )}
+              </span>
+              <span>が</span>
+            </>
+          )}
+          
           {activity.type === 'completion' ? (
             <>
               <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>
@@ -158,7 +163,6 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
             </>
           ) : activity.type === 'promotion' ? (
             <>
-              <span>ついに！</span>
               <span className="font-bold text-emerald-700">「{activity.linkTitle}」</span>
               <span>が推奨コンテンツに昇格しました！🎉</span>
             </>
