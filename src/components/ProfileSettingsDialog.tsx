@@ -62,11 +62,12 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Firestoreのドキュメント制限（1MB）を考慮し、Base64のオーバーヘッドを含めて500KBを上限とする
     if (file.size > 500 * 1024) {
       toast({ 
         variant: "destructive", 
         title: "画像サイズエラー", 
-        description: "画像サイズは500KB以下にしてください。" 
+        description: "画像サイズは500KB以下にしてください。Base64変換により容量が増えるため、小さな画像を推奨します。" 
       });
       return;
     }
@@ -80,16 +81,15 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
       setPhotoURL(base64);
-      toast({ title: "画像を読み込みました", description: "「保存」ボタンを押すと反映されます。" });
+      toast({ title: "画像を読み込みました", description: "「プロフィールを保存」ボタンを押すと反映されます。" });
     };
     reader.readAsDataURL(file);
-    // 同じファイルを再度選択できるようにリセット
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleRemovePhoto = () => {
     setPhotoURL('');
-    toast({ title: "画像を解除しました", description: "「保存」ボタンを押すと反映されます。" });
+    toast({ title: "画像を削除しました", description: "「プロフィールを保存」ボタンを押すと完全に反映されます。" });
   };
 
   const handleUpdateProfile = (e: React.FormEvent) => {
@@ -172,7 +172,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
                 <Avatar className="w-24 h-24 border-4 border-emerald-100 shadow-lg">
-                  <AvatarImage src={photoURL || undefined} className="object-cover" />
+                  <AvatarImage src={photoURL === "" ? undefined : photoURL} className="object-cover" />
                   <AvatarFallback className="bg-emerald-100 text-emerald-700 text-3xl font-black">
                     {initials}
                   </AvatarFallback>

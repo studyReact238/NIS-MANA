@@ -117,10 +117,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid) return;
     
-    const sessionKey = `nisumana_login_logged_${user.uid}`;
-    
     // セッションストレージまたはRefでのガード
-    if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
+    const sessionKey = `nisumana_login_logged_${user.uid}`;
+    if (sessionStorage.getItem(sessionKey) === 'true' || loginLoggedRef.current === user.uid) {
       setIsInitialized(true);
       return;
     }
@@ -135,7 +134,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastLoginAt: Date.now()
     };
 
-    // 非ブロッキングで更新
     setDoc(userRef, userData, { merge: true })
       .then(() => {
         logActivity('login', '', 'システム');
