@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
@@ -66,7 +65,7 @@ const LinkContext = createContext<LinkContextType | undefined>(undefined);
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const loginLoggedRef = useRef<boolean>(false);
+  const loginLoggedRef = useRef<string | null>(null);
   
   const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
@@ -104,19 +103,20 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }).catch(() => {});
   };
 
+  // ログインログの記録（重複防止）
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid) return;
     
     const sessionKey = `nisumana_login_logged_${user.uid}`;
     
-    // Check if we already logged in this session to prevent duplicate logs in Strict Mode
-    if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current) {
+    // 同一セッションかつ、既にこのコンポーネントインスタンスで処理済みの場合はスキップ
+    if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
       setIsInitialized(true);
       return;
     }
 
-    // Immediately mark as logged
-    loginLoggedRef.current = true;
+    // 処理開始をマーク
+    loginLoggedRef.current = user.uid;
     sessionStorage.setItem(sessionKey, 'true');
 
     const userRef = doc(firestore, 'users', user.uid);
@@ -134,7 +134,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 4000);
+      const timer = setTimeout(() => setCanFetchActivities(true), 1500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
@@ -177,7 +177,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return query(activitiesCol, orderBy('timestamp', 'desc'));
     } catch (e) {
-      console.error("Activities query build error:", e);
       return null;
     }
   }, [firestore, canFetchActivities, user?.uid, timelineLimit]);

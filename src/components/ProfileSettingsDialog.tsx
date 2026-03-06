@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -141,12 +140,11 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
         </DialogHeader>
 
         <div className="space-y-8">
-          {/* プロフィール画像と基本情報 */}
           <form onSubmit={handleUpdateProfile} className="space-y-6">
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
                 <Avatar className="w-24 h-24 border-4 border-emerald-100 shadow-lg">
-                  <AvatarImage src={photoURL} className="object-cover" />
+                  <AvatarImage src={photoURL || undefined} className="object-cover" />
                   <AvatarFallback className="bg-emerald-100 text-emerald-700 text-3xl font-black">
                     {initials}
                   </AvatarFallback>
@@ -204,7 +202,6 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
 
           <div className="h-px bg-slate-100" />
 
-          {/* パスワード変更 */}
           <form onSubmit={handleUpdatePassword} className="space-y-4">
             <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
               <Lock className="w-3.5 h-3.5" /> パスワード変更
