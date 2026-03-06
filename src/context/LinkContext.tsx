@@ -127,9 +127,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [firestore, user?.uid, isUserLoading]);
 
   useEffect(() => {
-    // 認証状態の同期と初期化完了を確認してからアクティビティの取得を許可
+    // 認証トークンのバックエンド同期時間を考慮し、初期化完了後さらに待機してから取得
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 3500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 4500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
@@ -401,7 +401,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => (l.tags || []).includes(t)));
     if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
-    if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(icon));
+    if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
     
     result.sort((a, b) => {
       if (sortBy === 'title-asc') return (a.title || "").localeCompare(b.title || "");

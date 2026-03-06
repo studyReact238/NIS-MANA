@@ -33,7 +33,7 @@ function Calendar({
         nav_button_next: "absolute right-1",
         month_grid: "w-full border-collapse space-y-1",
         weekdays: "flex w-full mb-2",
-        weekday: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem] text-center",
+        weekday: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem] text-center flex-1",
         weeks: "w-full space-y-2",
         week: "flex w-full mt-2 justify-between",
         day: cn(

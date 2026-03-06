@@ -2,10 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 1. activities (タイムライン) - 認証済みユーザーに読み取り権限を最優先で付与
-    // 評価の競合を避けるため、最上位に配置
+    // 1. activities (タイムライン) - 認証済みユーザーに読み取り・作成権限を最優先で付与
+    // 権限エラーを回避するため、最上位かつシンプルな記述に変更
     match /activities/{activityId} {
-      allow read, create: if request.auth != null;
+      allow get, list, create: if request.auth != null;
       allow update, delete: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
