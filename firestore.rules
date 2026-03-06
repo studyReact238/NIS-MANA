@@ -12,7 +12,7 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // 1. activities (タイムライン) - 読み取りと作成を許可
+    // 1. activities (タイムライン) - 認証済みユーザーに読み取りと作成を許可
     match /activities/{activityId} {
       allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();

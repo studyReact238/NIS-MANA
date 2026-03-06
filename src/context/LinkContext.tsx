@@ -119,6 +119,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const sessionKey = `nisumana_login_logged_${user.uid}`;
     
+    // セッションストレージまたはRefでのガード
     if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
       setIsInitialized(true);
       return;
@@ -134,6 +135,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastLoginAt: Date.now()
     };
 
+    // 非ブロッキングで更新
     setDoc(userRef, userData, { merge: true })
       .then(() => {
         logActivity('login', '', 'システム');
@@ -150,10 +152,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
   }, [firestore, user?.uid, isUserLoading]);
 
+  // 認証情報の同期を待ってからタイムラインを取得
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      // 権限エラーを避けるため、初期化後少し待ってから取得を開始
-      const timer = setTimeout(() => setCanFetchActivities(true), 1500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 2500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);

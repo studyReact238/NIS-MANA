@@ -18,7 +18,7 @@ import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/fireb
 import { updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lock, User, Camera, Save, Check } from 'lucide-react';
+import { Loader2, Lock, User, Camera, Save, Check, Trash2, X } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -51,7 +51,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
   const { data: userData } = useDoc<any>(userDocRef);
 
   useEffect(() => {
-    if (userData) {
+    if (userData && open) {
       setLastName(userData.lastName || '');
       setFirstName(userData.firstName || '');
       setPhotoURL(userData.photoURL || '');
@@ -62,7 +62,6 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 1MBを超える画像はエラーにする（Firestoreのドキュメント制限対策）
     if (file.size > 500 * 1024) {
       toast({ 
         variant: "destructive", 
@@ -81,8 +80,16 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
       setPhotoURL(base64);
+      toast({ title: "画像を読み込みました", description: "「保存」ボタンを押すと反映されます。" });
     };
     reader.readAsDataURL(file);
+    // 同じファイルを再度選択できるようにリセット
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoURL('');
+    toast({ title: "画像を解除しました", description: "「保存」ボタンを押すと反映されます。" });
   };
 
   const handleUpdateProfile = (e: React.FormEvent) => {
@@ -94,7 +101,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     const updateData = {
       lastName,
       firstName,
-      photoURL
+      photoURL: photoURL || ''
     };
 
     updateDoc(userRef, updateData)
@@ -136,7 +143,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     } catch (error: any) {
       let message = "パスワードの変更に失敗しました。";
       if (error.code === 'auth/requires-recent-login') {
-        message = "再ログインが必要です。";
+        message = "セキュリティ保護のため、一度ログアウトしてから再ログインして試してください。";
       }
       toast({ variant: "destructive", title: "エラー", description: message });
     } finally {
@@ -170,13 +177,28 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Camera className="w-8 h-8 text-white" />
-                </button>
+                
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
+                    title="画像を変更"
+                  >
+                    <Camera className="w-6 h-6 text-white" />
+                  </button>
+                  {photoURL && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
+                      title="画像を削除"
+                    >
+                      <Trash2 className="w-6 h-6 text-white" />
+                    </button>
+                  )}
+                </div>
+
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -185,7 +207,9 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                   className="hidden"
                 />
               </div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">画像をタップして変更（500KB以下）</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                画像をタップして変更または削除<br />（500KB以下の正方形を推奨）
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -214,7 +238,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
             <Button
               type="submit"
               disabled={isSavingProfile}
-              className="w-full rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md shadow-emerald-200"
+              className="w-full rounded-xl h-12 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md shadow-emerald-200"
             >
               {isSavingProfile ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               プロフィールを保存
