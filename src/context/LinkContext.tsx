@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus, RecommendationFilter } from '@/types/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { 
@@ -101,9 +102,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId: user.uid,
       userEmail: user.email || '',
       isAdmin: isAdminUser
-    }).catch(() => {
-      // ログ記録の失敗はUIに影響させない
-    });
+    }).catch(() => {});
   };
 
   useEffect(() => {
@@ -126,16 +125,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionStorage.setItem(sessionKey, 'true');
       setIsInitialized(true);
     }).catch(() => {
-      // 失敗しても初期化済みとして扱う（無限ループ防止）
       setIsInitialized(true);
     });
   }, [firestore, user?.uid, isUserLoading]);
 
-  // 認証と初期化が完全にバックエンドに伝播するのを待つために待機時間を確保
+  // 認証と初期化が完全にバックエンドに伝播するのを待つ (5秒)
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      // 5秒待機することでAuthの状態がFirestoreルールに確実に反映されるようにする。
-      // これにより「Missing or insufficient permissions」を確実に防止。
       const timer = setTimeout(() => setCanFetchActivities(true), 5000);
       return () => clearTimeout(timer);
     } else {
@@ -172,7 +168,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // タイムライン - canFetchActivitiesがtrueになるまでリクエストを完全に抑制
+  // タイムライン
   const activitiesQuery = useMemoFirebase(() => {
     if (!firestore || !canFetchActivities || !user?.uid) return null;
     
@@ -311,15 +307,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const link = links.find(l => l.id === id);
     if (!link) return;
 
-    const currentUpvotes = link.upvoteCount;
-    const currentDownvotes = link.downvoteCount;
     const wasRecommended = link.isRecommended;
     const now = Date.now();
 
     if (currentVote === type) {
-      const updates = {
-        [`${type}voteCount`]: increment(-1)
-      };
+      const updates = { [`${type}voteCount`]: increment(-1) };
       deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
     } else {
@@ -327,17 +319,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const voteData = { type, updatedAt: now };
       setDoc(voteRef, voteData, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: voteData })));
       
-      const updates: any = {
-        [`${type}voteCount`]: increment(1)
-      };
-      if (oldVote) {
-        updates[`${oldVote}voteCount`] = increment(-1);
-      }
+      const updates: any = { [`${type}voteCount`]: increment(1) };
+      if (oldVote) { updates[`${oldVote}voteCount`] = increment(-1); }
       updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
 
       if (type === 'up') {
-        const nextUpvotes = currentUpvotes + 1;
-        const nextDownvotes = oldVote === 'down' ? currentDownvotes - 1 : currentDownvotes;
+        const nextUpvotes = (link.upvoteCount || 0) + 1;
+        const nextDownvotes = oldVote === 'down' ? (link.downvoteCount || 0) - 1 : (link.downvoteCount || 0);
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
         
         if (!wasRecommended && isNowRecommended) {

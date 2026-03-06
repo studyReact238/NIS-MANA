@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -39,11 +40,8 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [canFetch, setCanFetch] = useState(false);
 
-  // 認証とダイアログの状態を監視して、バックエンドの認証状態が完全に伝播するのを待つ
   useEffect(() => {
     if (open && !isUserLoading && user?.uid && firestore) {
-      // 5秒待機することで、認証トークンがFirestoreに確実に同期されるようにする。
-      // これにより「Missing or insufficient permissions」を確実に防止。
       const timer = setTimeout(() => setCanFetch(true), 5000);
       return () => clearTimeout(timer);
     } else {
@@ -121,97 +119,83 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl rounded-4xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="mb-6 shrink-0">
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-emerald-950">
+      <DialogContent className="max-w-4xl rounded-4xl p-4 sm:p-8 max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="mb-4 shrink-0">
+          <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2 text-emerald-950">
             <CalendarIcon className="w-6 h-6 text-emerald-600" />
             アクティビティカレンダー
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             あなた自身の学習や活動の履歴を振り返ることができます。
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 flex-1 overflow-hidden">
-          <div className="md:col-span-5 flex flex-col items-center gap-4 bg-emerald-50/30 p-4 rounded-3xl border border-emerald-100">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              locale={ja}
-              className="rounded-2xl border bg-white shadow-sm p-3"
-              modifiers={{
-                hasActivity: activityDates
-              }}
-              modifiersClassNames={{
-                hasActivity: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-emerald-500 aria-selected:after:bg-white"
-              }}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-8 flex-1 overflow-hidden">
+          <div className="md:col-span-5 flex flex-col items-center gap-4 bg-emerald-50/30 p-2 sm:p-4 rounded-3xl border border-emerald-100 overflow-hidden">
+            <div className="w-full max-w-[280px] sm:max-w-none flex justify-center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                locale={ja}
+                className="rounded-2xl border bg-white shadow-sm"
+                modifiers={{ hasActivity: activityDates }}
+                modifiersClassNames={{
+                  hasActivity: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-emerald-500 aria-selected:after:bg-white"
+                }}
+              />
+            </div>
           </div>
 
-          <div className="md:col-span-7 flex flex-col bg-slate-50/50 rounded-3xl border border-emerald-50 overflow-hidden">
-            <div className="p-4 border-b border-emerald-100 bg-white/80 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
-                  <Clock className="w-5 h-5" />
+          <div className="md:col-span-7 flex flex-col bg-slate-50/50 rounded-3xl border border-emerald-50 overflow-hidden min-h-[300px]">
+            <div className="p-3 sm:p-4 border-b border-emerald-100 bg-white/80 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
+                  <Clock className="w-4 h-4" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-emerald-950">
-                    {selectedDate && isValid(selectedDate) ? format(selectedDate, 'yyyy年MM月dd日', { locale: ja }) : '日付を選択してください'}
-                  </h3>
-                </div>
+                <h3 className="text-xs sm:text-sm font-bold text-emerald-950">
+                  {selectedDate && isValid(selectedDate) ? format(selectedDate, 'yyyy年MM月dd日', { locale: ja }) : '選択中'}
+                </h3>
               </div>
-              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-black">
-                {selectedDateActivities.length} 件の活動
+              <Badge variant="outline" className="text-[10px] sm:text-xs bg-emerald-50 text-emerald-700 border-emerald-200 font-black">
+                {selectedDateActivities.length} 件
               </Badge>
             </div>
 
             <ScrollArea className="flex-1">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {isLoading || !canFetch ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <LogIn className="w-8 h-8 text-emerald-200 animate-pulse" />
-                    <p className="text-xs text-slate-400 font-bold">データを読み込み中...</p>
+                  <div className="flex flex-col items-center justify-center py-10 gap-2">
+                    <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
+                    <p className="text-[10px] text-slate-400 font-bold">読み込み中...</p>
                   </div>
                 ) : selectedDateActivities.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {selectedDateActivities.map((activity, idx) => (
-                      <div key={activity.id || idx} className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-emerald-100 shadow-sm transition-all hover:border-emerald-300">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                      <div key={activity.id || idx} className="flex items-start gap-3 p-3 bg-white rounded-2xl border border-emerald-100 shadow-sm transition-all hover:border-emerald-300">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                           {getActivityIcon(activity.type)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-700">
                               {getActivityLabel(activity.type)}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-400">
+                            <span className="text-[9px] font-bold text-slate-400">
                               {format(activity.timestamp, 'HH:mm')}
                             </span>
                           </div>
-                          <p className="text-sm font-bold text-slate-800 leading-tight">
-                            {activity.linkTitle ? (
-                              <>
-                                <span className="text-emerald-700">「{activity.linkTitle}」</span>
-                                {activity.type === 'completion' ? ' を受講完了しました' :
-                                 activity.type === 'learning_started' ? ' の学習を開始しました' :
-                                 activity.type === 'link_added' ? ' を作成しました' :
-                                 activity.type === 'upvote' ? ' に高評価を付けました' : ' に動きがありました'}
-                              </>
-                            ) : (
-                              activity.type === 'login' ? 'システムにログインしました' : 'アクティビティがありました'
-                            )}
+                          <p className="text-xs font-bold text-slate-800 leading-tight truncate">
+                            {activity.linkTitle ? `「${activity.linkTitle}」` : 'アクティビティ'}
                           </p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-slate-100">
-                      <Zap className="w-8 h-8 text-slate-100" />
-                    </div>
-                    <p className="text-sm text-slate-400 font-bold italic">この日の活動記録はありません</p>
+                  <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
+                    <Zap className="w-8 h-8 text-slate-100" />
+                    <p className="text-[10px] text-slate-400 font-bold italic">活動なし</p>
                   </div>
                 )}
               </div>
@@ -219,8 +203,8 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-emerald-100 flex justify-end shrink-0">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl font-bold h-10 px-8">
+        <div className="mt-4 pt-4 border-t border-emerald-100 flex justify-end shrink-0">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl font-bold h-10 px-6">
             閉じる
           </Button>
         </div>
