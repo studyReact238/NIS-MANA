@@ -43,7 +43,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   useEffect(() => {
     if (open && !isUserLoading && user?.uid && firestore) {
       // 認証の同期とバックエンドの準備を待つために十分な時間を確保
-      const timer = setTimeout(() => setCanFetch(true), 4000);
+      const timer = setTimeout(() => setCanFetch(true), 4500);
       return () => clearTimeout(timer);
     } else {
       setCanFetch(false);
@@ -139,7 +139,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 locale={ja}
-                className="rounded-2xl border bg-white shadow-sm"
+                className="rounded-2xl border bg-white shadow-sm w-full"
                 modifiers={{ hasActivity: activityDates }}
                 modifiersClassNames={{
                   hasActivity: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-emerald-500 aria-selected:after:bg-white"

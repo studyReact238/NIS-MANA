@@ -31,14 +31,14 @@ function Calendar({
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
-        month_grid: "w-full border-collapse space-y-1",
-        weekdays: "flex w-full",
-        weekday: "text-muted-foreground w-9 font-normal text-[0.8rem] flex justify-center items-center shrink-0",
-        weeks: "flex flex-col w-full mt-2",
-        week: "flex w-full mt-1 justify-center",
+        month_grid: "w-full border-collapse",
+        weekdays: "flex w-full mb-2",
+        weekday: "text-muted-foreground w-9 font-normal text-[0.8rem] flex-1 text-center",
+        weeks: "flex flex-col w-full",
+        week: "flex w-full mt-2 justify-between items-center",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center justify-center shrink-0"
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex-1 flex items-center justify-center shrink-0"
         ),
         day_selected:
           "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white focus:bg-emerald-600 focus:text-white",
