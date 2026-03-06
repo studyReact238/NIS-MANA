@@ -130,10 +130,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [firestore, user?.uid, isUserLoading]);
 
-  // 認証と初期化が完了した後、わずかに遅延させてからクエリを開始する
+  // 認証と初期化が完全にバックエンドに伝播するのを待つために待機時間を延長
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 300);
+      const timer = setTimeout(() => setCanFetchActivities(true), 500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
@@ -169,7 +169,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // タイムライン - canFetchActivitiesがtrueになるまでリクエストしない
+  // タイムライン - canFetchActivitiesがtrueになるまでリクエストを完全に抑制
   const activitiesQuery = useMemoFirebase(() => {
     if (!firestore || !canFetchActivities || !user?.uid) return null;
     
@@ -180,6 +180,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return query(activitiesCol, orderBy('timestamp', 'desc'));
     } catch (e) {
+      console.error("Activities query build error:", e);
       return null;
     }
   }, [firestore, canFetchActivities, user?.uid, timelineLimit]);

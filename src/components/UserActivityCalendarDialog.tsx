@@ -39,10 +39,10 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [canFetch, setCanFetch] = useState(false);
 
-  // 認証とダイアログの状態を監視して、少し遅らせてからクエリを許可する
+  // 認証とダイアログの状態を監視して、バックエンドの認証状態が完全に伝播するのを待つ
   useEffect(() => {
     if (open && !isUserLoading && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetch(true), 200);
+      const timer = setTimeout(() => setCanFetch(true), 500);
       return () => clearTimeout(timer);
     } else {
       setCanFetch(false);
@@ -58,6 +58,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
         orderBy('timestamp', 'desc')
       );
     } catch (e) {
+      console.error("User activities query build error:", e);
       return null;
     }
   }, [firestore, user?.uid, canFetch]);
