@@ -43,8 +43,8 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
 
   useEffect(() => {
     if (open && !isUserLoading && user?.uid && firestore) {
-      // 認証同期のため待機時間を確保 (バックエンド反映待ち)
-      const timer = setTimeout(() => setCanFetch(true), 2500);
+      // 認証同期のため待機時間を確保
+      const timer = setTimeout(() => setCanFetch(true), 3000);
       return () => clearTimeout(timer);
     } else {
       setCanFetch(false);

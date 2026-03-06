@@ -77,11 +77,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
   
-  // 初期化状態
   const [isInitialized, setIsInitialized] = useState(false);
   const [canFetchActivities, setCanFetchActivities] = useState(false);
 
-  // 管理者リスト
   const adminDocsRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'admins');
@@ -129,17 +127,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [firestore, user?.uid, isUserLoading]);
 
-  // 認証と初期化が完全にバックエンドに伝播するのを待つ (反映遅延対策)
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 3500);
+      // 認証同期のため待機時間を確保
+      const timer = setTimeout(() => setCanFetchActivities(true), 4000);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
     }
   }, [isInitialized, user?.uid, firestore]);
 
-  // 全ユーザー
   const allUsersRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'users');
@@ -152,7 +149,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return adminDocs.some(admin => admin.id === user.uid);
   }, [user?.uid, adminDocs]);
 
-  // リンク
   const rawLinksRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'learningLinks');
@@ -160,7 +156,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: rawLinks, isLoading: isLinksLoading } = useCollection<any>(rawLinksRef);
 
-  // 進捗
   const userProgressRef = useMemoFirebase(() => {
     if (!firestore || isUserLoading || !user?.uid) return null;
     return collection(firestore, 'users', user.uid, 'progress');
@@ -168,7 +163,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // タイムライン
   const activitiesQuery = useMemoFirebase(() => {
     if (!firestore || !canFetchActivities || !user?.uid) return null;
     

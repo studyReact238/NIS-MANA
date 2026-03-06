@@ -3,10 +3,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 1. activities (タイムライン) - 認証済みユーザーなら誰でも閲覧・作成可能
-    // 評価の優先順位を最大にするため最上位に配置
+    // 1. activities (タイムライン) - 認証済みユーザーなら誰でも閲覧可能
+    // 評価の優先順位を最大にするため最上位に配置し、明示的に get と list を許可
     match /activities/{activityId} {
-      allow read, create: if request.auth != null;
+      allow get, list: if request.auth != null;
+      allow create: if request.auth != null;
       allow update, delete: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
