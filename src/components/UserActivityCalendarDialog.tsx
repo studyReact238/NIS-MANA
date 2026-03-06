@@ -42,8 +42,8 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   // 認証とダイアログの状態を監視して、バックエンドの認証状態が完全に伝播するのを待つ
   useEffect(() => {
     if (open && !isUserLoading && user?.uid && firestore) {
-      // 2.5秒待機することで、認証トークンがFirestoreに確実に同期されるようにする
-      const timer = setTimeout(() => setCanFetch(true), 2500);
+      // 3.5秒待機することで、認証トークンがFirestoreに確実に同期されるようにする
+      const timer = setTimeout(() => setCanFetch(true), 3500);
       return () => clearTimeout(timer);
     } else {
       setCanFetch(false);
