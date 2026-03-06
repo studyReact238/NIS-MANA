@@ -117,10 +117,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid) return;
     
-    // セッションストレージまたはRefでのガード
-    const sessionKey = `nisumana_login_logged_${user.uid}`;
-    if (sessionStorage.getItem(sessionKey) === 'true' || loginLoggedRef.current === user.uid) {
-      setIsInitialized(true);
+    const sessionKey = `nisumana_logged_v5_${user.uid}`;
+    
+    // 二重実行を確実に防ぐための先行ガード
+    if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
+      if (!isInitialized) setIsInitialized(true);
       return;
     }
 
@@ -153,7 +154,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 認証情報の同期を待ってからタイムラインを取得
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 2500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 4500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);

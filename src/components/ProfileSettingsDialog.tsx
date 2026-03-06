@@ -18,7 +18,7 @@ import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/fireb
 import { updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lock, User, Camera, Save, Check, Trash2, X } from 'lucide-react';
+import { Loader2, Lock, User, Camera, Save, Check, Trash2 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -62,12 +62,12 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Firestoreのドキュメント制限（1MB）を考慮し、Base64のオーバーヘッドを含めて500KBを上限とする
+    // Base64はサイズが33%増えるため、Firestoreの1MB制限を考慮し500KBを上限とする
     if (file.size > 500 * 1024) {
       toast({ 
         variant: "destructive", 
         title: "画像サイズエラー", 
-        description: "画像サイズは500KB以下にしてください。Base64変換により容量が増えるため、小さな画像を推奨します。" 
+        description: "画像サイズは500KB以下にしてください。" 
       });
       return;
     }
@@ -208,7 +208,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                 />
               </div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
-                画像をタップして変更または削除<br />（500KB以下の正方形を推奨）
+                画像をタップして変更または削除<br />（500KB以下推奨）
               </p>
             </div>
 
@@ -248,9 +248,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
           <div className="h-px bg-slate-100" />
 
           <form onSubmit={handleUpdatePassword} className="space-y-4">
-            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-              <Lock className="w-3.5 h-3.5" /> パスワード変更
-            </h4>
+            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">パスワード変更</h4>
             <div className="space-y-2">
               <Label htmlFor="new-password">新しいパスワード</Label>
               <Input

@@ -22,9 +22,7 @@ import {
   Tag as TagIcon,
   Palette,
   Layout,
-  User,
   LogOut,
-  Lock,
   Users,
   Target,
   Zap,
@@ -97,7 +95,7 @@ export const Dashboard: React.FC = () => {
       if (auth) {
         if (user) {
           sessionStorage.removeItem(`nisumana_init_done_${user.uid}`);
-          sessionStorage.removeItem(`nisumana_login_logged_${user.uid}`);
+          sessionStorage.removeItem(`nisumana_login_logged_v5_${user.uid}`);
         }
         await signOut(auth);
         toast({ title: "ログアウトしました", description: "またのご利用をお待ちしております。" });
@@ -169,7 +167,7 @@ export const Dashboard: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border-2 border-emerald-200 p-0 overflow-hidden bg-white shadow-sm">
                     <Avatar className="w-full h-full">
-                      <AvatarImage src={userData?.photoURL} />
+                      <AvatarImage src={userData?.photoURL === "" ? undefined : userData?.photoURL} />
                       <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-sm">
                         {initials}
                       </AvatarFallback>
@@ -179,7 +177,7 @@ export const Dashboard: React.FC = () => {
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[200px] shadow-2xl border-2 border-emerald-100">
                   <div className="px-3 py-3 border-b border-emerald-50 mb-1 flex items-center gap-3">
                     <Avatar className="w-8 h-8 border border-emerald-100">
-                      <AvatarImage src={userData?.photoURL} />
+                      <AvatarImage src={userData?.photoURL === "" ? undefined : userData?.photoURL} />
                       <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[10px] font-black">
                         {initials}
                       </AvatarFallback>
@@ -250,7 +248,7 @@ export const Dashboard: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border-2 border-emerald-100 p-0 overflow-hidden bg-emerald-50 hover:bg-emerald-100 shadow-sm transition-all">
                     <Avatar className="w-full h-full">
-                      <AvatarImage src={userData?.photoURL} />
+                      <AvatarImage src={userData?.photoURL === "" ? undefined : userData?.photoURL} />
                       <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-[10px]">
                         {initials}
                       </AvatarFallback>
