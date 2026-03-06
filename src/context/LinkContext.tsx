@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
@@ -92,7 +93,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const activityRef = collection(firestore, 'activities');
     const isAdminUser = adminDocs?.some(a => a.id === user.uid) || false;
 
-    addDoc(activityRef, {
+    const activityData = {
       type,
       linkId,
       linkTitle,
@@ -100,7 +101,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId: user.uid,
       userEmail: user.email || '',
       isAdmin: isAdminUser
-    }).catch(() => {});
+    };
+
+    addDoc(activityRef, activityData).catch(async (error) => {
+      const permissionError = new FirestorePermissionError({
+        path: activityRef.path,
+        operation: 'create',
+        requestResourceData: activityData,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   // ログインログの記録（重複防止）
@@ -109,31 +119,40 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const sessionKey = `nisumana_login_logged_${user.uid}`;
     
-    // 同一セッションかつ、既にこのコンポーネントインスタンスで処理済みの場合はスキップ
     if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
       setIsInitialized(true);
       return;
     }
 
-    // 処理開始をマーク
     loginLoggedRef.current = user.uid;
     sessionStorage.setItem(sessionKey, 'true');
 
     const userRef = doc(firestore, 'users', user.uid);
-    setDoc(userRef, {
+    const userData = {
       id: user.uid,
       email: user.email,
       lastLoginAt: Date.now()
-    }, { merge: true }).then(() => {
-      logActivity('login', '', 'システム');
-      setIsInitialized(true);
-    }).catch(() => {
-      setIsInitialized(true);
-    });
+    };
+
+    setDoc(userRef, userData, { merge: true })
+      .then(() => {
+        logActivity('login', '', 'システム');
+        setIsInitialized(true);
+      })
+      .catch(async (error) => {
+        setIsInitialized(true);
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'write',
+          requestResourceData: userData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }, [firestore, user?.uid, isUserLoading]);
 
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
+      // 権限エラーを避けるため、初期化後少し待ってから取得を開始
       const timer = setTimeout(() => setCanFetchActivities(true), 1500);
       return () => clearTimeout(timer);
     } else {
@@ -224,25 +243,46 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     addDoc(colRef, newLink).then((docRef) => {
       logActivity('link_added', docRef.id, data.title);
-    }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: colRef.path, operation: 'create', requestResourceData: newLink })));
+    }).catch(async (error) => {
+      const permissionError = new FirestorePermissionError({
+        path: colRef.path,
+        operation: 'create',
+        requestResourceData: newLink,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const updateLink = (id: string, updates: any) => {
     if (!firestore || !user?.uid) return;
     const { status, userVote, id: _, isRecommended: __, ...cleanUpdates } = updates;
     const docRef = doc(firestore, 'learningLinks', id);
+    const finalUpdates = { ...cleanUpdates, updatedAt: Date.now() };
 
-    updateDoc(docRef, { ...cleanUpdates, updatedAt: Date.now() })
+    updateDoc(docRef, finalUpdates)
       .then(() => {
         logActivity('link_updated', id, cleanUpdates.title || '（タイトル不明）');
       })
-      .catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: cleanUpdates })));
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: finalUpdates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const deleteLink = (id: string) => {
     if (!firestore) return;
     const docRef = doc(firestore, 'learningLinks', id);
-    deleteDoc(docRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' })));
+    deleteDoc(docRef).catch(async (error) => {
+      const permissionError = new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const duplicateLink = (id: string) => {
@@ -265,35 +305,77 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     const learnerRef = doc(firestore, 'learningLinks', id, 'learners', user.uid);
     
-    setDoc(progressRef, { 
+    const progressData = { 
       status: nextStatus, 
       updatedAt: Date.now() 
-    }, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: progressRef.path, operation: 'write', requestResourceData: { status: nextStatus } })));
+    };
+
+    setDoc(progressRef, progressData, { merge: true }).catch(async (error) => {
+      const permissionError = new FirestorePermissionError({
+        path: progressRef.path,
+        operation: 'write',
+        requestResourceData: progressData,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
 
     const updates: any = {};
 
     if (oldStatus === 'completed') {
       updates.completedCount = increment(-1);
-      deleteDoc(completionRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'delete' })));
+      deleteDoc(completionRef).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: completionRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
     } else if (oldStatus === 'learning') {
       updates.learningCount = increment(-1);
-      deleteDoc(learnerRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'delete' })));
+      deleteDoc(learnerRef).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: learnerRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
     }
 
     if (nextStatus === 'completed') {
       updates.completedCount = increment(1);
       const cData = { email: user.email, completedAt: Date.now() };
-      setDoc(completionRef, cData).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: completionRef.path, operation: 'create', requestResourceData: cData })));
+      setDoc(completionRef, cData).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: completionRef.path,
+          operation: 'create',
+          requestResourceData: cData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
       logActivity('completion', link.id, link.title);
     } else if (nextStatus === 'learning') {
       updates.learningCount = increment(1);
       const lData = { email: user.email, startedAt: Date.now() };
-      setDoc(learnerRef, lData).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: learnerRef.path, operation: 'create', requestResourceData: lData })));
+      setDoc(learnerRef, lData).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: learnerRef.path,
+          operation: 'create',
+          requestResourceData: lData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
       logActivity('learning_started', link.id, link.title);
     }
 
     if (Object.keys(updates).length > 0) {
-      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
+      updateDoc(linkRef, updates).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: linkRef.path,
+          operation: 'update',
+          requestResourceData: updates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
     }
   };
 
@@ -309,16 +391,43 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (currentVote === type) {
       const updates = { [`${type}voteCount`]: increment(-1) };
-      deleteDoc(voteRef).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'delete' })));
-      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
+      deleteDoc(voteRef).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: voteRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+      updateDoc(linkRef, updates).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: linkRef.path,
+          operation: 'update',
+          requestResourceData: updates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
     } else {
       const oldVote = currentVote;
       const voteData = { type, updatedAt: now };
-      setDoc(voteRef, voteData, { merge: true }).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: voteRef.path, operation: 'write', requestResourceData: voteData })));
+      setDoc(voteRef, voteData, { merge: true }).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: voteRef.path,
+          operation: 'write',
+          requestResourceData: voteData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
       
       const updates: any = { [`${type}voteCount`]: increment(1) };
       if (oldVote) { updates[`${oldVote}voteCount`] = increment(-1); }
-      updateDoc(linkRef, updates).catch(e => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: linkRef.path, operation: 'update', requestResourceData: updates })));
+      updateDoc(linkRef, updates).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: linkRef.path,
+          operation: 'update',
+          requestResourceData: updates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
 
       if (type === 'up') {
         const nextUpvotes = (link.upvoteCount || 0) + 1;

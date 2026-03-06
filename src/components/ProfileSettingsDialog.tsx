@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -18,7 +19,8 @@ import { updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Lock, User, Camera, Save, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface ProfileSettingsDialogProps {
   open: boolean;
@@ -60,6 +62,16 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 1MBを超える画像はエラーにする（Firestoreのドキュメント制限対策）
+    if (file.size > 500 * 1024) {
+      toast({ 
+        variant: "destructive", 
+        title: "画像サイズエラー", 
+        description: "画像サイズは500KB以下にしてください。" 
+      });
+      return;
+    }
+
     if (!file.type.startsWith('image/')) {
       toast({ variant: "destructive", title: "エラー", description: "画像ファイルを選択してください。" });
       return;
@@ -73,23 +85,32 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     reader.readAsDataURL(file);
   };
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+  const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !user?.uid) return;
 
     setIsSavingProfile(true);
-    try {
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        lastName,
-        firstName,
-        photoURL
+    const userRef = doc(firestore, 'users', user.uid);
+    const updateData = {
+      lastName,
+      firstName,
+      photoURL
+    };
+
+    updateDoc(userRef, updateData)
+      .then(() => {
+        toast({ title: "プロフィール更新", description: "情報を保存しました。" });
+        setIsSavingProfile(false);
+      })
+      .catch(async (error) => {
+        setIsSavingProfile(false);
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
-      toast({ title: "プロフィール更新", description: "情報を保存しました。" });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "エラー", description: "更新に失敗しました。" });
-    } finally {
-      setIsSavingProfile(false);
-    }
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -164,7 +185,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                   className="hidden"
                 />
               </div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">画像をタップして変更</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">画像をタップして変更（500KB以下）</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
