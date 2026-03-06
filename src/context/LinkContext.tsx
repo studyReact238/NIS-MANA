@@ -128,8 +128,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      // セキュリティルールの評価が確実にパスするよう、認証状態の同期を待つ
-      const timer = setTimeout(() => setCanFetchActivities(true), 2500);
+      // 認証の同期とバックエンドの準備を待つために十分な時間を確保
+      const timer = setTimeout(() => setCanFetchActivities(true), 3500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
