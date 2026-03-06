@@ -2,11 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 1. activities (タイムライン) - 最優先で評価するためにトップに配置
-    // read は get と list の両方をカバーします。認証済みユーザーに無条件で許可します。
+    // 1. activities (タイムライン)
+    // 認証済みユーザーであれば誰でも閲覧と作成が可能。
+    // 最優先で評価するためにトップに配置し、記述を極めてシンプルに。
     match /activities/{activityId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow get, list, create: if request.auth.uid != null;
+      allow update, delete: if request.auth.uid != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
     // 共通関数
@@ -20,7 +21,7 @@ service cloud.firestore {
 
     // 2. admins (管理者名簿)
     match /admins/{userId} {
-      allow read: if isSignedIn();
+      allow read: if request.auth.uid != null;
       allow write: if isAdmin();
     }
 
