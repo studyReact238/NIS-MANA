@@ -21,7 +21,8 @@ import {
   LogIn, 
   Zap, 
   Clock,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Loader2
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +43,8 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
 
   useEffect(() => {
     if (open && !isUserLoading && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetch(true), 5000);
+      // 認証同期のため待機時間を確保
+      const timer = setTimeout(() => setCanFetch(true), 1500);
       return () => clearTimeout(timer);
     } else {
       setCanFetch(false);

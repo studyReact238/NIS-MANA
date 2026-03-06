@@ -22,31 +22,32 @@ function Calendar({
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
+        month: "space-y-4 flex-1",
+        month_caption: "flex justify-center pt-1 relative items-center mb-4",
+        caption_label: "text-sm font-bold text-emerald-900",
         nav: "space-x-1 flex items-center",
-        nav_button: cn(
+        button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1 z-10"
         ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
-        // React Day Picker v9 互換のクラス名
-        month_grid: "w-full border-collapse space-y-1",
-        weekdays: "flex justify-center",
+        button_next: cn(
+          buttonVariants({ variant: "outline" }),
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1 z-10"
+        ),
+        month_grid: "w-full border-collapse",
+        weekdays: "flex justify-center mb-2",
         weekday: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex justify-center items-center shrink-0",
         weeks: "w-full space-y-1",
-        week: "flex w-full mt-2 justify-center",
+        week: "flex w-full mt-1 justify-center",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 flex items-center justify-center shrink-0"
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 flex items-center justify-center shrink-0 rounded-lg hover:bg-emerald-50 hover:text-emerald-700"
         ),
         day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
+          "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white focus:bg-emerald-600 focus:text-white",
+        day_today: "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200",
         day_outside:
-          "day-outside text-muted-foreground aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
+          "day-outside text-muted-foreground opacity-30 aria-selected:bg-emerald-50 aria-selected:text-muted-foreground",
         day_disabled: "text-muted-foreground opacity-50",
         day_range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
