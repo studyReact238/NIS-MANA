@@ -42,8 +42,8 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
 
   useEffect(() => {
     if (open && !isUserLoading && user?.uid && firestore) {
-      // 認証状態の同期を待つために十分な待機時間を確保
-      const timer = setTimeout(() => setCanFetch(true), 5500);
+      // 認証の同期時間を十分に確保
+      const timer = setTimeout(() => setCanFetch(true), 3500);
       return () => clearTimeout(timer);
     } else {
       setCanFetch(false);
@@ -126,7 +126,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
             <CalendarIcon className="w-6 h-6 text-emerald-600" />
             アクティビティカレンダー
           </DialogTitle>
-          <DialogDescription className="text-sm">
+          <DialogDescription className="text-sm text-emerald-700">
             あなた自身の学習や活動の履歴を振り返ることができます。
           </DialogDescription>
         </DialogHeader>

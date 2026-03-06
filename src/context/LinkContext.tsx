@@ -127,9 +127,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [firestore, user?.uid, isUserLoading]);
 
   useEffect(() => {
+    // 認証状態の同期と初期化完了を確認してからアクティビティの取得を許可
     if (isInitialized && user?.uid && firestore) {
-      // 認証の同期とバックエンドの準備を待つために十分な時間を確保
-      const timer = setTimeout(() => setCanFetchActivities(true), 5500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 3500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
