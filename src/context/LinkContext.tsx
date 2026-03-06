@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus, RecommendationFilter } from '@/types/link';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { 
@@ -65,6 +66,7 @@ const LinkContext = createContext<LinkContextType | undefined>(undefined);
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const loginLoggedRef = useRef<boolean>(false);
   
   const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
@@ -105,12 +107,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid) return;
     
-    const sessionKey = `nisumana_init_done_${user.uid}`;
+    const sessionKey = `nisumana_login_logged_${user.uid}`;
     
-    if (sessionStorage.getItem(sessionKey)) {
+    // Check if we already logged in this session to prevent duplicate logs in Strict Mode
+    if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current) {
       setIsInitialized(true);
       return;
     }
+
+    // Immediately mark as logged
+    loginLoggedRef.current = true;
+    sessionStorage.setItem(sessionKey, 'true');
 
     const userRef = doc(firestore, 'users', user.uid);
     setDoc(userRef, {
@@ -119,7 +126,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastLoginAt: Date.now()
     }, { merge: true }).then(() => {
       logActivity('login', '', 'システム');
-      sessionStorage.setItem(sessionKey, 'true');
       setIsInitialized(true);
     }).catch(() => {
       setIsInitialized(true);
@@ -127,9 +133,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [firestore, user?.uid, isUserLoading]);
 
   useEffect(() => {
-    // 認証トークンのバックエンド同期時間を考慮し、初期化完了後さらに待機してから取得
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 4500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 4000);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
