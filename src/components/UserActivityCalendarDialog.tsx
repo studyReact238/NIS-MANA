@@ -42,8 +42,8 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
 
   useEffect(() => {
     if (open && !isUserLoading && user?.uid && firestore) {
-      // 認証の同期とバックエンドの準備を待つために十分な時間を確保
-      const timer = setTimeout(() => setCanFetch(true), 4500);
+      // 認証状態の同期を待つために十分な待機時間を確保
+      const timer = setTimeout(() => setCanFetch(true), 5500);
       return () => clearTimeout(timer);
     } else {
       setCanFetch(false);
@@ -133,7 +133,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-8 flex-1 overflow-hidden">
           <div className="md:col-span-5 flex flex-col items-center gap-4 bg-emerald-50/30 p-2 sm:p-4 rounded-3xl border border-emerald-100 overflow-hidden">
-            <div className="w-full max-w-[280px] sm:max-w-none flex justify-center">
+            <div className="w-full flex justify-center">
               <Calendar
                 mode="single"
                 selected={selectedDate}

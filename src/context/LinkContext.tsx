@@ -129,7 +129,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
       // 認証の同期とバックエンドの準備を待つために十分な時間を確保
-      const timer = setTimeout(() => setCanFetchActivities(true), 4500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 5500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
@@ -401,7 +401,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => (l.tags || []).includes(t)));
     if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
-    if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
+    if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(icon));
     
     result.sort((a, b) => {
       if (sortBy === 'title-asc') return (a.title || "").localeCompare(b.title || "");
