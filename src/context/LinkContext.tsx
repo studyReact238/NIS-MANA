@@ -134,8 +134,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 認証と初期化が完全にバックエンドに伝播するのを待つために待機時間を確保
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      // 1.5秒待機することでAuthの状態がFirestoreルールに確実に反映されるようにする
-      const timer = setTimeout(() => setCanFetchActivities(true), 1500);
+      // 2.5秒待機することでAuthの状態がFirestoreルールに確実に反映されるようにする
+      const timer = setTimeout(() => setCanFetchActivities(true), 2500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
