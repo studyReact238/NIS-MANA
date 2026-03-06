@@ -129,10 +129,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [firestore, user?.uid, isUserLoading]);
 
-  // 認証と初期化が完全にバックエンドに伝播するのを待つ (5秒)
+  // 認証と初期化が完全にバックエンドに伝播するのを待つ (反映遅延対策)
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 5000);
+      const timer = setTimeout(() => setCanFetchActivities(true), 3500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
