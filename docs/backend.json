@@ -22,6 +22,10 @@
         "firstName": {
           "type": "string",
           "description": "The user's given name (名)."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Base64 encoded profile image or URL."
         }
       },
       "required": [

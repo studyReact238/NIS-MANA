@@ -6,6 +6,7 @@ import { LearningLink, LinkStatus } from '@/types/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   getIcon, 
@@ -105,22 +106,32 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { use
     return '匿名ユーザーさん';
   };
 
+  const initials = getDisplayName().substring(0, 1).toUpperCase();
+
   return (
     <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center">
-          <Icon className="w-3.5 h-3.5 text-slate-400" />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold text-slate-800">{getDisplayName()}</span>
-          {!isLoading && isUserAdmin && (
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />
-          )}
+        <Avatar className="w-8 h-8 border border-slate-50">
+          <AvatarImage src={userData?.photoURL} />
+          <AvatarFallback className="bg-slate-50 text-slate-400 text-[10px] font-bold">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-800 truncate">{getDisplayName()}</span>
+            {!isLoading && isUserAdmin && (
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-[8px] text-slate-400 font-medium">
+            <Clock className="w-2.5 h-2.5" />
+            {timestamp ? format(timestamp, 'MM/dd HH:mm', { locale: ja }) : '---'}
+          </div>
         </div>
       </div>
-      <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
-        <Calendar className="w-3 h-3" />
-        {timestamp ? format(timestamp, 'MM/dd HH:mm', { locale: ja }) : '---'}
+      <div className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center">
+        <Icon className="w-3.5 h-3.5 text-slate-300" />
       </div>
     </div>
   );
@@ -236,6 +247,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
   const hasTest = !!(link.testUrl || link.testHtml);
   const testHref = link.testHtml ? `/test-viewer?id=${link.id}` : (link.testUrl || '#');
 
+  const creatorInitials = formatDisplayName(creatorData).substring(0, 1).toUpperCase();
+
   return (
     <>
       <Card className={cn(
@@ -249,7 +262,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
              </Badge>
            ) : (
-             <Badge variant="outline" className="bg-slate-100/80 text-slate-500 border-2 border-slate-200 shadow-sm px-3 py-1.5 rounded-full flex items-center gap-1.5">
+             <Badge variant="outline" className="bg-white/80 text-slate-500 border-2 border-slate-200 shadow-sm px-3 py-1.5 rounded-full flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
              </Badge>
@@ -443,7 +456,12 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                   <span>更新: {format(link.updatedAt, 'yyyy/MM/dd HH:mm', { locale: ja })}</span>
                 </div>
                 <div className="flex items-center gap-1.5 opacity-80">
-                  <User className="w-3.5 h-3.5" />
+                  <Avatar className="w-5 h-5 border border-emerald-100">
+                    <AvatarImage src={creatorData?.photoURL} />
+                    <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[8px] font-black">
+                      {creatorInitials}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="truncate max-w-[150px] inline-flex items-center gap-1.5">
                     投稿者: {formatDisplayName(creatorData)}
                     {isCreatorAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />}
@@ -517,7 +535,12 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 最終更新: {format(link.updatedAt, 'yyyy年MM月dd日 HH:mm', { locale: ja })}
               </DialogDescription>
               <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
-                <User className="w-4 h-4" />
+                <Avatar className="w-5 h-5 border border-emerald-100">
+                  <AvatarImage src={creatorData?.photoURL} />
+                  <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[8px] font-black">
+                    {creatorInitials}
+                  </AvatarFallback>
+                </Avatar>
                 投稿者: {formatDisplayName(creatorData)}
                 {isCreatorAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />}
               </div>

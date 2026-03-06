@@ -5,13 +5,15 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useLinks } from '@/context/LinkContext';
 import { LinkCard } from '@/components/LinkCard';
 import { LinkDialog } from '@/components/LinkDialog';
-import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
+import { ProfileSettingsDialog } from '@/components/ProfileSettingsDialog';
 import { UserManagementDialog } from '@/components/UserManagementDialog';
 import { Timeline } from '@/components/Timeline';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useAuth, useUser } from '@/firebase';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { 
   Search, 
@@ -30,7 +32,8 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  AlertTriangle
+  AlertTriangle,
+  Settings
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -63,13 +66,21 @@ export const Dashboard: React.FC = () => {
   } = useLinks();
 
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
   const [tagsExpanded, setTagsExpanded] = useState(false);
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: userData } = useDoc<any>(userDocRef);
 
   const handleEdit = useCallback((link: LearningLink) => {
     setEditingLink(link);
@@ -138,6 +149,9 @@ export const Dashboard: React.FC = () => {
     return result;
   }, [testLinks, search, selectedTags, selectedColors, selectedIcons]);
 
+  const displayName = `${userData?.lastName || ''} ${userData?.firstName || ''}`.trim() || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.substring(0, 1).toUpperCase();
+
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-20">
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 sm:py-6 -mx-4 sm:-mx-6 px-4 sm:px-6 mb-4 border-b border-emerald-100">
@@ -153,20 +167,33 @@ export const Dashboard: React.FC = () => {
             <div className="flex md:hidden items-center gap-2">
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-emerald-100 text-emerald-700">
-                    <User className="w-5 h-5" />
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border-2 border-emerald-200 p-0 overflow-hidden bg-white shadow-sm">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={userData?.photoURL} />
+                      <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-sm">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[200px] shadow-2xl border-2 border-emerald-100">
-                  <div className="px-3 py-2 border-b border-emerald-50 mb-1">
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{isServerAdmin ? '管理者' : '学習者'}</p>
-                    <p className="text-xs font-bold text-emerald-950 truncate">{user?.email}</p>
+                  <div className="px-3 py-3 border-b border-emerald-50 mb-1 flex items-center gap-3">
+                    <Avatar className="w-8 h-8 border border-emerald-100">
+                      <AvatarImage src={userData?.photoURL} />
+                      <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[10px] font-black">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{isServerAdmin ? '管理者' : '学習者'}</p>
+                      <p className="text-xs font-bold text-emerald-950 truncate">{displayName}</p>
+                    </div>
                   </div>
                   <DropdownMenuItem 
-                    onSelect={() => setPasswordDialogOpen(true)}
+                    onSelect={() => setProfileSettingsOpen(true)}
                     className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
                   >
-                    <Lock className="w-4 h-4 mr-2 text-emerald-600" /> パスワード変更
+                    <Settings className="w-4 h-4 mr-2 text-emerald-600" /> プロフィール設定
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-emerald-100" />
                   <DropdownMenuItem 
@@ -215,22 +242,27 @@ export const Dashboard: React.FC = () => {
 
             <div className="hidden md:flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
               <div className="text-right">
-                <p className="text-xs font-bold leading-none text-emerald-950 truncate max-w-[120px] mb-1">{user?.email}</p>
+                <p className="text-xs font-bold leading-none text-emerald-950 truncate max-w-[120px] mb-1">{displayName}</p>
                 <p className="text-[9px] text-emerald-600 font-bold tracking-wider uppercase">{isServerAdmin ? 'Admin' : 'Learner'}</p>
               </div>
               
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
-                    <User className="w-4 h-4" />
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border-2 border-emerald-100 p-0 overflow-hidden bg-emerald-50 hover:bg-emerald-100 shadow-sm transition-all">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={userData?.photoURL} />
+                      <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[180px] shadow-2xl border-2 border-emerald-100">
                   <DropdownMenuItem 
-                    onSelect={() => setPasswordDialogOpen(true)}
+                    onSelect={() => setProfileSettingsOpen(true)}
                     className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
                   >
-                    <Lock className="w-4 h-4 mr-2 text-emerald-600" /> パスワード変更
+                    <Settings className="w-4 h-4 mr-2 text-emerald-600" /> プロフィール設定
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-emerald-100" />
                   <DropdownMenuItem 
@@ -537,9 +569,9 @@ export const Dashboard: React.FC = () => {
         editLink={editingLink} 
       />
 
-      <PasswordChangeDialog
-        open={passwordDialogOpen}
-        onOpenChange={setPasswordDialogOpen}
+      <ProfileSettingsDialog
+        open={profileSettingsOpen}
+        onOpenChange={setProfileSettingsOpen}
       />
 
       {isAdmin && (

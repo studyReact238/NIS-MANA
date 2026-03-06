@@ -6,6 +6,7 @@ import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { CheckCircle2, Zap, Clock, Plus, Edit3, BookOpen, ShieldCheck, ThumbsUp, Sparkles, LogIn } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -69,25 +70,23 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
     }
   };
 
-  if (isUserLoading) {
-    return (
-      <div className="relative flex items-start gap-6 group py-2">
-        <div className="w-11 h-11 rounded-2xl bg-slate-100 animate-pulse border-2 border-slate-50 shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 w-32 bg-slate-100 animate-pulse rounded" />
-          <div className="h-3 w-48 bg-slate-50 animate-pulse rounded" />
-        </div>
-      </div>
-    );
-  }
+  const initials = getDisplayName().substring(0, 1).toUpperCase();
 
   return (
     <div className="relative flex items-start gap-6 group">
-      <div className={cn(
-        "relative z-10 w-11 h-11 rounded-2xl flex items-center justify-center border-2 shadow-sm transition-all group-hover:scale-110 shrink-0",
-        getActivityColor(activity.type)
-      )}>
-        {getActivityIcon(activity.type)}
+      <div className="relative shrink-0">
+        <Avatar className="w-11 h-11 border-2 border-white shadow-sm transition-transform group-hover:scale-110">
+          <AvatarImage src={userData?.photoURL} className="object-cover" />
+          <AvatarFallback className={cn("text-xs font-black", getActivityColor(activity.type))}>
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <div className={cn(
+          "absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md z-20",
+          getActivityColor(activity.type)
+        )}>
+          {React.cloneElement(getActivityIcon(activity.type) as React.ReactElement, { className: "w-2.5 h-2.5" })}
+        </div>
       </div>
       
       <div className="flex-1 pt-1 min-w-0">
