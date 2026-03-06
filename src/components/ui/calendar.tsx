@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -23,25 +22,23 @@ function Calendar({
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        month_caption: "flex justify-center pt-1 relative items-center mb-4",
+        caption: "flex justify-center pt-1 relative items-center mb-4",
         caption_label: "text-sm font-bold text-emerald-900",
         nav: "space-x-1 flex items-center",
-        button_previous: cn(
+        nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1 z-10"
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
-        button_next: cn(
-          buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1 z-10"
-        ),
-        month_grid: "w-full border-collapse",
-        weekdays: "flex w-full mb-2",
-        weekday: "text-muted-foreground w-9 font-normal text-[0.8rem] flex justify-center items-center shrink-0",
-        weeks: "w-full flex flex-col gap-1",
-        week: "flex w-full justify-center",
+        nav_button_previous: "absolute left-1",
+        nav_button_next: "absolute right-1",
+        table: "w-full border-collapse space-y-1",
+        head_row: "flex w-full",
+        head_cell: "text-muted-foreground w-9 font-normal text-[0.8rem] flex justify-center items-center shrink-0",
+        row: "flex w-full mt-2 justify-center",
+        cell: "h-9 w-9 text-center text-sm p-0 relative flex items-center justify-center shrink-0",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 flex items-center justify-center shrink-0 rounded-lg hover:bg-emerald-50 hover:text-emerald-700"
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
         ),
         day_selected:
           "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white focus:bg-emerald-600 focus:text-white",

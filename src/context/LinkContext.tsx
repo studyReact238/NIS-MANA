@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
@@ -129,8 +128,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      // セキュリティルールの評価が安定するまで待機
-      const timer = setTimeout(() => setCanFetchActivities(true), 1500);
+      // セキュリティルールの評価が確実にパスするよう、認証状態の同期を待つ
+      const timer = setTimeout(() => setCanFetchActivities(true), 2500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
