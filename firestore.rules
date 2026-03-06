@@ -2,6 +2,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // 1. activities (タイムライン) - 認証済みユーザーに読み取りと作成を最優先で許可
+    // 評価の競合を避けるため、ルールの先頭に配置
+    match /activities/{activityId} {
+      allow get, list, create: if request.auth != null;
+      allow update, delete: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
     // 認証済みユーザーかチェック
     function isSignedIn() {
       return request.auth != null;
@@ -10,13 +17,6 @@ service cloud.firestore {
     // 管理者かチェック（adminsコレクションにUIDが存在するか）
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    // 1. activities (タイムライン) - 認証済みユーザーに読み取りと作成を許可
-    // 評価順序を確実にするため、最優先で定義
-    match /activities/{activityId} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isAdmin();
     }
 
     // 2. admins (管理者名簿)

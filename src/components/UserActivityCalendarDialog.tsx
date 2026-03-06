@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -37,10 +37,20 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [canFetch, setCanFetch] = useState(false);
+
+  // 認証とダイアログの状態を監視して、少し遅らせてからクエリを許可する
+  useEffect(() => {
+    if (open && !isUserLoading && user?.uid && firestore) {
+      const timer = setTimeout(() => setCanFetch(true), 200);
+      return () => clearTimeout(timer);
+    } else {
+      setCanFetch(false);
+    }
+  }, [open, isUserLoading, user?.uid, firestore]);
 
   const userActivitiesQuery = useMemoFirebase(() => {
-    // 完全に認証が確立され、UIDが取得でき、Firestoreが準備できるまで待機
-    if (!firestore || isUserLoading || !user?.uid || !open) return null;
+    if (!firestore || !canFetch || !user?.uid) return null;
     try {
       return query(
         collection(firestore, 'activities'),
@@ -48,10 +58,9 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
         orderBy('timestamp', 'desc')
       );
     } catch (e) {
-      console.error("User activities query failed:", e);
       return null;
     }
-  }, [firestore, user?.uid, isUserLoading, open]);
+  }, [firestore, user?.uid, canFetch]);
 
   const { data: userActivities, isLoading } = useCollection<any>(userActivitiesQuery);
 
@@ -72,7 +81,6 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
     return map;
   }, [userActivities]);
 
-  // 活動があった日のDateオブジェクト配列
   const activityDates = useMemo(() => {
     return Array.from(activitiesByDate.keys()).map(dateStr => {
       const [year, month, day] = dateStr.split('-').map(Number);
@@ -157,7 +165,7 @@ export const UserActivityCalendarDialog: React.FC<UserActivityCalendarDialogProp
 
             <ScrollArea className="flex-1">
               <div className="p-6">
-                {isLoading ? (
+                {isLoading || !canFetch ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <LogIn className="w-8 h-8 text-emerald-200 animate-pulse" />
                     <p className="text-xs text-slate-400 font-bold">データを読み込み中...</p>

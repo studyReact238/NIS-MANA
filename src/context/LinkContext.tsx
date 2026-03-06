@@ -76,10 +76,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
   
-  // 初期化完了フラグ
+  // 初期化状態
   const [isInitialized, setIsInitialized] = useState(false);
-
-  const loginLoggedRef = useRef<string | null>(null);
+  const [canFetchActivities, setCanFetchActivities] = useState(false);
 
   // 管理者リスト
   const adminDocsRef = useMemoFirebase(() => {
@@ -102,7 +101,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId: user.uid,
       userEmail: user.email || '',
       isAdmin: isAdminUser
-    }).catch(() => {});
+    }).catch(() => {
+      // ログ記録の失敗はUIに影響させない
+    });
   };
 
   useEffect(() => {
@@ -110,13 +111,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const sessionKey = `nisumana_init_done_${user.uid}`;
     
-    // すでにこのセッションで初期化済みならフラグを立てて終了
     if (sessionStorage.getItem(sessionKey)) {
       setIsInitialized(true);
       return;
     }
 
-    // ユーザー情報の更新とログインログ
     const userRef = doc(firestore, 'users', user.uid);
     setDoc(userRef, {
       id: user.uid,
@@ -127,10 +126,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionStorage.setItem(sessionKey, 'true');
       setIsInitialized(true);
     }).catch(() => {
-      // 権限エラー等で失敗してもアプリは動かす
       setIsInitialized(true);
     });
   }, [firestore, user?.uid, isUserLoading]);
+
+  // 認証と初期化が完了した後、わずかに遅延させてからクエリを開始する
+  useEffect(() => {
+    if (isInitialized && user?.uid && firestore) {
+      const timer = setTimeout(() => setCanFetchActivities(true), 300);
+      return () => clearTimeout(timer);
+    } else {
+      setCanFetchActivities(false);
+    }
+  }, [isInitialized, user?.uid, firestore]);
 
   // 全ユーザー
   const allUsersRef = useMemoFirebase(() => {
@@ -161,9 +169,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { data: userProgress, isLoading: isProgressLoading } = useCollection<any>(userProgressRef);
 
-  // タイムライン - 初期化(isInitialized)が完了するまで絶対にリクエストしない
+  // タイムライン - canFetchActivitiesがtrueになるまでリクエストしない
   const activitiesQuery = useMemoFirebase(() => {
-    if (!firestore || !isInitialized || !user?.uid) return null;
+    if (!firestore || !canFetchActivities || !user?.uid) return null;
     
     try {
       const activitiesCol = collection(firestore, 'activities');
@@ -174,7 +182,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       return null;
     }
-  }, [firestore, isInitialized, user?.uid, timelineLimit]);
+  }, [firestore, canFetchActivities, user?.uid, timelineLimit]);
 
   const { data: activities } = useCollection<any>(activitiesQuery);
 
@@ -428,7 +436,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       recommendationFilter, setRecommendationFilter,
       sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
       clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
-      duplicateLink, updateStatus, voteLink, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading || !isInitialized,
+      duplicateLink, updateStatus, voteLink, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading || !canFetchActivities,
       activities: activities || [], timelineLimit, setTimelineLimit, adminDocs: adminDocs || [],
       totalUserCount: totalUsers
     }}>
