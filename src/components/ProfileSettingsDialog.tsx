@@ -14,6 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -172,30 +177,38 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
                 <Avatar className="w-24 h-24 border-4 border-emerald-100 shadow-lg">
-                  <AvatarImage src={photoURL === "" ? undefined : photoURL} className="object-cover" />
+                  <AvatarImage src={photoURL || undefined} className="object-cover" />
                   <AvatarFallback className="bg-emerald-100 text-emerald-700 text-3xl font-black">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
-                    title="画像を変更"
-                  >
-                    <Camera className="w-6 h-6 text-white" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
+                      >
+                        <Camera className="w-6 h-6 text-white" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>画像ファイルをアップロードします</TooltipContent>
+                  </Tooltip>
                   {photoURL && (
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
-                      title="画像を削除"
-                    >
-                      <Trash2 className="w-6 h-6 text-white" />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
+                        >
+                          <Trash2 className="w-6 h-6 text-white" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>現在のプロフィール画像を削除します</TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
 

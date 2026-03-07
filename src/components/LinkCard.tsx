@@ -47,6 +47,11 @@ import {
   DialogTitle,
   DialogDescription
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -88,12 +93,12 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { use
     return doc(firestore, 'users', userId);
   }, [firestore, userId]);
   
-  const { data: userData, isLoading } = useDoc<any>(userRef);
+  const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
   const isUserAdmin = adminDocs?.some(a => a.id === userId);
 
   const getDisplayName = () => {
-    if (isLoading) return '読み込み中...';
+    if (isUserLoading) return '読み込み中...';
     if (userData?.lastName || userData?.firstName) {
       return `${userData.lastName || ''} ${userData.firstName || ''}`.trim() + 'さん';
     }
@@ -112,7 +117,7 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { use
     <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
       <div className="flex items-center gap-2">
         <Avatar className="w-8 h-8 border border-slate-50">
-          <AvatarImage src={userData?.photoURL} />
+          <AvatarImage src={userData?.photoURL || undefined} />
           <AvatarFallback className="bg-slate-50 text-slate-400 text-[10px] font-bold">
             {initials}
           </AvatarFallback>
@@ -120,8 +125,13 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { use
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-bold text-slate-800 truncate">{getDisplayName()}</span>
-            {!isLoading && isUserAdmin && (
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />
+            {!isUserLoading && isUserAdmin && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent>管理者</TooltipContent>
+              </Tooltip>
             )}
           </div>
           <div className="flex items-center gap-1 text-[8px] text-slate-400 font-medium">
@@ -256,17 +266,28 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
         cn(colorData.bg, colorData.border)
       )}>
         <div className="absolute top-4 left-6 z-20 flex flex-col gap-2">
-           {link.isRecommended ? (
-             <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 shadow-lg px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-pulse">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
-             </Badge>
-           ) : (
-             <Badge variant="outline" className="bg-white/80 text-slate-500 border-2 border-slate-200 shadow-sm px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
-             </Badge>
-           )}
+           <Tooltip>
+             <TooltipTrigger asChild>
+               <div>
+                 {link.isRecommended ? (
+                   <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 shadow-lg px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-pulse cursor-default">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
+                   </Badge>
+                 ) : (
+                   <Badge variant="outline" className="bg-white/80 text-slate-500 border-2 border-slate-200 shadow-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-default">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
+                   </Badge>
+                 )}
+               </div>
+             </TooltipTrigger>
+             <TooltipContent>
+               {link.isRecommended 
+                 ? "多くのユーザーから高く評価されている信頼できるコンテンツです" 
+                 : "まだ評価が十分でないか、注意が必要なコンテンツです"}
+             </TooltipContent>
+           </Tooltip>
         </div>
 
         {link.status === 'completed' && (
@@ -307,22 +328,27 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               )}
 
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 h-auto rounded-full border-2 transition-all",
-                      link.status === 'completed' ? "bg-emerald-600 border-emerald-700 text-white" :
-                      link.status === 'learning' ? "bg-blue-600 border-blue-700 text-white" :
-                      "bg-white border-slate-200 text-slate-700"
-                    )}
-                  >
-                    {getStatusIcon(link.status)}
-                    <span className="text-[10px] font-black uppercase tracking-wider">
-                      {getStatusLabel(link.status)}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 h-auto rounded-full border-2 transition-all",
+                          link.status === 'completed' ? "bg-emerald-600 border-emerald-700 text-white" :
+                          link.status === 'learning' ? "bg-blue-600 border-blue-700 text-white" :
+                          "bg-white border-slate-200 text-slate-700"
+                        )}
+                      >
+                        {getStatusIcon(link.status)}
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {getStatusLabel(link.status)}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>現在の学習進捗を切り替えます</TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent className="rounded-2xl p-2 min-w-[140px] shadow-2xl border-2 border-emerald-100">
                   <DropdownMenuItem onClick={() => handleStatusChange('unstarted')} className="rounded-xl font-bold text-xs h-10">
                     <Circle className="w-4 h-4 mr-2" /> 未着手
@@ -421,26 +447,36 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                </div>
                
                <div className="flex items-center gap-4 ml-auto">
-                 <button 
-                   onClick={() => handleVoteAction('up')}
-                   className={cn(
-                     "flex items-center gap-1.5 transition-all hover:scale-110",
-                     userVote === 'up' ? "text-emerald-600 scale-110" : "text-slate-400"
-                   )}
-                 >
-                   <ThumbsUp className={cn("w-4 h-4", userVote === 'up' && "fill-emerald-600")} />
-                   <span className="text-[10px] font-black">{Math.max(0, link.upvoteCount || 0)}</span>
-                 </button>
-                 <button 
-                   onClick={() => handleVoteAction('down')}
-                   className={cn(
-                     "flex items-center gap-1.5 transition-all hover:scale-110",
-                     userVote === 'down' ? "text-rose-600 scale-110" : "text-slate-400"
-                   )}
-                 >
-                   <ThumbsDown className={cn("w-4 h-4", userVote === 'down' && "fill-rose-600")} />
-                   <span className="text-[10px] font-black">{Math.max(0, link.downvoteCount || 0)}</span>
-                 </button>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <button 
+                       onClick={() => handleVoteAction('up')}
+                       className={cn(
+                         "flex items-center gap-1.5 transition-all hover:scale-110",
+                         userVote === 'up' ? "text-emerald-600 scale-110" : "text-slate-400"
+                       )}
+                     >
+                       <ThumbsUp className={cn("w-4 h-4", userVote === 'up' && "fill-emerald-600")} />
+                       <span className="text-[10px] font-black">{Math.max(0, link.upvoteCount || 0)}</span>
+                     </button>
+                   </TooltipTrigger>
+                   <TooltipContent>この教材を高評価する</TooltipContent>
+                 </Tooltip>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <button 
+                       onClick={() => handleVoteAction('down')}
+                       className={cn(
+                         "flex items-center gap-1.5 transition-all hover:scale-110",
+                         userVote === 'down' ? "text-rose-600 scale-110" : "text-slate-400"
+                       )}
+                     >
+                       <ThumbsDown className={cn("w-4 h-4", userVote === 'down' && "fill-rose-600")} />
+                       <span className="text-[10px] font-black">{Math.max(0, link.downvoteCount || 0)}</span>
+                     </button>
+                   </TooltipTrigger>
+                   <TooltipContent>この教材を低評価する</TooltipContent>
+                 </Tooltip>
                </div>
             </div>
 
@@ -457,14 +493,21 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </div>
                 <div className="flex items-center gap-1.5 opacity-80">
                   <Avatar className="w-5 h-5 border border-emerald-100">
-                    <AvatarImage src={creatorData?.photoURL} />
+                    <AvatarImage src={creatorData?.photoURL || undefined} />
                     <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[8px] font-black">
                       {creatorInitials}
                     </AvatarFallback>
                   </Avatar>
                   <span className="truncate max-w-[150px] inline-flex items-center gap-1.5">
                     投稿者: {formatDisplayName(creatorData)}
-                    {isCreatorAdmin && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />}
+                    {!isCreatorLoading && isCreatorAdmin && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/10 shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent>管理者</TooltipContent>
+                      </Tooltip>
+                    )}
                   </span>
                 </div>
               </div>
@@ -513,17 +556,28 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 <Icon className={cn("w-8 h-8", colorData.text)} />
               </div>
               <div className="flex flex-col gap-1">
-                 {link.isRecommended ? (
-                   <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 px-3 py-1 rounded-full flex items-center gap-1.5 w-fit">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
-                   </Badge>
-                 ) : (
-                   <Badge variant="outline" className="bg-slate-100 text-slate-500 border-2 border-slate-200 px-3 py-1 rounded-full flex items-center gap-1.5 w-fit">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
-                   </Badge>
-                 )}
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <div>
+                       {link.isRecommended ? (
+                         <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 px-3 py-1 rounded-full flex items-center gap-1.5 w-fit cursor-default">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
+                         </Badge>
+                       ) : (
+                         <Badge variant="outline" className="bg-slate-100 text-slate-500 border-2 border-slate-200 px-3 py-1 rounded-full flex items-center gap-1.5 w-fit cursor-default">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
+                         </Badge>
+                       )}
+                     </div>
+                   </TooltipTrigger>
+                   <TooltipContent>
+                     {link.isRecommended 
+                       ? "多くのユーザーから高く評価されている信頼できるコンテンツです" 
+                       : "まだ評価が十分でないか、注意が必要なコンテンツです"}
+                   </TooltipContent>
+                 </Tooltip>
               </div>
             </div>
             <DialogTitle className={cn("text-3xl font-bold leading-tight", colorData.darkText)}>
@@ -536,13 +590,20 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               </DialogDescription>
               <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                 <Avatar className="w-5 h-5 border border-emerald-100">
-                  <AvatarImage src={creatorData?.photoURL} />
+                  <AvatarImage src={creatorData?.photoURL || undefined} />
                   <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[8px] font-black">
                     {creatorInitials}
                   </AvatarFallback>
                 </Avatar>
                 投稿者: {formatDisplayName(creatorData)}
-                {isCreatorAdmin && <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />}
+                {!isCreatorLoading && isCreatorAdmin && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent>管理者</TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             </div>
           </DialogHeader>

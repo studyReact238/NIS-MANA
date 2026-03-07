@@ -50,6 +50,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { StatusFilter, SortOption, LearningLink, RecommendationFilter } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -164,20 +169,25 @@ export const Dashboard: React.FC = () => {
 
             <div className="flex md:hidden items-center gap-2">
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border-2 border-emerald-200 p-0 overflow-hidden bg-white shadow-sm">
-                    <Avatar className="w-full h-full">
-                      <AvatarImage src={userData?.photoURL === "" ? undefined : userData?.photoURL} />
-                      <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-sm">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border-2 border-emerald-200 p-0 overflow-hidden bg-white shadow-sm">
+                        <Avatar className="w-full h-full">
+                          <AvatarImage src={userData?.photoURL || undefined} />
+                          <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-sm">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>プロフィール設定やログアウト</TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[200px] shadow-2xl border-2 border-emerald-100">
                   <div className="px-3 py-3 border-b border-emerald-50 mb-1 flex items-center gap-3">
                     <Avatar className="w-8 h-8 border border-emerald-100">
-                      <AvatarImage src={userData?.photoURL === "" ? undefined : userData?.photoURL} />
+                      <AvatarImage src={userData?.photoURL || undefined} />
                       <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[10px] font-black">
                         {initials}
                       </AvatarFallback>
@@ -208,34 +218,49 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 justify-end w-full md:w-auto">
             <div className="flex items-center gap-2">
               {isAdmin && (
-                <Button 
-                  onClick={() => setUserManagementOpen(true)}
-                  variant="outline"
-                  className="rounded-full h-9 sm:h-10 px-3 sm:px-4 border-emerald-200 text-emerald-800 font-bold hover:bg-emerald-50 text-xs"
-                >
-                  <span className="hidden sm:inline">ユーザー管理</span>
-                  <Users className="w-3.5 h-3.5 sm:ml-2" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={() => setUserManagementOpen(true)}
+                      variant="outline"
+                      className="rounded-full h-9 sm:h-10 px-3 sm:px-4 border-emerald-200 text-emerald-800 font-bold hover:bg-emerald-50 text-xs"
+                    >
+                      <span className="hidden sm:inline">ユーザー管理</span>
+                      <Users className="w-3.5 h-3.5 sm:ml-2" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>ユーザーの登録や権限を管理します</TooltipContent>
+                </Tooltip>
               )}
-              <Button 
-                onClick={handleAdd} 
-                className="rounded-full h-9 sm:h-10 px-4 sm:px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-xs border-2 border-emerald-800 transition-all"
-              >
-                <Plus className="w-3.5 h-3.5 sm:mr-2" /> 
-                <span className="hidden sm:inline">新規追加</span>
-                <span className="sm:hidden">追加</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={handleAdd} 
+                    className="rounded-full h-9 sm:h-10 px-4 sm:px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-xs border-2 border-emerald-800 transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5 sm:mr-2" /> 
+                    <span className="hidden sm:inline">新規追加</span>
+                    <span className="sm:hidden">追加</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>新しく学習リンクを追加します</TooltipContent>
+              </Tooltip>
             </div>
 
             {isServerAdmin && (
-              <div className="flex items-center gap-2 sm:gap-3 bg-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-200 shadow-sm">
-                <span className="text-[9px] sm:text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
-                <Switch 
-                  checked={isAdmin} 
-                  onCheckedChange={setIsAdmin} 
-                  className="scale-90 sm:scale-100 data-[state=checked]:bg-emerald-600" 
-                />
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 sm:gap-3 bg-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-200 shadow-sm">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
+                    <Switch 
+                      checked={isAdmin} 
+                      onCheckedChange={setIsAdmin} 
+                      className="scale-90 sm:scale-100 data-[state=checked]:bg-emerald-600" 
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>管理者として情報を編集できるモードに切り替えます</TooltipContent>
+              </Tooltip>
             )}
 
             <div className="hidden md:flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
@@ -245,16 +270,21 @@ export const Dashboard: React.FC = () => {
               </div>
               
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border-2 border-emerald-100 p-0 overflow-hidden bg-emerald-50 hover:bg-emerald-100 shadow-sm transition-all">
-                    <Avatar className="w-full h-full">
-                      <AvatarImage src={userData?.photoURL === "" ? undefined : userData?.photoURL} />
-                      <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-[10px]">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border-2 border-emerald-100 p-0 overflow-hidden bg-emerald-50 hover:bg-emerald-100 shadow-sm transition-all">
+                        <Avatar className="w-full h-full">
+                          <AvatarImage src={userData?.photoURL || undefined} />
+                          <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>プロフィール設定やログアウト</TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[180px] shadow-2xl border-2 border-emerald-100">
                   <DropdownMenuItem 
                     onSelect={() => setProfileSettingsOpen(true)}

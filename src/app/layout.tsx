@@ -1,7 +1,9 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: 'にすまな - スキマ時間でちょいアプデ。',
@@ -22,8 +24,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background min-h-screen">
         <FirebaseClientProvider>
-          {children}
-          <Toaster />
+          <TooltipProvider>
+            {children}
+            <Toaster />
+          </TooltipProvider>
         </FirebaseClientProvider>
       </body>
     </html>
