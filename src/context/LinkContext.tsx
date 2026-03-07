@@ -113,18 +113,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // ログインログの記録（重複防止）
+  // ログインログの記録（重複防止の強化）
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid) return;
     
-    const sessionKey = `nisumana_logged_v5_${user.uid}`;
+    const sessionKey = `nisumana_init_done_v6_${user.uid}`;
     
-    // 二重実行を確実に防ぐための先行ガード
+    // 二重実行を確実に防ぐための先行ガード（Refとセッションストレージを併用）
     if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
       if (!isInitialized) setIsInitialized(true);
       return;
     }
 
+    // 処理開始直前にフラグを立てる
     loginLoggedRef.current = user.uid;
     sessionStorage.setItem(sessionKey, 'true');
 
@@ -151,10 +152,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
   }, [firestore, user?.uid, isUserLoading]);
 
-  // 認証情報の同期を待ってからタイムラインを取得
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 4500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 1500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
@@ -190,15 +190,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const activitiesQuery = useMemoFirebase(() => {
     if (!firestore || !canFetchActivities || !user?.uid) return null;
     
-    try {
-      const activitiesCol = collection(firestore, 'activities');
-      if (timelineLimit > 0) {
-        return query(activitiesCol, orderBy('timestamp', 'desc'), limit(timelineLimit));
-      }
-      return query(activitiesCol, orderBy('timestamp', 'desc'));
-    } catch (e) {
-      return null;
+    const activitiesCol = collection(firestore, 'activities');
+    if (timelineLimit > 0) {
+      return query(activitiesCol, orderBy('timestamp', 'desc'), limit(timelineLimit));
     }
+    return query(activitiesCol, orderBy('timestamp', 'desc'));
   }, [firestore, canFetchActivities, user?.uid, timelineLimit]);
 
   const { data: activities } = useCollection<any>(activitiesQuery);

@@ -31,7 +31,8 @@ import {
   ChevronUp,
   Sparkles,
   AlertTriangle,
-  Settings
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -99,8 +100,7 @@ export const Dashboard: React.FC = () => {
     try {
       if (auth) {
         if (user) {
-          sessionStorage.removeItem(`nisumana_init_done_${user.uid}`);
-          sessionStorage.removeItem(`nisumana_login_logged_v5_${user.uid}`);
+          sessionStorage.removeItem(`nisumana_init_done_v6_${user.uid}`);
         }
         await signOut(auth);
         toast({ title: "ログアウトしました", description: "またのご利用をお待ちしております。" });
@@ -169,25 +169,20 @@ export const Dashboard: React.FC = () => {
 
             <div className="flex md:hidden items-center gap-2">
               <DropdownMenu modal={false}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border-2 border-emerald-200 p-0 overflow-hidden bg-white shadow-sm">
-                        <Avatar className="w-full h-full">
-                          <AvatarImage src={userData?.photoURL || undefined} />
-                          <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-sm">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>プロフィール設定やログアウト</TooltipContent>
-                </Tooltip>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border-2 border-emerald-200 p-0 overflow-hidden bg-white shadow-sm">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={userData?.photoURL || ""} />
+                      <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-sm">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[200px] shadow-2xl border-2 border-emerald-100">
                   <div className="px-3 py-3 border-b border-emerald-50 mb-1 flex items-center gap-3">
                     <Avatar className="w-8 h-8 border border-emerald-100">
-                      <AvatarImage src={userData?.photoURL || undefined} />
+                      <AvatarImage src={userData?.photoURL || ""} />
                       <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[10px] font-black">
                         {initials}
                       </AvatarFallback>
@@ -218,49 +213,33 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 justify-end w-full md:w-auto">
             <div className="flex items-center gap-2">
               {isAdmin && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={() => setUserManagementOpen(true)}
-                      variant="outline"
-                      className="rounded-full h-9 sm:h-10 px-3 sm:px-4 border-emerald-200 text-emerald-800 font-bold hover:bg-emerald-50 text-xs"
-                    >
-                      <span className="hidden sm:inline">ユーザー管理</span>
-                      <Users className="w-3.5 h-3.5 sm:ml-2" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>ユーザーの登録や権限を管理します</TooltipContent>
-                </Tooltip>
+                <Button 
+                  onClick={() => setUserManagementOpen(true)}
+                  variant="outline"
+                  className="rounded-full h-9 sm:h-10 px-3 sm:px-4 border-emerald-200 text-emerald-800 font-bold hover:bg-emerald-50 text-xs"
+                >
+                  <span>ユーザー管理</span>
+                  <Users className="w-3.5 h-3.5 ml-2" />
+                </Button>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    onClick={handleAdd} 
-                    className="rounded-full h-9 sm:h-10 px-4 sm:px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-xs border-2 border-emerald-800 transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5 sm:mr-2" /> 
-                    <span className="hidden sm:inline">新規追加</span>
-                    <span className="sm:hidden">追加</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>新しく学習リンクを追加します</TooltipContent>
-              </Tooltip>
+              <Button 
+                onClick={handleAdd} 
+                className="rounded-full h-9 sm:h-10 px-4 sm:px-6 bg-emerald-700 hover:bg-emerald-800 shadow-md font-bold text-xs border-2 border-emerald-800 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5 mr-2" /> 
+                <span>新規追加</span>
+              </Button>
             </div>
 
             {isServerAdmin && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 sm:gap-3 bg-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-200 shadow-sm">
-                    <span className="text-[9px] sm:text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
-                    <Switch 
-                      checked={isAdmin} 
-                      onCheckedChange={setIsAdmin} 
-                      className="scale-90 sm:scale-100 data-[state=checked]:bg-emerald-600" 
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>管理者として情報を編集できるモードに切り替えます</TooltipContent>
-              </Tooltip>
+              <div className="flex items-center gap-2 sm:gap-3 bg-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-200 shadow-sm">
+                <span className="text-[9px] sm:text-[10px] font-bold text-emerald-900 uppercase tracking-tight">編集モード</span>
+                <Switch 
+                  checked={isAdmin} 
+                  onCheckedChange={setIsAdmin} 
+                  className="scale-90 sm:scale-100 data-[state=checked]:bg-emerald-600" 
+                />
+              </div>
             )}
 
             <div className="hidden md:flex items-center gap-3 bg-white pl-4 pr-2 py-1.5 rounded-full border border-emerald-200 shadow-sm">
@@ -270,21 +249,16 @@ export const Dashboard: React.FC = () => {
               </div>
               
               <DropdownMenu modal={false}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border-2 border-emerald-100 p-0 overflow-hidden bg-emerald-50 hover:bg-emerald-100 shadow-sm transition-all">
-                        <Avatar className="w-full h-full">
-                          <AvatarImage src={userData?.photoURL || undefined} />
-                          <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-[10px]">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>プロフィール設定やログアウト</TooltipContent>
-                </Tooltip>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border-2 border-emerald-100 p-0 overflow-hidden bg-emerald-50 hover:bg-emerald-100 shadow-sm transition-all">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={userData?.photoURL || ""} />
+                      <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[180px] shadow-2xl border-2 border-emerald-100">
                   <DropdownMenuItem 
                     onSelect={() => setProfileSettingsOpen(true)}
@@ -311,6 +285,14 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-emerald-600" />
             <h2 className="text-sm font-black text-emerald-900 uppercase tracking-widest">現在の学習進捗</h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>各教材のステータスを集計した全体の進行状況です。</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2">
@@ -342,6 +324,7 @@ export const Dashboard: React.FC = () => {
             className="bg-slate-300 h-full transition-all duration-500 ease-out relative group border-l border-white/20"
           />
         </div>
+        <p className="text-[10px] text-slate-400 font-bold italic text-right">※全リンク数に対する自身の進捗割合</p>
       </div>
 
       <Tabs defaultValue="links" className="space-y-6">
@@ -361,19 +344,22 @@ export const Dashboard: React.FC = () => {
 
         <TabsContent value="links" className="space-y-6">
           <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-emerald-900/10 border border-emerald-200 p-5 sm:p-8 space-y-4">
-            <div className="relative group max-w-3xl mx-auto">
-              <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
-              <Input 
-                value={search} 
-                onChange={e => setSearch(e.target.value)}
-                placeholder="タイトルやタグで検索..." 
-                className="pl-12 sm:pl-14 h-14 sm:h-16 rounded-full bg-emerald-50/50 border-emerald-100 border-2 focus:border-emerald-500 focus:ring-0 text-base sm:text-lg transition-all"
-              />
+            <div className="space-y-2 max-w-3xl mx-auto">
+              <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest pl-2">検索キーワード</p>
+              <div className="relative group">
+                <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
+                <Input 
+                  value={search} 
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="タイトルやタグ、説明文で検索..." 
+                  className="pl-12 sm:pl-14 h-14 sm:h-16 rounded-full bg-emerald-50/50 border-emerald-100 border-2 focus:border-emerald-500 focus:ring-0 text-base sm:text-lg transition-all"
+                />
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row justify-center gap-4 pb-2">
               <div className="flex flex-col gap-1.5 flex-1 max-w-md">
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest pl-2">受講状況</span>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest pl-2">自分の受講状況で絞り込む</span>
                 <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full">
                   <TabsList className="grid grid-cols-4 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
                     <TabsTrigger value="all" className="rounded-xl font-bold text-[10px] sm:text-xs">すべて</TabsTrigger>
@@ -385,7 +371,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1.5 flex-1 max-w-md">
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest pl-2">推奨状況</span>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest pl-2">評価状況で絞り込む</span>
                 <Tabs value={recommendationFilter} onValueChange={(val) => setRecommendationFilter(val as RecommendationFilter)} className="w-full">
                   <TabsList className="grid grid-cols-3 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
                     <TabsTrigger value="all" className="rounded-xl font-bold text-[10px] sm:text-xs">すべて</TabsTrigger>
@@ -409,7 +395,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
                     <SelectTrigger className="w-full max-w-[220px] border-emerald-200 bg-emerald-50/50 rounded-xl h-8 text-[10px] font-bold text-emerald-900">
-                      <SelectValue placeholder="並べ替え" />
+                      <SelectValue placeholder="表示順を選択" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-emerald-200">
                       <SelectItem value="date-new">更新日時：新着順</SelectItem>
@@ -437,11 +423,12 @@ export const Dashboard: React.FC = () => {
                           c.class,
                           selectedColors.includes(c.name) ? "border-emerald-800 scale-110 ring-4 ring-emerald-200" : "border-white shadow-md hover:scale-105"
                         )}
+                        aria-label={`${c.name}色で絞り込む`}
                       />
                     ))}
                     {selectedColors.length > 0 && (
                       <button onClick={clearColors} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
-                        クリア
+                        リセット
                       </button>
                     )}
                   </div>
@@ -466,6 +453,7 @@ export const Dashboard: React.FC = () => {
                             ? "bg-emerald-600 text-white border-emerald-700 shadow-md scale-105" 
                             : "bg-white border-emerald-100 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200"
                         )}
+                        aria-label={`${i.name}タイプで絞り込む`}
                       >
                         <IconComp className="w-4 h-4" />
                       </button>
@@ -473,7 +461,7 @@ export const Dashboard: React.FC = () => {
                   })}
                   {selectedIcons.length > 0 && (
                     <button onClick={clearIcons} className="col-span-4 sm:col-span-1 px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase text-center mt-1 sm:mt-0">
-                      すべてクリア
+                      リセット
                     </button>
                   )}
                 </div>
@@ -492,7 +480,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-7 px-2 text-emerald-600 font-bold text-[10px] rounded-lg">
-                      {tagsExpanded ? <><ChevronUp className="w-3 h-3 mr-1" /> 閉じる</> : <><ChevronDown className="w-3 h-3 mr-1" /> 表示する</>}
+                      {tagsExpanded ? <><ChevronUp className="w-3 h-3 mr-1" /> 閉じる</> : <><ChevronDown className="w-3 h-3 mr-1" /> タグ一覧を表示</>}
                     </Button>
                   </CollapsibleTrigger>
                 </div>
@@ -516,7 +504,7 @@ export const Dashboard: React.FC = () => {
                     {allTags.length === 0 && <span className="text-xs text-slate-400 italic">タグがまだありません</span>}
                     {selectedTags.length > 0 && (
                       <button onClick={clearTags} className="px-2 py-1 rounded-full text-[9px] font-black text-rose-600 bg-rose-50 border-2 border-rose-100 uppercase">
-                        すべてクリア
+                        リセット
                       </button>
                     )}
                   </div>
@@ -528,9 +516,8 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-4 px-2 mt-6">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 font-black px-3 py-1 rounded-full text-[10px]">
-                {filteredLinks.length} <span className="ml-1 opacity-60">件のリンク</span>
+                {filteredLinks.length} <span className="ml-1 opacity-60">件表示中</span>
               </Badge>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">検索結果を表示中</span>
             </div>
           </div>
 
@@ -541,25 +528,26 @@ export const Dashboard: React.FC = () => {
             {filteredLinks.length === 0 && !isLoading && (
               <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-[2rem] border-4 border-dashed border-emerald-100/50 px-6">
                 <h3 className="text-lg font-bold text-emerald-900">該当するリンクが見つかりません</h3>
+                <p className="text-sm text-slate-400 font-medium">条件を変えて検索してみてください。</p>
               </div>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="tests" className="space-y-6">
-          <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-blue-900/10 border border-blue-200 p-5 sm:p-8 space-y-4">
-             <div className="text-center mb-4">
+          <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl shadow-blue-900/10 border border-blue-200 p-5 sm:p-8 space-y-4 text-center">
+             <div className="mb-4">
                 <h2 className="text-xl font-bold text-blue-900 flex items-center justify-center gap-2">
-                   <ClipboardCheck className="w-6 h-6" /> 確認テスト一覧
+                   <ClipboardCheck className="w-6 h-6" /> 受講済みテスト一覧
                 </h2>
-                <p className="text-sm text-blue-600 font-medium">受講を完了した教材のテストに挑戦できます。</p>
+                <p className="text-sm text-blue-600 font-medium mt-1">「受講済み」ステータスになった教材のテストをいつでも受けられます。</p>
              </div>
              <div className="relative group max-w-3xl mx-auto">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 text-blue-400" />
               <Input 
                 value={search} 
                 onChange={e => setSearch(e.target.value)}
-                placeholder="受講済みの中から検索..." 
+                placeholder="受講済みの中からタイトルで検索..." 
                 className="pl-12 h-14 rounded-full bg-blue-50/50 border-blue-100 border-2 focus:border-blue-500"
               />
             </div>
@@ -575,7 +563,7 @@ export const Dashboard: React.FC = () => {
                   <Target className="w-8 h-8 text-blue-200" />
                 </div>
                 <h3 className="text-lg font-bold text-blue-900">表示できるテストがありません</h3>
-                <p className="text-sm text-slate-400">教材を「受講済み」にするとここに表示されます。</p>
+                <p className="text-sm text-slate-400">リンクを学習して「受講済み」にするとここに表示されます。</p>
               </div>
             )}
           </div>

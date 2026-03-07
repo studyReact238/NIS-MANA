@@ -14,16 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lock, User, Camera, Save, Check, Trash2 } from 'lucide-react';
+import { Loader2, Lock, User, Camera, Save, Check, Trash2, Info } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -67,18 +62,17 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Base64はサイズが33%増えるため、Firestoreの1MB制限を考慮し500KBを上限とする
     if (file.size > 500 * 1024) {
       toast({ 
         variant: "destructive", 
         title: "画像サイズエラー", 
-        description: "画像サイズは500KB以下にしてください。" 
+        description: "画像サイズは500KB以下にしてください（現在は約" + Math.round(file.size / 1024) + "KB）。" 
       });
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      toast({ variant: "destructive", title: "エラー", description: "画像ファイルを選択してください。" });
+      toast({ variant: "destructive", title: "エラー", description: "有効な画像ファイルを選択してください。" });
       return;
     }
 
@@ -86,7 +80,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
       setPhotoURL(base64);
-      toast({ title: "画像を読み込みました", description: "「プロフィールを保存」ボタンを押すと反映されます。" });
+      toast({ title: "プレビューを表示中", description: "「プロフィールを保存」ボタンを押すと変更が確定します。" });
     };
     reader.readAsDataURL(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -94,7 +88,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
 
   const handleRemovePhoto = () => {
     setPhotoURL('');
-    toast({ title: "画像を削除しました", description: "「プロフィールを保存」ボタンを押すと完全に反映されます。" });
+    toast({ title: "画像を削除しました", description: "「プロフィールを保存」ボタンを押すと確定します。" });
   };
 
   const handleUpdateProfile = (e: React.FormEvent) => {
@@ -111,7 +105,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
 
     updateDoc(userRef, updateData)
       .then(() => {
-        toast({ title: "プロフィール更新", description: "情報を保存しました。" });
+        toast({ title: "プロフィール更新", description: "正常に保存されました。" });
         setIsSavingProfile(false);
       })
       .catch(async (error) => {
@@ -162,13 +156,13 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="mb-6">
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+        <DialogHeader className="mb-6 text-center">
+          <DialogTitle className="text-2xl font-bold flex items-center justify-center gap-2">
             <User className="w-6 h-6 text-emerald-600" />
             プロフィール設定
           </DialogTitle>
           <DialogDescription>
-            あなたの表示名やアイコン、パスワードを設定します。
+            名前やアイコン画像、パスワードをいつでも変更できます。
           </DialogDescription>
         </DialogHeader>
 
@@ -177,38 +171,30 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
                 <Avatar className="w-24 h-24 border-4 border-emerald-100 shadow-lg">
-                  <AvatarImage src={photoURL || undefined} className="object-cover" />
+                  <AvatarImage src={photoURL || ""} className="object-cover" />
                   <AvatarFallback className="bg-emerald-100 text-emerald-700 text-3xl font-black">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
-                      >
-                        <Camera className="w-6 h-6 text-white" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>画像ファイルをアップロードします</TooltipContent>
-                  </Tooltip>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
+                    aria-label="画像を変更する"
+                  >
+                    <Camera className="w-6 h-6 text-white" />
+                  </button>
                   {photoURL && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={handleRemovePhoto}
-                          className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
-                        >
-                          <Trash2 className="w-6 h-6 text-white" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>現在のプロフィール画像を削除します</TooltipContent>
-                    </Tooltip>
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
+                      aria-label="画像を削除する"
+                    >
+                      <Trash2 className="w-6 h-6 text-white" />
+                    </button>
                   )}
                 </div>
 
@@ -220,30 +206,35 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                   className="hidden"
                 />
               </div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
-                画像をタップして変更または削除<br />（500KB以下推奨）
-              </p>
+              <div className="text-center space-y-1">
+                <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                  画像をタップして変更
+                </p>
+                <p className="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">
+                  <Info className="w-3 h-3" /> 500KB以下の画像を選択してください。
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="lastName">姓</Label>
+                <Label htmlFor="lastName">姓（ラストネーム）</Label>
                 <Input
                   id="lastName"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   className="rounded-xl h-11 border-emerald-100"
-                  placeholder="山田"
+                  placeholder="例: 山田"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="firstName">名</Label>
+                <Label htmlFor="firstName">名（ファーストネーム）</Label>
                 <Input
                   id="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   className="rounded-xl h-11 border-emerald-100"
-                  placeholder="太郎"
+                  placeholder="例: 太郎"
                 />
               </div>
             </div>
@@ -254,14 +245,14 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
               className="w-full rounded-xl h-12 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md shadow-emerald-200"
             >
               {isSavingProfile ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              プロフィールを保存
+              プロフィールを保存する
             </Button>
           </form>
 
           <div className="h-px bg-slate-100" />
 
           <form onSubmit={handleUpdatePassword} className="space-y-4">
-            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">パスワード変更</h4>
+            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">セキュリティ設定（パスワード）</h4>
             <div className="space-y-2">
               <Label htmlFor="new-password">新しいパスワード</Label>
               <Input
@@ -270,18 +261,18 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="rounded-xl h-11 border-emerald-100"
-                placeholder="6文字以上"
+                placeholder="6文字以上で入力してください"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">確認用パスワード</Label>
+              <Label htmlFor="confirm-password">パスワード（確認用）</Label>
               <Input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="rounded-xl h-11 border-emerald-100"
-                placeholder="もう一度入力"
+                placeholder="もう一度入力してください"
               />
             </div>
             <Button
@@ -291,7 +282,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
               className="w-full rounded-xl h-11 border-2 border-emerald-100 text-emerald-700 font-bold hover:bg-emerald-50"
             >
               {isUpdatingPassword ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-              パスワードを更新
+              パスワードを更新する
             </Button>
           </form>
         </div>

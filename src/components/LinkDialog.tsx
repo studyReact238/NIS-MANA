@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLinks } from '@/context/LinkContext';
 import { LearningLink, LinkColor } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
-import { X, Tag as TagIcon, Plus, ClipboardCheck, Upload, FileCode } from 'lucide-react';
+import { X, Tag as TagIcon, Plus, ClipboardCheck, Upload, FileCode, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -134,10 +134,10 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-4xl p-8">
         <DialogHeader className="mb-6">
           <DialogTitle className="text-3xl font-bold">
-            {editLink ? 'リンクを編集' : '新しいリンクを追加'}
+            {editLink ? 'リンク情報を編集' : '新しい教材を追加'}
           </DialogTitle>
           <DialogDescription>
-            学習リソースの情報を入力してください。
+            学習リソースのタイトル、URL、タグなどを入力して共有しましょう。
           </DialogDescription>
         </DialogHeader>
 
@@ -149,10 +149,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 id="title" 
                 value={formData.title} 
                 onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Next.jsの基礎" 
+                placeholder="例: Next.jsの基礎を学ぶ" 
                 className="rounded-2xl py-6 border-emerald-100 focus:border-emerald-500"
                 required
               />
+              <p className="text-[10px] text-slate-400 font-bold px-1">※一覧に表示されるわかりやすい名前を入力してください。</p>
             </div>
             
             <div className="space-y-2 col-span-2 sm:col-span-1">
@@ -165,12 +166,13 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 className="rounded-2xl py-6 border-emerald-100 focus:border-emerald-500"
                 required
               />
+              <p className="text-[10px] text-slate-400 font-bold px-1">※メインの学習コンテンツへのリンクです。</p>
             </div>
 
             <div className="space-y-2 col-span-2 sm:col-span-1">
               <Label className="text-base font-semibold flex items-center gap-2">
                 <ClipboardCheck className="w-4 h-4 text-blue-600" />
-                確認テストの設定
+                確認テスト
               </Label>
               
               <div className="flex flex-col gap-2">
@@ -179,7 +181,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                     id="testUrl" 
                     value={formData.testUrl} 
                     onChange={e => setFormData(prev => ({ ...prev, testUrl: e.target.value, testHtml: '' }))}
-                    placeholder="テストのURLを入力..." 
+                    placeholder="URLまたはHTMLを選択" 
                     disabled={!!formData.testHtml}
                     className="rounded-2xl h-12 border-blue-100 focus:border-blue-500 flex-1"
                   />
@@ -219,16 +221,20 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                     </button>
                   </div>
                 )}
+                <p className="text-[10px] text-slate-400 font-bold px-1 flex items-center gap-1">
+                  <Info className="w-3 h-3" />
+                  外部URLまたはHTMLファイルを指定できます。
+                </p>
               </div>
             </div>
 
             <div className="space-y-3 col-span-2">
-              <Label htmlFor="description" className="text-base font-semibold">説明</Label>
+              <Label htmlFor="description" className="text-base font-semibold">説明・メモ</Label>
               <Textarea 
                 id="description" 
                 value={formData.description} 
                 onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="内容のメモを入力してください" 
+                placeholder="内容の要約や、学習時のアドバイスを入力..." 
                 className="rounded-2xl min-h-[120px] resize-none border-emerald-100 focus:border-emerald-500"
               />
             </div>
@@ -237,7 +243,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
               <div className="flex items-center justify-between">
                 <Label className="text-base font-semibold flex items-center gap-2">
                   <TagIcon className="w-4 h-4 text-emerald-600" />
-                  タグ管理
+                  タグの設定
                 </Label>
               </div>
               
@@ -250,7 +256,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                     </button>
                   </Badge>
                 ))}
-                {formData.tags.length === 0 && <span className="text-xs text-slate-400 font-bold italic">タグが設定されていません</span>}
+                {formData.tags.length === 0 && <span className="text-xs text-slate-400 font-bold italic">タグを追加してください</span>}
               </div>
 
               <div className="flex gap-2">
@@ -258,7 +264,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                   value={tagInput} 
                   onChange={e => setTagInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag(tagInput))}
-                  placeholder="新しいタグを入力..." 
+                  placeholder="タグを入力して追加..." 
                   className="rounded-2xl border-emerald-100 focus:border-emerald-500"
                 />
                 <Button type="button" onClick={() => addTag(tagInput)} className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-6 font-bold shadow-md">
@@ -268,7 +274,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
 
               {suggestedTags.length > 0 && (
                 <div className="space-y-2">
-                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">既存のタグから追加</span>
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest px-1">よく使われるタグ</span>
                   <div className="flex flex-wrap gap-1.5 p-3 bg-white rounded-2xl border border-dashed border-emerald-200">
                     {suggestedTags.map(tag => (
                       <button
@@ -287,7 +293,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             </div>
 
             <div className="space-y-4 col-span-2">
-              <Label className="text-base font-semibold">外観設定</Label>
+              <Label className="text-base font-semibold">デザインの設定</Label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-6 bg-emerald-50/20 rounded-4xl border border-emerald-100">
                 <div className="space-y-3">
                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">テーマカラー</span>
@@ -302,6 +308,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                           c.class,
                           formData.color === c.name ? "border-white scale-110 ring-4 ring-emerald-200 shadow-lg" : "border-transparent opacity-60 hover:opacity-100"
                         )}
+                        aria-label={`${c.name}色を選択`}
                       />
                     ))}
                   </div>
@@ -310,7 +317,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 <div className="hidden sm:block h-10 w-px bg-emerald-100 mx-2" />
 
                 <div className="space-y-3">
-                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">アイコン</span>
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">アイコンの種類</span>
                   <div className="flex flex-wrap gap-2">
                     {LINK_ICONS.map(i => {
                       const IconComp = i.icon;
@@ -325,6 +332,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                               ? "bg-emerald-600 text-white border-emerald-700 scale-110 shadow-lg" 
                               : "bg-white border-emerald-100 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200"
                           )}
+                          aria-label={`${i.name}アイコンを選択`}
                         >
                           <IconComp className="w-5 h-5" />
                         </button>
