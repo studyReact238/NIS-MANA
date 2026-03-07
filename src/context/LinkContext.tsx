@@ -117,9 +117,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid) return;
     
-    const sessionKey = `nisumana_init_done_v6_${user.uid}`;
+    const sessionKey = `nisumana_init_done_v7_${user.uid}`;
     
-    // 二重実行を確実に防ぐための先行ガード（Refとセッションストレージを併用）
+    // 二重実行を確実に防ぐための先行ガード
     if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
       if (!isInitialized) setIsInitialized(true);
       return;
@@ -154,7 +154,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 1500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 2500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);

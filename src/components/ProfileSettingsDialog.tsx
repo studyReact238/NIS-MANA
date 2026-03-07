@@ -18,9 +18,14 @@ import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/fireb
 import { updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lock, User, Camera, Save, Check, Trash2, Info } from 'lucide-react';
+import { Loader2, Lock, User, Camera, Save, Check, Trash2, Info, HelpCircle } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ProfileSettingsDialogProps {
   open: boolean;
@@ -66,7 +71,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
       toast({ 
         variant: "destructive", 
         title: "画像サイズエラー", 
-        description: "画像サイズは500KB以下にしてください（現在は約" + Math.round(file.size / 1024) + "KB）。" 
+        description: "画像サイズは500KB以下にしてください。" 
       });
       return;
     }
@@ -178,23 +183,31 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                 </Avatar>
                 
                 <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
-                    aria-label="画像を変更する"
-                  >
-                    <Camera className="w-6 h-6 text-white" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
+                      >
+                        <Camera className="w-6 h-6 text-white" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>画像ファイルを選択</p></TooltipContent>
+                  </Tooltip>
                   {photoURL && (
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
-                      aria-label="画像を削除する"
-                    >
-                      <Trash2 className="w-6 h-6 text-white" />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
+                        >
+                          <Trash2 className="w-6 h-6 text-white" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>画像を削除</p></TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
 
@@ -207,18 +220,31 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                 />
               </div>
               <div className="text-center space-y-1">
-                <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
-                  画像をタップして変更
-                </p>
-                <p className="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">
-                  <Info className="w-3 h-3" /> 500KB以下の画像を選択してください。
-                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">画像をタップして変更</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>自分を識別するためのアイコン画像をアップロードできます。500KB以下の画像を選択してください。</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="lastName">姓（ラストネーム）</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="lastName">姓</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent><p>苗字を入力してください。</p></TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
                   id="lastName"
                   value={lastName}
@@ -228,7 +254,15 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="firstName">名（ファーストネーム）</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="firstName">名</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent><p>名前を入力してください。</p></TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
                   id="firstName"
                   value={firstName}
@@ -252,7 +286,15 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
           <div className="h-px bg-slate-100" />
 
           <form onSubmit={handleUpdatePassword} className="space-y-4">
-            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">セキュリティ設定（パスワード）</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">セキュリティ設定（パスワード）</h4>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent><p>ログインパスワードを変更できます。6文字以上で設定してください。</p></TooltipContent>
+              </Tooltip>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="new-password">新しいパスワード</Label>
               <Input

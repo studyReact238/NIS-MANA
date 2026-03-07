@@ -48,7 +48,8 @@ import {
   ExternalLink,
   Clock,
   User as UserIcon,
-  Save
+  Save,
+  HelpCircle
 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -56,6 +57,11 @@ import { useLinks } from '@/context/LinkContext';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface UserManagementDialogProps {
   open: boolean;
@@ -317,7 +323,17 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 flex-1 overflow-hidden">
             <div className="md:col-span-4 space-y-6 overflow-y-auto pr-2">
               <div className="space-y-4">
-                <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest border-b border-emerald-100 pb-2">新規ユーザー登録</h3>
+                <div className="flex items-center gap-2 border-b border-emerald-100 pb-2">
+                  <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest">新規ユーザー登録</h3>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>新しいメンバーをシステムに登録します。登録後、初期パスワードでログイン可能です。</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <form onSubmit={initiateRegister} className="space-y-4 pt-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1.5">
@@ -357,7 +373,17 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
               </div>
 
               <div className="pt-6 border-t border-dashed border-emerald-100">
-                <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest pb-2">システム・メンテナンス</h3>
+                <div className="flex items-center gap-2 pb-2">
+                  <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest">システム・メンテナンス</h3>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>学習中や完了人数の表示が実データと乖離した場合、全データを再スキャンして修正します。</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-3">
                   <p className="text-[10px] text-amber-800 font-bold leading-relaxed">
                     学習状況のカウントが不正確な場合は、統計情報を再集計してください。

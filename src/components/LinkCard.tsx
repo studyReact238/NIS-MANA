@@ -263,15 +263,35 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
       )}>
         <div className="absolute top-4 left-6 z-20 flex flex-col gap-2">
           {link.isRecommended ? (
-            <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 shadow-lg px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-pulse cursor-default">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 shadow-lg px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-pulse cursor-default">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
+              </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="w-4 h-4 text-emerald-400 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>10%以上のユーザーが高評価をつけ、かつ低評価よりも高評価が多い教材です。</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           ) : (
-            <Badge variant="outline" className="bg-white/80 text-slate-500 border-2 border-slate-200 shadow-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-default">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <Badge variant="outline" className="bg-white/80 text-slate-500 border-2 border-slate-200 shadow-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-default">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
+              </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>評価が少ない、または低評価が目立つ教材です。利用には注意してください。</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           )}
         </div>
 
@@ -312,35 +332,45 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </div>
               )}
 
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 h-auto rounded-full border-2 transition-all",
-                      link.status === 'completed' ? "bg-emerald-600 border-emerald-700 text-white" :
-                      link.status === 'learning' ? "bg-blue-600 border-blue-700 text-white" :
-                      "bg-white border-slate-200 text-slate-700"
-                    )}
-                  >
-                    {getStatusIcon(link.status)}
-                    <span className="text-[10px] font-black uppercase tracking-wider">
-                      {getStatusLabel(link.status)}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="rounded-2xl p-2 min-w-[140px] shadow-2xl border-2 border-emerald-100">
-                  <DropdownMenuItem onClick={() => handleStatusChange('unstarted')} className="rounded-xl font-bold text-xs h-10">
-                    <Circle className="w-4 h-4 mr-2" /> 未着手に戻す
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusChange('learning')} className="rounded-xl font-bold text-xs h-10 text-blue-600">
-                    <BookOpen className="w-4 h-4 mr-2" /> 学習中に変更
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusChange('completed')} className="rounded-xl font-bold text-xs h-10 text-emerald-600">
-                    <CheckCircle2 className="w-4 h-4 mr-2" /> 受講済みに変更
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-1">
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 h-auto rounded-full border-2 transition-all",
+                        link.status === 'completed' ? "bg-emerald-600 border-emerald-700 text-white" :
+                        link.status === 'learning' ? "bg-blue-600 border-blue-700 text-white" :
+                        "bg-white border-slate-200 text-slate-700"
+                      )}
+                    >
+                      {getStatusIcon(link.status)}
+                      <span className="text-[10px] font-black uppercase tracking-wider">
+                        {getStatusLabel(link.status)}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="rounded-2xl p-2 min-w-[140px] shadow-2xl border-2 border-emerald-100">
+                    <DropdownMenuItem onClick={() => handleStatusChange('unstarted')} className="rounded-xl font-bold text-xs h-10">
+                      <Circle className="w-4 h-4 mr-2" /> 未着手に戻す
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusChange('learning')} className="rounded-xl font-bold text-xs h-10 text-blue-600">
+                      <BookOpen className="w-4 h-4 mr-2" /> 学習中に変更
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusChange('completed')} className="rounded-xl font-bold text-xs h-10 text-emerald-600">
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> 受講済みに変更
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>この教材のあなたの学習状態を切り替えます。</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               
               {canManage && (
                 <DropdownMenu modal={false}>
@@ -415,7 +445,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
             </div>
 
             <div className="flex flex-col gap-2 pt-4 mt-2 border-t-2 border-black/5">
-               <div className="flex items-center gap-6">
+               <div className="flex items-center gap-4">
                  <div className="flex items-center gap-1.5 text-slate-500">
                     <Users className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.completedCount || 0)}人が受講完了</span>
@@ -424,6 +454,14 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     <BookOpen className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.learningCount || 0)}人が学習中</span>
                  </div>
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>この教材を利用している全体のユーザー数です。</p>
+                    </TooltipContent>
+                  </Tooltip>
                </div>
                
                <div className="flex items-center gap-4 ml-auto">
@@ -455,6 +493,14 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     </button>
                     <span className="text-[9px] text-slate-400 font-bold hidden sm:inline">低評価</span>
                   </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>教材の質を評価します。あなたの評価が推奨コンテンツの判定に使われます。</p>
+                    </TooltipContent>
+                  </Tooltip>
                </div>
             </div>
 

@@ -18,9 +18,14 @@ import { Badge } from '@/components/ui/badge';
 import { useLinks } from '@/context/LinkContext';
 import { LearningLink, LinkColor } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
-import { X, Tag as TagIcon, Plus, ClipboardCheck, Upload, FileCode, Info } from 'lucide-react';
+import { X, Tag as TagIcon, Plus, ClipboardCheck, Upload, FileCode, Info, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface LinkDialogProps {
   open: boolean;
@@ -144,7 +149,17 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2 col-span-2">
-              <Label htmlFor="title" className="text-base font-semibold">タイトル</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="title" className="text-base font-semibold">タイトル</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>一覧画面で表示される教材の名前です。一目で内容がわかるようにしましょう。</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Input 
                 id="title" 
                 value={formData.title} 
@@ -153,11 +168,20 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 className="rounded-2xl py-6 border-emerald-100 focus:border-emerald-500"
                 required
               />
-              <p className="text-[10px] text-slate-400 font-bold px-1">※一覧に表示されるわかりやすい名前を入力してください。</p>
             </div>
             
             <div className="space-y-2 col-span-2 sm:col-span-1">
-              <Label htmlFor="url" className="text-base font-semibold">学習サイト URL</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="url" className="text-base font-semibold">学習サイト URL</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>教材のメインページとなるWebサイトのURLを入力してください。</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Input 
                 id="url" 
                 value={formData.url} 
@@ -166,14 +190,23 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 className="rounded-2xl py-6 border-emerald-100 focus:border-emerald-500"
                 required
               />
-              <p className="text-[10px] text-slate-400 font-bold px-1">※メインの学習コンテンツへのリンクです。</p>
             </div>
 
             <div className="space-y-2 col-span-2 sm:col-span-1">
-              <Label className="text-base font-semibold flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-blue-600" />
-                確認テスト
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4 text-blue-600" />
+                  確認テスト
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>外部ツール（Googleフォーム等）のURL、または自作のHTMLファイルを指定できます。</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
@@ -221,15 +254,21 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                     </button>
                   </div>
                 )}
-                <p className="text-[10px] text-slate-400 font-bold px-1 flex items-center gap-1">
-                  <Info className="w-3 h-3" />
-                  外部URLまたはHTMLファイルを指定できます。
-                </p>
               </div>
             </div>
 
             <div className="space-y-3 col-span-2">
-              <Label htmlFor="description" className="text-base font-semibold">説明・メモ</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="description" className="text-base font-semibold">説明・メモ</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>教材の要約や、学習時の注意点などを自由に記載してください。</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Textarea 
                 id="description" 
                 value={formData.description} 
@@ -240,11 +279,19 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             </div>
 
             <div className="space-y-4 col-span-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <Label className="text-base font-semibold flex items-center gap-2">
                   <TagIcon className="w-4 h-4 text-emerald-600" />
                   タグの設定
                 </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>関連するキーワード（Next.js, UI/UX など）を入力して、後で探しやすくしましょう。</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               
               <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/50">
@@ -271,29 +318,20 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                   追加
                 </Button>
               </div>
-
-              {suggestedTags.length > 0 && (
-                <div className="space-y-2">
-                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest px-1">よく使われるタグ</span>
-                  <div className="flex flex-wrap gap-1.5 p-3 bg-white rounded-2xl border border-dashed border-emerald-200">
-                    {suggestedTags.map(tag => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => addTag(tag)}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100 transition-colors"
-                      >
-                        <Plus className="w-3 h-3" />
-                        #{tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="space-y-4 col-span-2">
-              <Label className="text-base font-semibold">デザインの設定</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold">デザインの設定</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>一覧画面でのカードの色とアイコンをカスタマイズできます。</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-6 bg-emerald-50/20 rounded-4xl border border-emerald-100">
                 <div className="space-y-3">
                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">テーマカラー</span>
