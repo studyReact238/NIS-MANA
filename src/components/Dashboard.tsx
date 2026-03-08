@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -100,7 +99,7 @@ export const Dashboard: React.FC = () => {
     try {
       if (auth) {
         if (user) {
-          sessionStorage.removeItem(`nisumana_init_done_v7_${user.uid}`);
+          sessionStorage.removeItem(`nisumana_init_done_v8_${user.uid}`);
         }
         await signOut(auth);
         toast({ title: "ログアウトしました", description: "またのご利用をお待ちしております。" });
@@ -224,9 +223,11 @@ export const Dashboard: React.FC = () => {
                   </Button>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>ユーザーの登録や権限、システムのメンテナンスを行います。</p>
                     </TooltipContent>
                   </Tooltip>
@@ -242,9 +243,11 @@ export const Dashboard: React.FC = () => {
                 </Button>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>新しい学習用リンク（教材）を登録します。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -261,9 +264,11 @@ export const Dashboard: React.FC = () => {
                 />
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>オンにすると、各教材の編集や削除が行えるようになります。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -315,7 +320,9 @@ export const Dashboard: React.FC = () => {
             <h2 className="text-sm font-black text-emerald-900 uppercase tracking-widest">現在の学習進捗</h2>
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                  <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                </button>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>全教材に対するあなたの現在の進捗状況をリアルタイムで表示しています。</p>
@@ -377,9 +384,11 @@ export const Dashboard: React.FC = () => {
                 <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">検索キーワード</p>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>教材のタイトル、説明、設定されたタグから部分一致で検索できます。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -401,9 +410,11 @@ export const Dashboard: React.FC = () => {
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">自分の受講状況で絞り込む</span>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>未着手や学習中など、現在の学習ステータスで表示を絞り込みます。</p>
                     </TooltipContent>
                   </Tooltip>
@@ -423,9 +434,11 @@ export const Dashboard: React.FC = () => {
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">評価状況で絞り込む</span>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>多くのユーザーから評価された「推奨コンテンツ」のみを表示できます。</p>
                     </TooltipContent>
                   </Tooltip>
@@ -452,9 +465,11 @@ export const Dashboard: React.FC = () => {
                     <span className="text-[10px] font-bold">並べ替え:</span>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="w-3 h-3 text-slate-400 cursor-help" />
+                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </button>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent className="max-w-xs">
                         <p>表示する順番を変更します。評価順や学習中人数順がおすすめです。</p>
                       </TooltipContent>
                     </Tooltip>
@@ -480,9 +495,11 @@ export const Dashboard: React.FC = () => {
                     <span className="text-[10px] font-bold">カラー:</span>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="w-3 h-3 text-slate-400 cursor-help" />
+                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </button>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent className="max-w-xs">
                         <p>教材に設定されたテーマカラーで絞り込みます。</p>
                       </TooltipContent>
                     </Tooltip>
@@ -515,9 +532,11 @@ export const Dashboard: React.FC = () => {
                   <span className="text-[10px] font-bold">タイプ:</span>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3 h-3 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>教材に設定されたアイコンの種類（動画、本、Webなど）で絞り込みます。</p>
                     </TooltipContent>
                   </Tooltip>
@@ -556,9 +575,11 @@ export const Dashboard: React.FC = () => {
                     <span className="text-[10px] font-bold">タグ絞り込み:</span>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="w-3 h-3 text-slate-400 cursor-help" />
+                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </button>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent className="max-w-xs">
                         <p>特定のキーワード（タグ）が含まれる教材を抽出します。複数選択可能です。</p>
                       </TooltipContent>
                     </Tooltip>

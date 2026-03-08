@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -160,7 +159,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-md rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
         <DialogHeader className="mb-6 text-center">
           <DialogTitle className="text-2xl font-bold flex items-center justify-center gap-2">
             <User className="w-6 h-6 text-emerald-600" />
@@ -188,7 +187,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
+                        className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors focus:outline-none focus:ring-1 focus:ring-white"
                       >
                         <Camera className="w-6 h-6 text-white" />
                       </button>
@@ -201,7 +200,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                         <button
                           type="button"
                           onClick={handleRemovePhoto}
-                          className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
+                          className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors focus:outline-none focus:ring-1 focus:ring-white"
                         >
                           <Trash2 className="w-6 h-6 text-white" />
                         </button>
@@ -224,9 +223,11 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                   <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">画像をタップして変更</p>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>自分を識別するためのアイコン画像をアップロードできます。500KB以下の画像を選択してください。</p>
                     </TooltipContent>
                   </Tooltip>
@@ -240,7 +241,9 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                   <Label htmlFor="lastName">姓</Label>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent><p>苗字を入力してください。</p></TooltipContent>
                   </Tooltip>
@@ -258,7 +261,9 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
                   <Label htmlFor="firstName">名</Label>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent><p>名前を入力してください。</p></TooltipContent>
                   </Tooltip>
@@ -290,7 +295,9 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
               <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">セキュリティ設定（パスワード）</h4>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                    <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent><p>ログインパスワードを変更できます。6文字以上で設定してください。</p></TooltipContent>
               </Tooltip>

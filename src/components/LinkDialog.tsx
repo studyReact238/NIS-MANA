@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -153,9 +152,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 <Label htmlFor="title" className="text-base font-semibold">タイトル</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>一覧画面で表示される教材の名前です。一目で内容がわかるようにしましょう。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -175,9 +176,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 <Label htmlFor="url" className="text-base font-semibold">学習サイト URL</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>教材のメインページとなるWebサイトのURLを入力してください。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -200,9 +203,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 </Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>外部ツール（Googleフォーム等）のURL、または自作のHTMLファイルを指定できます。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -262,9 +267,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 <Label htmlFor="description" className="text-base font-semibold">説明・メモ</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>教材の要約や、学習時の注意点などを自由に記載してください。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -286,9 +293,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 </Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>関連するキーワード（Next.js, UI/UX など）を入力して、後で探しやすくしましょう。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -325,9 +334,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 <Label className="text-base font-semibold">デザインの設定</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>一覧画面でのカードの色とアイコンをカスタマイズできます。</p>
                   </TooltipContent>
                 </Tooltip>

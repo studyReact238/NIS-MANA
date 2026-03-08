@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -327,9 +326,11 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                   <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest">新規ユーザー登録</h3>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>新しいメンバーをシステムに登録します。登録後、初期パスワードでログイン可能です。</p>
                     </TooltipContent>
                   </Tooltip>
@@ -377,9 +378,11 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                   <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest">システム・メンテナンス</h3>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>学習中や完了人数の表示が実データと乖離した場合、全データを再スキャンして修正します。</p>
                     </TooltipContent>
                   </Tooltip>

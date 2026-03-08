@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -270,9 +269,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               </Badge>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <HelpCircle className="w-4 h-4 text-emerald-400 cursor-help" />
+                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                    <HelpCircle className="w-4 h-4 text-emerald-400 cursor-help" />
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="max-w-xs">
                   <p>10%以上のユーザーが高評価をつけ、かつ低評価よりも高評価が多い教材です。</p>
                 </TooltipContent>
               </Tooltip>
@@ -285,9 +286,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               </Badge>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="max-w-xs">
                   <p>評価が少ない、または低評価が目立つ教材です。利用には注意してください。</p>
                 </TooltipContent>
               </Tooltip>
@@ -364,9 +367,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-xs">
                     <p>この教材のあなたの学習状態を切り替えます。</p>
                   </TooltipContent>
                 </Tooltip>
@@ -456,9 +461,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                  </div>
                  <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>この教材を利用している全体のユーザー数です。</p>
                     </TooltipContent>
                   </Tooltip>
@@ -495,9 +502,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help" />
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help" />
+                      </button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="max-w-xs">
                       <p>教材の質を評価します。あなたの評価が推奨コンテンツの判定に使われます。</p>
                     </TooltipContent>
                   </Tooltip>

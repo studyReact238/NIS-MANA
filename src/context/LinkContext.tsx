@@ -1,8 +1,8 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus, RecommendationFilter } from '@/types/link';
+import { useLinks as useLinksData } from '@/firebase'; // Avoid naming conflict
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { 
   collection, 
@@ -113,19 +113,18 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // ログインログの記録（重複防止の強化）
+  // ログインログの記録（重複防止の強化 - v8）
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid) return;
     
-    const sessionKey = `nisumana_init_done_v7_${user.uid}`;
+    const sessionKey = `nisumana_init_done_v8_${user.uid}`;
     
-    // 二重実行を確実に防ぐための先行ガード
     if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
       if (!isInitialized) setIsInitialized(true);
       return;
     }
 
-    // 処理開始直前にフラグを立てる
+    // 先行してフラグを立てる
     loginLoggedRef.current = user.uid;
     sessionStorage.setItem(sessionKey, 'true');
 
@@ -154,7 +153,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 2500);
+      const timer = setTimeout(() => setCanFetchActivities(true), 3500); // 待機時間を少し延長
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);
