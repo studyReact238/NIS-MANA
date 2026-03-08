@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -19,6 +20,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -56,11 +62,6 @@ import { useLinks } from '@/context/LinkContext';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface UserManagementDialogProps {
   open: boolean;
@@ -82,7 +83,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
 
-  // 編集用氏名ステート
   const [editLastName, setEditLastName] = useState('');
   const [editFirstName, setEditFirstName] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -149,19 +149,11 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const initiateRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast({
-        variant: "destructive",
-        title: "入力エラー",
-        description: "メールアドレスとパスワードを入力してください。"
-      });
+      toast({ variant: "destructive", title: "入力エラー", description: "メールアドレスとパスワードを入力してください。" });
       return;
     }
     if (password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "入力エラー",
-        description: "パスワードは6文字以上で入力してください。"
-      });
+      toast({ variant: "destructive", title: "入力エラー", description: "パスワードは6文字以上で入力してください。" });
       return;
     }
     setShowConfirmAlert(true);
@@ -218,12 +210,8 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
     setIsSavingProfile(true);
     try {
       const userDocRef = doc(firestore, 'users', selectedUser.id);
-      await updateDoc(userDocRef, {
-        lastName: editLastName,
-        firstName: editFirstName
-      });
+      await updateDoc(userDocRef, { lastName: editLastName, firstName: editFirstName });
       toast({ title: "更新完了", description: "プロフィール情報を更新しました。" });
-      // 選択中のユーザー情報も更新（表示用）
       setSelectedUser((prev: any) => ({ ...prev, lastName: editLastName, firstName: editFirstName }));
     } catch (e: any) {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ 
@@ -238,25 +226,16 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   const toggleAdminStatus = async (userToUpdate: {id: string, email: string}, isCurrentlyAdmin: boolean) => {
     if (!firestore || !user) return;
-    
     if (user.uid === userToUpdate.id) {
-      toast({
-        variant: "destructive",
-        title: "操作不可",
-        description: "自分自身の管理者権限は変更できません。"
-      });
+      toast({ variant: "destructive", title: "操作不可", description: "自分自身の管理者権限は変更できません。" });
       return;
     }
-
     try {
       if (isCurrentlyAdmin) {
         await deleteDoc(doc(firestore, 'admins', userToUpdate.id));
         toast({ title: "権限解除", description: `${userToUpdate.email} の管理者権限を解除しました。` });
       } else {
-        await setDoc(doc(firestore, 'admins', userToUpdate.id), {
-          id: userToUpdate.id,
-          email: userToUpdate.email
-        });
+        await setDoc(doc(firestore, 'admins', userToUpdate.id), { id: userToUpdate.id, email: userToUpdate.email });
         toast({ title: "権限付与", description: `${userToUpdate.email} に管理者権限を付与しました。` });
       }
     } catch (e: any) {
@@ -301,13 +280,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(val) => {
-        onOpenChange(val);
-        if (!val) {
-          setSelectedUser(null);
-          setUserToDelete(null);
-        }
-      }}>
+      <Dialog open={open} onOpenChange={(val) => { onOpenChange(val); if (!val) { setSelectedUser(null); setUserToDelete(null); } }}>
         <DialogContent className="max-w-4xl rounded-4xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="mb-6 shrink-0">
             <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-emerald-950">
@@ -324,16 +297,16 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-b border-emerald-100 pb-2">
                   <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest">新規ユーザー登録</h3>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>新しいメンバーをシステムに登録します。登録後、初期パスワードでログイン可能です。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <form onSubmit={initiateRegister} className="space-y-4 pt-2">
                   <div className="grid grid-cols-2 gap-2">
@@ -376,16 +349,16 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
               <div className="pt-6 border-t border-dashed border-emerald-100">
                 <div className="flex items-center gap-2 pb-2">
                   <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest">システム・メンテナンス</h3>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>学習中や完了人数の表示が実データと乖離した場合、全データを再スキャンして修正します。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-3">
                   <p className="text-[10px] text-amber-800 font-bold leading-relaxed">
@@ -492,7 +465,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                   
                   <ScrollArea className="flex-1">
                     <div className="p-5 space-y-8">
-                      {/* プロフィール編集セクション */}
                       <div className="space-y-4">
                         <h4 className="text-[11px] font-black text-emerald-800 uppercase tracking-widest flex items-center gap-2">
                           <UserIcon className="w-3.5 h-3.5" /> プロフィール編集
@@ -501,28 +473,14 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                               <Label className="text-[10px] font-bold text-slate-500">姓</Label>
-                              <Input 
-                                value={editLastName} 
-                                onChange={(e) => setEditLastName(e.target.value)} 
-                                className="rounded-xl h-10 border-emerald-50 text-xs"
-                                placeholder="未登録"
-                              />
+                              <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="rounded-xl h-10 border-emerald-50 text-xs" placeholder="未登録" />
                             </div>
                             <div className="space-y-1.5">
                               <Label className="text-[10px] font-bold text-slate-500">名</Label>
-                              <Input 
-                                value={editFirstName} 
-                                onChange={(e) => setEditFirstName(e.target.value)} 
-                                className="rounded-xl h-10 border-emerald-50 text-xs"
-                                placeholder="未登録"
-                              />
+                              <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="rounded-xl h-10 border-emerald-50 text-xs" placeholder="未登録" />
                             </div>
                           </div>
-                          <Button 
-                            onClick={handleUpdateProfile} 
-                            disabled={isSavingProfile}
-                            className="w-full rounded-xl bg-emerald-600 h-10 font-bold text-xs"
-                          >
+                          <Button onClick={handleUpdateProfile} disabled={isSavingProfile} className="w-full rounded-xl bg-emerald-600 h-10 font-bold text-xs">
                             {isSavingProfile ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
                             氏名を更新する
                           </Button>
@@ -620,7 +578,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
             <AlertDialogTitle className="text-2xl font-bold text-emerald-950">ユーザーを削除しますか？</AlertDialogTitle>
             <AlertDialogDescription className="text-base text-emerald-800 font-medium">
               「{userToDelete?.email}」のプロファイルと学習記録を削除します。この操作は取り消せません。
-              <br /><span className="text-xs text-rose-500">※Firebase Authの認証情報は別途削除が必要です。</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8">

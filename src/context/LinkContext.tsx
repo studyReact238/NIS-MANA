@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus, RecommendationFilter } from '@/types/link';
-import { useLinks as useLinksData } from '@/firebase'; // Avoid naming conflict
+import { useLinks as useLinksData } from '@/firebase'; 
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { 
   collection, 
@@ -66,7 +67,7 @@ const LinkContext = createContext<LinkContextType | undefined>(undefined);
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const loginLoggedRef = useRef<string | null>(null);
+  const loginLoggedRef = useRef<boolean>(false);
   
   const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
@@ -113,19 +114,18 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // ログインログの記録（重複防止の強化 - v8）
+  // ログインログの重複防止 (v11)
   useEffect(() => {
-    if (!firestore || isUserLoading || !user?.uid) return;
+    if (!firestore || isUserLoading || !user?.uid || loginLoggedRef.current) return;
     
-    const sessionKey = `nisumana_init_done_v8_${user.uid}`;
-    
-    if (sessionStorage.getItem(sessionKey) || loginLoggedRef.current === user.uid) {
-      if (!isInitialized) setIsInitialized(true);
+    const sessionKey = `nisumana_logged_v11_${user.uid}`;
+    if (sessionStorage.getItem(sessionKey)) {
+      loginLoggedRef.current = true;
+      setIsInitialized(true);
       return;
     }
 
-    // 先行してフラグを立てる
-    loginLoggedRef.current = user.uid;
+    loginLoggedRef.current = true;
     sessionStorage.setItem(sessionKey, 'true');
 
     const userRef = doc(firestore, 'users', user.uid);
@@ -153,7 +153,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isInitialized && user?.uid && firestore) {
-      const timer = setTimeout(() => setCanFetchActivities(true), 3500); // 待機時間を少し延長
+      const timer = setTimeout(() => setCanFetchActivities(true), 4500);
       return () => clearTimeout(timer);
     } else {
       setCanFetchActivities(false);

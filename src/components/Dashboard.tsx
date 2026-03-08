@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -48,13 +49,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { StatusFilter, SortOption, LearningLink, RecommendationFilter } from '@/types/link';
 import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -99,7 +100,7 @@ export const Dashboard: React.FC = () => {
     try {
       if (auth) {
         if (user) {
-          sessionStorage.removeItem(`nisumana_init_done_v8_${user.uid}`);
+          sessionStorage.removeItem(`nisumana_logged_v11_${user.uid}`);
         }
         await signOut(auth);
         toast({ title: "ログアウトしました", description: "またのご利用をお待ちしております。" });
@@ -171,7 +172,7 @@ export const Dashboard: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border-2 border-emerald-200 p-0 overflow-hidden bg-white shadow-sm">
                     <Avatar className="w-full h-full">
-                      <AvatarImage src={userData?.photoURL || ""} />
+                      <AvatarImage src={userData?.photoURL} />
                       <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-sm">
                         {initials}
                       </AvatarFallback>
@@ -181,7 +182,7 @@ export const Dashboard: React.FC = () => {
                 <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[200px] shadow-2xl border-2 border-emerald-100">
                   <div className="px-3 py-3 border-b border-emerald-50 mb-1 flex items-center gap-3">
                     <Avatar className="w-8 h-8 border border-emerald-100">
-                      <AvatarImage src={userData?.photoURL || ""} />
+                      <AvatarImage src={userData?.photoURL} />
                       <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[10px] font-black">
                         {initials}
                       </AvatarFallback>
@@ -221,16 +222,16 @@ export const Dashboard: React.FC = () => {
                     <span>ユーザー管理</span>
                     <Users className="w-3.5 h-3.5 ml-2" />
                   </Button>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-4 h-4 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>ユーザーの登録や権限、システムのメンテナンスを行います。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
               <div className="flex items-center gap-1">
@@ -241,16 +242,16 @@ export const Dashboard: React.FC = () => {
                   <Plus className="w-3.5 h-3.5 mr-2" /> 
                   <span>新規追加</span>
                 </Button>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-4 h-4 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>新しい学習用リンク（教材）を登録します。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
@@ -262,16 +263,16 @@ export const Dashboard: React.FC = () => {
                   onCheckedChange={setIsAdmin} 
                   className="scale-90 sm:scale-100 data-[state=checked]:bg-emerald-600" 
                 />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>オンにすると、各教材の編集や削除が行えるようになります。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
@@ -285,7 +286,7 @@ export const Dashboard: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border-2 border-emerald-100 p-0 overflow-hidden bg-emerald-50 hover:bg-emerald-100 shadow-sm transition-all">
                     <Avatar className="w-full h-full">
-                      <AvatarImage src={userData?.photoURL || ""} />
+                      <AvatarImage src={userData?.photoURL} />
                       <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold text-[10px]">
                         {initials}
                       </AvatarFallback>
@@ -318,16 +319,16 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-emerald-600" />
             <h2 className="text-sm font-black text-emerald-900 uppercase tracking-widest">現在の学習進捗</h2>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                  <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                  <HelpCircle className="w-4 h-4 text-slate-400" />
                 </button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
+              </PopoverTrigger>
+              <PopoverContent className="max-w-xs text-xs">
                 <p>全教材に対するあなたの現在の進捗状況をリアルタイムで表示しています。</p>
-              </TooltipContent>
-            </Tooltip>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2">
@@ -382,16 +383,16 @@ export const Dashboard: React.FC = () => {
             <div className="space-y-2 max-w-3xl mx-auto">
               <div className="flex items-center gap-2 pl-2">
                 <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">検索キーワード</p>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>教材のタイトル、説明、設定されたタグから部分一致で検索できます。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="relative group">
                 <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 w-4 sm:h-5 sm:w-5 text-emerald-400 group-focus-within:text-emerald-600 transition-colors" />
@@ -408,16 +409,16 @@ export const Dashboard: React.FC = () => {
               <div className="flex flex-col gap-1.5 flex-1 max-w-md">
                 <div className="flex items-center gap-2 pl-2">
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">自分の受講状況で絞り込む</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>未着手や学習中など、現在の学習ステータスで表示を絞り込みます。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)} className="w-full">
                   <TabsList className="grid grid-cols-4 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
@@ -432,16 +433,16 @@ export const Dashboard: React.FC = () => {
               <div className="flex flex-col gap-1.5 flex-1 max-w-md">
                 <div className="flex items-center gap-2 pl-2">
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">評価状況で絞り込む</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>多くのユーザーから評価された「推奨コンテンツ」のみを表示できます。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Tabs value={recommendationFilter} onValueChange={(val) => setRecommendationFilter(val as RecommendationFilter)} className="w-full">
                   <TabsList className="grid grid-cols-3 h-10 sm:h-12 bg-emerald-100/50 rounded-2xl p-1 gap-1 border border-emerald-200">
@@ -463,16 +464,16 @@ export const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-1.5 text-emerald-800 min-w-[80px] sm:min-w-[90px]">
                     <ArrowUpDown className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-bold">並べ替え:</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                          <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                         </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
+                      </PopoverTrigger>
+                      <PopoverContent className="max-w-xs text-xs">
                         <p>表示する順番を変更します。評価順や学習中人数順がおすすめです。</p>
-                      </TooltipContent>
-                    </Tooltip>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
                     <SelectTrigger className="w-full max-w-[220px] border-emerald-200 bg-emerald-50/50 rounded-xl h-8 text-[10px] font-bold text-emerald-900">
@@ -493,16 +494,16 @@ export const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-1.5 text-emerald-800 min-w-[80px] sm:min-w-[90px]">
                     <Palette className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-bold">カラー:</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                          <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                         </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
+                      </PopoverTrigger>
+                      <PopoverContent className="max-w-xs text-xs">
                         <p>教材に設定されたテーマカラーで絞り込みます。</p>
-                      </TooltipContent>
-                    </Tooltip>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     {LINK_COLORS.map(c => (
@@ -530,16 +531,16 @@ export const Dashboard: React.FC = () => {
                 <div className="flex items-center gap-1.5 text-emerald-800 min-w-[80px] sm:min-w-[90px]">
                   <Layout className="w-3.5 h-3.5" />
                   <span className="text-[10px] font-bold">タイプ:</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-4 h-4 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>教材に設定されたアイコンの種類（動画、本、Webなど）で絞り込みます。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-2">
                   {LINK_ICONS.map(i => {
@@ -573,16 +574,16 @@ export const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-1.5 text-emerald-800 min-w-[80px] sm:min-w-[90px]">
                     <TagIcon className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-bold">タグ絞り込み:</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                          <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                         </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
+                      </PopoverTrigger>
+                      <PopoverContent className="max-w-xs text-xs">
                         <p>特定のキーワード（タグ）が含まれる教材を抽出します。複数選択可能です。</p>
-                      </TooltipContent>
-                    </Tooltip>
+                      </PopoverContent>
+                    </Popover>
                     {selectedTags.length > 0 && (
                       <Badge variant="secondary" className="h-5 px-2 bg-emerald-600 text-white text-[9px] font-black">
                         {selectedTags.length}

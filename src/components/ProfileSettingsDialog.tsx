@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -9,6 +10,11 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -20,11 +26,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Lock, User, Camera, Save, Check, Trash2, Info, HelpCircle } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface ProfileSettingsDialogProps {
   open: boolean;
@@ -175,38 +176,38 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
                 <Avatar className="w-24 h-24 border-4 border-emerald-100 shadow-lg">
-                  <AvatarImage src={photoURL || ""} className="object-cover" />
+                  <AvatarImage src={photoURL} className="object-cover" />
                   <AvatarFallback className="bg-emerald-100 text-emerald-700 text-3xl font-black">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors focus:outline-none focus:ring-1 focus:ring-white"
+                        className="p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
                       >
                         <Camera className="w-6 h-6 text-white" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>画像ファイルを選択</p></TooltipContent>
-                  </Tooltip>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2 text-xs">画像ファイルを選択</PopoverContent>
+                  </Popover>
                   {photoURL && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
+                    <Popover>
+                      <PopoverTrigger asChild>
                         <button
                           type="button"
                           onClick={handleRemovePhoto}
-                          className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors focus:outline-none focus:ring-1 focus:ring-white"
+                          className="p-2 bg-rose-500/80 rounded-full hover:bg-rose-600 transition-colors"
                         >
                           <Trash2 className="w-6 h-6 text-white" />
                         </button>
-                      </TooltipTrigger>
-                      <TooltipContent><p>画像を削除</p></TooltipContent>
-                    </Tooltip>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2 text-xs text-rose-600">画像を削除</PopoverContent>
+                    </Popover>
                   )}
                 </div>
 
@@ -221,16 +222,16 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
               <div className="text-center space-y-1">
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">画像をタップして変更</p>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>自分を識別するためのアイコン画像をアップロードできます。500KB以下の画像を選択してください。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
@@ -239,14 +240,14 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="lastName">姓</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>苗字を入力してください。</p></TooltipContent>
-                  </Tooltip>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2 text-xs">苗字を入力してください。</PopoverContent>
+                  </Popover>
                 </div>
                 <Input
                   id="lastName"
@@ -259,14 +260,14 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="firstName">名</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>名前を入力してください。</p></TooltipContent>
-                  </Tooltip>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2 text-xs">名前を入力してください。</PopoverContent>
+                  </Popover>
                 </div>
                 <Input
                   id="firstName"
@@ -293,14 +294,16 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
           <form onSubmit={handleUpdatePassword} className="space-y-4">
             <div className="flex items-center gap-2">
               <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">セキュリティ設定（パスワード）</h4>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                    <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                    <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                   </button>
-                </TooltipTrigger>
-                <TooltipContent><p>ログインパスワードを変更できます。6文字以上で設定してください。</p></TooltipContent>
-              </Tooltip>
+                </PopoverTrigger>
+                <PopoverContent className="max-w-xs text-xs">
+                  <p>ログインパスワードを変更できます。6文字以上で設定してください。</p>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-password">新しいパスワード</Label>

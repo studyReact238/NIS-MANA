@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -48,10 +49,10 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useLinks } from '@/context/LinkContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -117,7 +118,7 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { use
     <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
       <div className="flex items-center gap-2">
         <Avatar className="w-8 h-8 border border-slate-50">
-          <AvatarImage src={userData?.photoURL || ""} />
+          <AvatarImage src={userData?.photoURL} />
           <AvatarFallback className="bg-slate-50 text-slate-400 text-[10px] font-bold">
             {initials}
           </AvatarFallback>
@@ -267,16 +268,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 <Sparkles className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
               </Badge>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                    <HelpCircle className="w-4 h-4 text-emerald-400 cursor-help" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                    <HelpCircle className="w-4 h-4 text-emerald-400" />
                   </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
+                </PopoverTrigger>
+                <PopoverContent className="max-w-xs text-xs">
                   <p>10%以上のユーザーが高評価をつけ、かつ低評価よりも高評価が多い教材です。</p>
-                </TooltipContent>
-              </Tooltip>
+                </PopoverContent>
+              </Popover>
             </div>
           ) : (
             <div className="flex items-center gap-1.5">
@@ -284,16 +285,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
               </Badge>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                    <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                    <HelpCircle className="w-4 h-4 text-slate-400" />
                   </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
+                </PopoverTrigger>
+                <PopoverContent className="max-w-xs text-xs">
                   <p>評価が少ない、または低評価が目立つ教材です。利用には注意してください。</p>
-                </TooltipContent>
-              </Tooltip>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
         </div>
@@ -365,16 +366,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>この教材のあなたの学習状態を切り替えます。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               
               {canManage && (
@@ -459,16 +460,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     <BookOpen className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.learningCount || 0)}人が学習中</span>
                  </div>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help" />
+                 <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-300" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>この教材を利用している全体のユーザー数です。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                </div>
                
                <div className="flex items-center gap-4 ml-auto">
@@ -500,16 +501,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     </button>
                     <span className="text-[9px] text-slate-400 font-bold hidden sm:inline">低評価</span>
                   </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-300" />
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    </PopoverTrigger>
+                    <PopoverContent className="max-w-xs text-xs">
                       <p>教材の質を評価します。あなたの評価が推奨コンテンツの判定に使われます。</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                </div>
             </div>
 
@@ -526,7 +527,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                 </div>
                 <div className="flex items-center gap-1.5 opacity-80">
                   <Avatar className="w-5 h-5 border border-emerald-100">
-                    <AvatarImage src={creatorData?.photoURL || ""} />
+                    <AvatarImage src={creatorData?.photoURL} />
                     <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[8px] font-black">
                       {creatorInitials}
                     </AvatarFallback>
@@ -607,7 +608,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               </DialogDescription>
               <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                 <Avatar className="w-5 h-5 border border-emerald-100">
-                  <AvatarImage src={creatorData?.photoURL || ""} />
+                  <AvatarImage src={creatorData?.photoURL} />
                   <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[8px] font-black">
                     {creatorInitials}
                   </AvatarFallback>

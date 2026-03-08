@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -9,6 +10,11 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,11 +26,6 @@ import { LINK_COLORS, LINK_ICONS } from '@/lib/constants';
 import { X, Tag as TagIcon, Plus, ClipboardCheck, Upload, FileCode, Info, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface LinkDialogProps {
   open: boolean;
@@ -150,16 +151,16 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             <div className="space-y-2 col-span-2">
               <div className="flex items-center gap-2">
                 <Label htmlFor="title" className="text-base font-semibold">タイトル</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-4 h-4 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>一覧画面で表示される教材の名前です。一目で内容がわかるようにしましょう。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               <Input 
                 id="title" 
@@ -174,16 +175,16 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             <div className="space-y-2 col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2">
                 <Label htmlFor="url" className="text-base font-semibold">学習サイト URL</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-4 h-4 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>教材のメインページとなるWebサイトのURLを入力してください。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               <Input 
                 id="url" 
@@ -201,16 +202,16 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                   <ClipboardCheck className="w-4 h-4 text-blue-600" />
                   確認テスト
                 </Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-4 h-4 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>外部ツール（Googleフォーム等）のURL、または自作のHTMLファイルを指定できます。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               
               <div className="flex flex-col gap-2">
@@ -265,16 +266,16 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             <div className="space-y-3 col-span-2">
               <div className="flex items-center gap-2">
                 <Label htmlFor="description" className="text-base font-semibold">説明・メモ</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-4 h-4 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>教材の要約や、学習時の注意点などを自由に記載してください。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               <Textarea 
                 id="description" 
@@ -291,16 +292,16 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                   <TagIcon className="w-4 h-4 text-emerald-600" />
                   タグの設定
                 </Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-4 h-4 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>関連するキーワード（Next.js, UI/UX など）を入力して、後で探しやすくしましょう。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               
               <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/50">
@@ -332,16 +333,16 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
             <div className="space-y-4 col-span-2">
               <div className="flex items-center gap-2">
                 <Label className="text-base font-semibold">デザインの設定</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full transition-shadow">
-                      <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-4 h-4 text-slate-400" />
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
                     <p>一覧画面でのカードの色とアイコンをカスタマイズできます。</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-6 bg-emerald-50/20 rounded-4xl border border-emerald-100">
                 <div className="space-y-3">

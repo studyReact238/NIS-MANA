@@ -38,7 +38,7 @@ function Calendar({
         weekdays: "flex w-full mb-2",
         weekday: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem] text-center flex-1",
         weeks: "w-full space-y-2",
-        week: "flex w-full mt-2 justify-between",
+        week: "flex w-full mt-2 justify-between gap-1",
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex-1"
