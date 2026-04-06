@@ -122,7 +122,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
       setFormData(prev => ({ 
         ...prev, 
         testHtml: content,
-        testUrl: '' // HTMLアップロード時はURLをクリア
+        testUrl: '' 
       }));
       toast({
         title: "アップロード完了",
@@ -316,17 +316,37 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ open, onOpenChange, edit
                 {formData.tags.length === 0 && <span className="text-xs text-slate-400 font-bold italic">タグを追加してください</span>}
               </div>
 
-              <div className="flex gap-2">
-                <Input 
-                  value={tagInput} 
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag(tagInput))}
-                  placeholder="タグを入力して追加..." 
-                  className="rounded-2xl border-emerald-100 focus:border-emerald-500"
-                />
-                <Button type="button" onClick={() => addTag(tagInput)} className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-6 font-bold shadow-md">
-                  追加
-                </Button>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Input 
+                    value={tagInput} 
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag(tagInput))}
+                    placeholder="タグを入力して追加..." 
+                    className="rounded-2xl border-emerald-100 focus:border-emerald-500"
+                  />
+                  <Button type="button" onClick={() => addTag(tagInput)} className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-6 font-bold shadow-md">
+                    追加
+                  </Button>
+                </div>
+
+                {suggestedTags.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">既存のタグから追加</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {suggestedTags.map(tag => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => addTag(tag)}
+                          className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                        >
+                          +{tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
