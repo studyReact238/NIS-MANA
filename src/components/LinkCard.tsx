@@ -8,15 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  getIcon, 
-  getColorData 
+import {
+  getIcon,
+  getColorData
 } from '@/lib/constants';
-import { 
-  MoreVertical, 
-  Trash2, 
-  Copy, 
-  Edit3, 
+import {
+  MoreVertical,
+  Trash2,
+  Copy,
+  Edit3,
   ExternalLink,
   CheckCircle2,
   Clock,
@@ -75,6 +75,7 @@ interface LinkCardProps {
   link: LearningLink;
   onEdit: (link: LearningLink) => void;
   isTestView?: boolean;
+  viewMode?: 'card' | 'list';
 }
 
 const SPARKLE_COLORS = ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#f43f5e', '#ffffff', '#a855f7', '#ec4899'];
@@ -93,7 +94,7 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { use
     if (!firestore || !userId) return null;
     return doc(firestore, 'users', userId);
   }, [firestore, userId]);
-  
+
   const { data: userData, isLoading: isUserLoading } = useDoc<any>(userRef);
 
   const isUserAdmin = adminDocs?.some(a => a.id === userId);
@@ -143,7 +144,7 @@ const UserListItem = ({ userId, email, timestamp, icon: Icon, adminDocs }: { use
   );
 };
 
-export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) => {
+export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView, viewMode = 'card' }) => {
   const { isAdmin, isServerAdmin, updateStatus, voteLink, deleteLink, duplicateLink, toggleTag, selectedTags, adminDocs } = useLinks();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -151,7 +152,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
   const [detailOpen, setDetailOpen] = useState(false);
   const [showSparkles, setShowSparkles] = useState(false);
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
-  
+
   useEffect(() => {
     if (showSparkles) {
       const newSparkles = [...Array(24)].map((_, i) => {
@@ -175,7 +176,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
     if (!firestore || !user || !link.id) return null;
     return doc(firestore, 'learningLinks', link.id, 'votes', user.uid);
   }, [firestore, user?.uid, link.id]);
-  
+
   const { data: voteData } = useDoc<any>(voteDocRef);
   const userVote = voteData?.type as 'up' | 'down' | undefined;
 
@@ -238,15 +239,15 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
   const formatDisplayName = (u: any) => {
     if (isCreatorLoading) return '読み込み中...';
     if (!u) return '匿名ユーザーさん';
-    
+
     if (u.lastName || u.firstName) {
       return `${u.lastName || ''} ${u.firstName || ''}`.trim() + 'さん';
     }
-    
+
     if (u.email) {
       return `${u.email.split('@')[0]}さん`;
     }
-    
+
     return '匿名ユーザーさん';
   };
 
@@ -255,6 +256,235 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
 
   const creatorInitials = formatDisplayName(creatorData).substring(0, 1).toUpperCase();
 
+  // =========================================
+  // LIST MODE (一覧表示)
+  // =========================================
+  if (viewMode === 'list') {
+    return (
+      <>
+        <div className={cn(
+          "group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 hover:shadow-md bg-white",
+          colorData.border
+        )}>
+          {/* アイコン */}
+          <div className={cn(
+            "w-10 h-10 shrink-0 rounded-xl flex items-center justify-center shadow-sm border border-black/5 bg-white"
+          )}>
+            <Icon className={cn("w-5 h-5", colorData.text)} />
+          </div>
+
+          {/* タイトル・説明 */}
+          <div className="flex-1 min-w-0">
+            <button
+              onClick={() => setDetailOpen(true)}
+              className={cn(
+                "text-sm font-bold leading-snug text-left hover:opacity-80 transition-colors truncate block w-full",
+                colorData.darkText
+              )}
+            >
+              {link.title}
+            </button>
+            <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+              {link.description || '概要の記載はありません。'}
+            </p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {link.tags.slice(0, 3).map(tag => (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  onClick={(e) => { e.stopPropagation(); toggleTag(tag); }}
+                  className={cn(
+                    "rounded-full px-2 py-0 text-[9px] font-black border cursor-pointer transition-all",
+                    selectedTags.includes(tag)
+                      ? "bg-emerald-600 text-white border-emerald-700"
+                      : cn(colorData.badge, "hover:bg-opacity-80")
+                  )}
+                >
+                  #{tag}
+                </Badge>
+              ))}
+              {link.tags.length > 3 && (
+                <span className="text-[9px] text-slate-400 font-bold">+{link.tags.length - 3}</span>
+              )}
+            </div>
+          </div>
+
+          {/* ステータス・人数 */}
+          <div className="hidden md:flex flex-col items-end gap-1 shrink-0 text-[10px] font-bold text-slate-500">
+            <div className="flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              <span>{Math.max(0, link.completedCount || 0)}人受講済</span>
+            </div>
+            <div className="flex items-center gap-1 text-blue-500">
+              <BookOpen className="w-3 h-3" />
+              <span>{Math.max(0, link.learningCount || 0)}人学習中</span>
+            </div>
+            <div className="flex items-center gap-1 text-emerald-600">
+              <ThumbsUp className="w-3 h-3" />
+              <span>{Math.max(0, link.upvoteCount || 0)}</span>
+            </div>
+          </div>
+
+          {/* ステータス変更ボタン */}
+          <div className="shrink-0">
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1.5 h-auto rounded-full border-2 text-[10px] font-black transition-all",
+                    link.status === 'completed' ? "bg-emerald-600 border-emerald-700 text-white" :
+                      link.status === 'learning' ? "bg-blue-600 border-blue-700 text-white" :
+                        "bg-white border-slate-200 text-slate-700"
+                  )}
+                >
+                  {getStatusIcon(link.status)}
+                  <span className="hidden sm:inline">{getStatusLabel(link.status)}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="rounded-2xl p-2 min-w-[140px] shadow-2xl border-2 border-emerald-100">
+                <DropdownMenuItem onClick={() => handleStatusChange('unstarted')} className="rounded-xl font-bold text-xs h-10">
+                  <Circle className="w-4 h-4 mr-2" /> 未着手に戻す
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('learning')} className="rounded-xl font-bold text-xs h-10 text-blue-600">
+                  <BookOpen className="w-4 h-4 mr-2" /> 学習中に変更
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('completed')} className="rounded-xl font-bold text-xs h-10 text-emerald-600">
+                  <CheckCircle2 className="w-4 h-4 mr-2" /> 受講済みに変更
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* 学習開始ボタン */}
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-700 text-white text-[10px] font-black hover:bg-emerald-800 transition-all shadow-sm"
+          >
+            開く <ExternalLink className="w-3 h-3" />
+          </a>
+
+          {/* 管理メニュー */}
+          {canManage && (
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full hover:bg-slate-100 border border-black/5">
+                  <MoreVertical className="w-4 h-4 text-slate-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-2xl border-2 border-emerald-100">
+                <DropdownMenuItem onSelect={() => onEdit(link)} className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50">
+                  <Edit3 className="w-4 h-4 mr-2 text-emerald-600" /> 編集する
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => duplicateLink(link.id)} className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50">
+                  <Copy className="w-4 h-4 mr-2 text-blue-600" /> 複製を作成
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setDeleteDialogOpen(true)} className="rounded-xl cursor-pointer text-rose-600 text-xs h-11 font-bold focus:bg-rose-50">
+                  <Trash2 className="w-4 h-4 mr-2" /> 削除する
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        {/* 詳細ダイアログ (list mode) */}
+        <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+          <DialogContent className="max-w-2xl rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="mb-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={cn(
+                  "w-16 h-16 rounded-2xl flex items-center justify-center shadow-md bg-white border border-black/5"
+                )}>
+                  <Icon className={cn("w-8 h-8", colorData.text)} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  {link.isRecommended ? (
+                    <Badge className="bg-emerald-600 text-white border-2 border-emerald-400 px-3 py-1 rounded-full flex items-center gap-1.5 w-fit cursor-default">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">推奨コンテンツ</span>
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-slate-100 text-slate-500 border-2 border-slate-200 px-3 py-1 rounded-full flex items-center gap-1.5 w-fit cursor-default">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">非推奨コンテンツ</span>
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <DialogTitle className={cn("text-3xl font-bold leading-tight", colorData.darkText)}>
+                {link.title}
+              </DialogTitle>
+              <div className="flex flex-col gap-1 pt-2">
+                <DialogDescription className="flex items-center gap-2 text-slate-500 font-bold">
+                  <Clock className="w-4 h-4" />
+                  最終更新: {format(link.updatedAt, 'yyyy年MM月dd日 HH:mm', { locale: ja })}
+                </DialogDescription>
+                <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
+                  <Avatar className="w-5 h-5 border border-emerald-100">
+                    <AvatarImage src={creatorData?.photoURL} />
+                    <AvatarFallback className="bg-emerald-50 text-emerald-600 text-[8px] font-black">
+                      {creatorInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  投稿者: {formatDisplayName(creatorData)}
+                  {!isCreatorLoading && isCreatorAdmin && (
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" />
+                  )}
+                </div>
+              </div>
+            </DialogHeader>
+            <div className="space-y-8">
+              <div className="space-y-3">
+                <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">リソースの説明</h4>
+                <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100 min-h-[100px] whitespace-pre-wrap text-slate-800 leading-relaxed">
+                  {link.description || '説明はありません。'}
+                </div>
+              </div>
+              <div className="pt-6 border-t border-emerald-100 flex flex-col sm:flex-row gap-4">
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-emerald-600 text-white font-black hover:bg-emerald-700 shadow-xl shadow-emerald-200 transition-all"
+                >
+                  学習サイトを開く <ExternalLink className="w-5 h-5" />
+                </a>
+                <Button variant="ghost" onClick={() => setDetailOpen(false)} className="h-14 rounded-2xl font-bold px-8">
+                  閉じる
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="rounded-4xl border-2 border-emerald-100 p-8">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-bold text-emerald-950">リンクを削除しますか？</AlertDialogTitle>
+              <AlertDialogDescription className="text-base text-emerald-800 font-medium">
+                「{link.title}」を完全に削除します。この操作は取り消せません。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-8">
+              <AlertDialogCancel className="rounded-2xl text-sm h-12 px-8 font-bold border-2 border-emerald-200 hover:bg-emerald-50">キャンセル</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => { deleteLink(link.id); setDeleteDialogOpen(false); }}
+                className="rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-sm h-12 px-8 font-bold border-2 border-rose-700 shadow-lg shadow-rose-200"
+              >
+                削除する
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
+  }
+
+  // =========================================
+  // CARD MODE (カード表示) — 既存デザイン
+  // =========================================
   return (
     <>
       <Card className={cn(
@@ -312,19 +542,19 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
             )}>
               <Icon className={cn("w-7 h-7", colorData.text)} />
             </div>
-            
+
             <div className="flex items-center gap-3 relative">
               {showSparkles && sparkles.length > 0 && (
                 <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
                   <div className="relative">
                     {sparkles.map((s) => (
-                      <div 
-                        key={s.id} 
+                      <div
+                        key={s.id}
                         className="absolute w-2 h-2 rounded-full animate-float-up"
-                        style={{ 
+                        style={{
                           backgroundColor: s.color,
-                          top: '50%', 
-                          left: '50%', 
+                          top: '50%',
+                          left: '50%',
                           margin: '-4px',
                           '--tw-translate-x': `${s.x}px`,
                           '--tw-translate-y': `${s.y}px`,
@@ -339,13 +569,13 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               <div className="flex items-center gap-1">
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className={cn(
                         "flex items-center gap-2 px-3 py-2 h-auto rounded-full border-2 transition-all",
                         link.status === 'completed' ? "bg-emerald-600 border-emerald-700 text-white" :
-                        link.status === 'learning' ? "bg-blue-600 border-blue-700 text-white" :
-                        "bg-white border-slate-200 text-slate-700"
+                          link.status === 'learning' ? "bg-blue-600 border-blue-700 text-white" :
+                            "bg-white border-slate-200 text-slate-700"
                       )}
                     >
                       {getStatusIcon(link.status)}
@@ -377,7 +607,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                   </PopoverContent>
                 </Popover>
               </div>
-              
+
               {canManage && (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
@@ -386,20 +616,20 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[160px] shadow-2xl border-2 border-emerald-100">
-                    <DropdownMenuItem 
-                      onSelect={() => onEdit(link)} 
+                    <DropdownMenuItem
+                      onSelect={() => onEdit(link)}
                       className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
                     >
                       <Edit3 className="w-4 h-4 mr-2 text-emerald-600" /> 編集する
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onSelect={() => duplicateLink(link.id)} 
+                    <DropdownMenuItem
+                      onSelect={() => duplicateLink(link.id)}
                       className="rounded-xl cursor-pointer text-xs h-11 font-bold text-emerald-900 focus:bg-emerald-50"
                     >
                       <Copy className="w-4 h-4 mr-2 text-blue-600" /> 複製を作成
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onSelect={() => setDeleteDialogOpen(true)} 
+                    <DropdownMenuItem
+                      onSelect={() => setDeleteDialogOpen(true)}
                       className="rounded-xl cursor-pointer text-rose-600 text-xs h-11 font-bold focus:bg-rose-50"
                     >
                       <Trash2 className="w-4 h-4 mr-2" /> 削除する
@@ -411,7 +641,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
           </div>
 
           <div className="space-y-4">
-            <button 
+            <button
               onClick={() => setDetailOpen(true)}
               className={cn(
                 "text-xl font-bold leading-snug line-clamp-2 transition-colors text-left hover:opacity-80",
@@ -420,7 +650,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
             >
               {link.title}
             </button>
-            
+
             <ScrollArea className="h-24 pr-4 -mr-4">
               <p className={cn(
                 "text-sm font-medium leading-relaxed text-slate-700"
@@ -431,17 +661,17 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
 
             <div className="flex flex-wrap gap-2 pt-2">
               {link.tags.map(tag => (
-                <Badge 
-                  key={tag} 
-                  variant="outline" 
+                <Badge
+                  key={tag}
+                  variant="outline"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleTag(tag);
                   }}
                   className={cn(
                     "rounded-full px-3 py-1 text-[10px] font-black border-2 cursor-pointer transition-all",
-                    selectedTags.includes(tag) 
-                      ? "bg-emerald-600 text-white border-emerald-700 shadow-md" 
+                    selectedTags.includes(tag)
+                      ? "bg-emerald-600 text-white border-emerald-700 shadow-md"
                       : cn(colorData.badge, "hover:bg-opacity-80")
                   )}
                 >
@@ -451,67 +681,67 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
             </div>
 
             <div className="flex flex-col gap-2 pt-4 mt-2 border-t-2 border-black/5">
-               <div className="flex items-center gap-4">
-                 <div className="flex items-center gap-1.5 text-slate-500">
-                    <Users className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.completedCount || 0)}人が受講完了</span>
-                 </div>
-                 <div className="flex items-center gap-1.5 text-blue-500">
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.learningCount || 0)}人が学習中</span>
-                 </div>
-                 <Popover>
-                    <PopoverTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-300" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="max-w-xs text-xs">
-                      <p>この教材を利用している全体のユーザー数です。</p>
-                    </PopoverContent>
-                  </Popover>
-               </div>
-               
-               <div className="flex items-center gap-4 ml-auto">
-                  <div className="flex items-center gap-1.5">
-                    <button 
-                      onClick={() => handleVoteAction('up')}
-                      className={cn(
-                        "flex items-center gap-1.5 transition-all hover:scale-110",
-                        userVote === 'up' ? "text-emerald-600 scale-110" : "text-slate-400"
-                      )}
-                      aria-label="高評価をつける"
-                    >
-                      <ThumbsUp className={cn("w-4 h-4", userVote === 'up' && "fill-emerald-600")} />
-                      <span className="text-[10px] font-black">{Math.max(0, link.upvoteCount || 0)}</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <Users className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.completedCount || 0)}人が受講完了</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-blue-500">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{Math.max(0, link.learningCount || 0)}人が学習中</span>
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-300" />
                     </button>
-                    <span className="text-[9px] text-slate-400 font-bold hidden sm:inline">高評価</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button 
-                      onClick={() => handleVoteAction('down')}
-                      className={cn(
-                        "flex items-center gap-1.5 transition-all hover:scale-110",
-                        userVote === 'down' ? "text-rose-600 scale-110" : "text-slate-400"
-                      )}
-                      aria-label="低評価をつける"
-                    >
-                      <ThumbsDown className={cn("w-4 h-4", userVote === 'down' && "fill-rose-600")} />
-                      <span className="text-[10px] font-black">{Math.max(0, link.downvoteCount || 0)}</span>
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
+                    <p>この教材を利用している全体のユーザー数です。</p>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="flex items-center gap-4 ml-auto">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleVoteAction('up')}
+                    className={cn(
+                      "flex items-center gap-1.5 transition-all hover:scale-110",
+                      userVote === 'up' ? "text-emerald-600 scale-110" : "text-slate-400"
+                    )}
+                    aria-label="高評価をつける"
+                  >
+                    <ThumbsUp className={cn("w-4 h-4", userVote === 'up' && "fill-emerald-600")} />
+                    <span className="text-[10px] font-black">{Math.max(0, link.upvoteCount || 0)}</span>
+                  </button>
+                  <span className="text-[9px] text-slate-400 font-bold hidden sm:inline">高評価</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleVoteAction('down')}
+                    className={cn(
+                      "flex items-center gap-1.5 transition-all hover:scale-110",
+                      userVote === 'down' ? "text-rose-600 scale-110" : "text-slate-400"
+                    )}
+                    aria-label="低評価をつける"
+                  >
+                    <ThumbsDown className={cn("w-4 h-4", userVote === 'down' && "fill-rose-600")} />
+                    <span className="text-[10px] font-black">{Math.max(0, link.downvoteCount || 0)}</span>
+                  </button>
+                  <span className="text-[9px] text-slate-400 font-bold hidden sm:inline">低評価</span>
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
+                      <HelpCircle className="w-3.5 h-3.5 text-slate-300" />
                     </button>
-                    <span className="text-[9px] text-slate-400 font-bold hidden sm:inline">低評価</span>
-                  </div>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center p-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-full">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-300" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="max-w-xs text-xs">
-                      <p>教材の質を評価します。あなたの評価が推奨コンテンツの判定に使われます。</p>
-                    </PopoverContent>
-                  </Popover>
-               </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-xs text-xs">
+                    <p>教材の質を評価します。あなたの評価が推奨コンテンツの判定に使われます。</p>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             <div className={cn(
@@ -540,16 +770,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                   </span>
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 {isTestView ? (
-                  <Link 
+                  <Link
                     href={testHref}
                     target={link.testHtml ? undefined : "_blank"}
                     rel={link.testHtml ? undefined : "noopener noreferrer"}
                     className={cn(
                       "flex-1 inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
-                      hasTest 
+                      hasTest
                         ? "bg-blue-600 border-blue-700 text-white hover:bg-blue-700 hover:shadow-lg shadow-blue-200"
                         : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed pointer-events-none"
                     )}
@@ -557,9 +787,9 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     テストを受ける <ClipboardCheck className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                   </Link>
                 ) : (
-                  <a 
-                    href={link.url} 
-                    target="_blank" 
+                  <a
+                    href={link.url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
                       "flex-1 inline-flex items-center justify-center gap-2 text-sm font-black transition-all px-4 py-3.5 rounded-xl border-2 group/btn",
@@ -579,7 +809,7 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
         <DialogContent className="max-w-2xl rounded-4xl p-8 max-h-[90vh] overflow-y-auto">
           <DialogHeader className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-               <div className={cn(
+              <div className={cn(
                 "w-16 h-16 rounded-2xl flex items-center justify-center shadow-md bg-white border border-black/5"
               )}>
                 <Icon className={cn("w-8 h-8", colorData.text)} />
@@ -623,31 +853,31 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
 
           <div className="space-y-8">
             <div className="flex flex-wrap items-center gap-6 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
-               <div className="flex flex-col items-center min-w-[80px]">
-                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">受講完了</span>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-emerald-600" />
-                    <span className="text-xl font-black text-emerald-900">{Math.max(0, link.completedCount || 0)}</span>
+              <div className="flex flex-col items-center min-w-[80px]">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">受講完了</span>
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-emerald-600" />
+                  <span className="text-xl font-black text-emerald-900">{Math.max(0, link.completedCount || 0)}</span>
+                </div>
+              </div>
+              <div className="h-10 w-px bg-emerald-200" />
+              <div className="flex flex-col items-center min-w-[80px]">
+                <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1">学習中</span>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  <span className="text-xl font-black text-emerald-900">{Math.max(0, link.learningCount || 0)}</span>
+                </div>
+              </div>
+              <div className="h-10 w-px bg-emerald-200" />
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">高評価数</span>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <ThumbsUp className="w-5 h-5 text-emerald-600" />
+                    <span className="text-lg font-black text-emerald-900">{Math.max(0, link.upvoteCount || 0)}</span>
                   </div>
-               </div>
-               <div className="h-10 w-px bg-emerald-200" />
-               <div className="flex flex-col items-center min-w-[80px]">
-                  <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1">学習中</span>
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-blue-600" />
-                    <span className="text-xl font-black text-emerald-900">{Math.max(0, link.learningCount || 0)}</span>
-                  </div>
-               </div>
-               <div className="h-10 w-px bg-emerald-200" />
-               <div className="flex flex-col items-center">
-                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">高評価数</span>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <ThumbsUp className="w-5 h-5 text-emerald-600" />
-                      <span className="text-lg font-black text-emerald-900">{Math.max(0, link.upvoteCount || 0)}</span>
-                    </div>
-                  </div>
-               </div>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -661,8 +891,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
               <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">タグ一覧</h4>
               <div className="flex flex-wrap gap-2">
                 {link.tags.map(tag => (
-                  <Badge 
-                    key={tag} 
+                  <Badge
+                    key={tag}
                     variant="outline"
                     onClick={() => {
                       setDetailOpen(false);
@@ -670,8 +900,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                     }}
                     className={cn(
                       "px-4 py-1.5 rounded-full text-xs font-black cursor-pointer transition-all border-2",
-                      selectedTags.includes(tag) 
-                        ? "bg-emerald-600 text-white border-emerald-700 shadow-md" 
+                      selectedTags.includes(tag)
+                        ? "bg-emerald-600 text-white border-emerald-700 shadow-md"
                         : "bg-white border-emerald-100 text-emerald-800 hover:bg-emerald-50"
                     )}
                   >
@@ -701,12 +931,12 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                           </div>
                         ) : learners && learners.length > 0 ? (
                           learners.map((l: any) => (
-                            <UserListItem 
-                              key={l.id} 
-                              userId={l.id} 
-                              email={l.email} 
-                              timestamp={l.startedAt} 
-                              icon={BookOpen} 
+                            <UserListItem
+                              key={l.id}
+                              userId={l.id}
+                              email={l.email}
+                              timestamp={l.startedAt}
+                              icon={BookOpen}
                               adminDocs={adminDocs}
                             />
                           ))
@@ -738,12 +968,12 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                           </div>
                         ) : completions && completions.length > 0 ? (
                           completions.map((c: any) => (
-                            <UserListItem 
-                              key={c.id} 
-                              userId={c.id} 
-                              email={c.email} 
-                              timestamp={c.completedAt} 
-                              icon={CheckCircle2} 
+                            <UserListItem
+                              key={c.id}
+                              userId={c.id}
+                              email={c.email}
+                              timestamp={c.completedAt}
+                              icon={CheckCircle2}
                               adminDocs={adminDocs}
                             />
                           ))
@@ -761,16 +991,16 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
 
             <div className="pt-6 border-t border-emerald-100 flex flex-col sm:flex-row gap-4">
               <div className="flex-1 flex gap-2">
-                <a 
-                  href={link.url} 
-                  target="_blank" 
+                <a
+                  href={link.url}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-emerald-600 text-white font-black hover:bg-emerald-700 shadow-xl shadow-emerald-200 transition-all"
                 >
                   学習サイトを開く <ExternalLink className="w-5 h-5" />
                 </a>
                 {hasTest && (
-                  <Link 
+                  <Link
                     href={testHref}
                     target={link.testHtml ? undefined : "_blank"}
                     rel={link.testHtml ? undefined : "noopener noreferrer"}
@@ -780,8 +1010,8 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
                   </Link>
                 )}
               </div>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setDetailOpen(false)}
                 className="h-14 rounded-2xl font-bold px-8"
               >
@@ -802,11 +1032,11 @@ export const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, isTestView }) 
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8">
             <AlertDialogCancel className="rounded-2xl text-sm h-12 px-8 font-bold border-2 border-emerald-200 hover:bg-emerald-50">キャンセル</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={() => {
                 deleteLink(link.id);
                 setDeleteDialogOpen(false);
-              }} 
+              }}
               className="rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-sm h-12 px-8 font-bold border-2 border-rose-700 shadow-lg shadow-rose-200"
             >
               削除する

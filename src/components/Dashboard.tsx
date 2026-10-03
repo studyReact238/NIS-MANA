@@ -32,7 +32,9 @@ import {
   Sparkles,
   AlertTriangle,
   Settings,
-  HelpCircle
+  HelpCircle,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -78,6 +80,7 @@ export const Dashboard: React.FC = () => {
   const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LearningLink | null>(null);
   const [tagsExpanded, setTagsExpanded] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -631,11 +634,43 @@ export const Dashboard: React.FC = () => {
                 {filteredLinks.length} <span className="ml-1 opacity-60">件表示中</span>
               </Badge>
             </div>
+            <div className="flex items-center gap-1 p-1 bg-emerald-100/60 rounded-xl border border-emerald-200">
+              <button
+                onClick={() => setViewMode('card')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black transition-all",
+                  viewMode === 'card'
+                    ? "bg-white text-emerald-800 shadow-sm border border-emerald-200"
+                    : "text-emerald-600 hover:text-emerald-800"
+                )}
+                aria-label="カード表示"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">カード</span>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black transition-all",
+                  viewMode === 'list'
+                    ? "bg-white text-emerald-800 shadow-sm border border-emerald-200"
+                    : "text-emerald-600 hover:text-emerald-800"
+                )}
+                aria-label="リスト表示"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">一覧</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className={cn(
+            viewMode === 'card'
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+              : "flex flex-col gap-3"
+          )}>
             {filteredLinks.map(link => (
-              <LinkCard key={link.id} link={link} onEdit={handleEdit} />
+              <LinkCard key={link.id} link={link} onEdit={handleEdit} viewMode={viewMode} />
             ))}
             {filteredLinks.length === 0 && !isLoading && (
               <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4 bg-white rounded-[2rem] border-4 border-dashed border-emerald-100/50 px-6">
