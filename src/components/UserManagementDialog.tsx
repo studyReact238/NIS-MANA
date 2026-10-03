@@ -2,11 +2,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
@@ -38,15 +38,15 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Loader2, 
-  UserPlus, 
-  Trash2, 
-  Mail, 
-  Lock, 
-  ShieldCheck, 
-  RefreshCw, 
-  Eye, 
+import {
+  Loader2,
+  UserPlus,
+  Trash2,
+  Mail,
+  Lock,
+  ShieldCheck,
+  RefreshCw,
+  Eye,
   ArrowLeft,
   BookOpen,
   CheckCircle2,
@@ -79,9 +79,10 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
   const [isRegistering, setIsRegistering] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
-  
+
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{ id: string, email: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [editLastName, setEditLastName] = useState('');
   const [editFirstName, setEditFirstName] = useState('');
@@ -214,8 +215,8 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
       toast({ title: "更新完了", description: "プロフィール情報を更新しました。" });
       setSelectedUser((prev: any) => ({ ...prev, lastName: editLastName, firstName: editFirstName }));
     } catch (e: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-        path: `users/${selectedUser.id}`, 
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: `users/${selectedUser.id}`,
         operation: 'update',
         requestResourceData: { lastName: editLastName, firstName: editFirstName }
       }));
@@ -224,7 +225,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
     }
   };
 
-  const toggleAdminStatus = async (userToUpdate: {id: string, email: string}, isCurrentlyAdmin: boolean) => {
+  const toggleAdminStatus = async (userToUpdate: { id: string, email: string }, isCurrentlyAdmin: boolean) => {
     if (!firestore || !user) return;
     if (user.uid === userToUpdate.id) {
       toast({ variant: "destructive", title: "操作不可", description: "自分自身の管理者権限は変更できません。" });
@@ -239,9 +240,9 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
         toast({ title: "権限付与", description: `${userToUpdate.email} に管理者権限を付与しました。` });
       }
     } catch (e: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-        path: `admins/${userToUpdate.id}`, 
-        operation: isCurrentlyAdmin ? 'delete' : 'create' 
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: `admins/${userToUpdate.id}`,
+        operation: isCurrentlyAdmin ? 'delete' : 'create'
       }));
     }
   };
@@ -260,6 +261,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   const confirmDeleteUser = async () => {
     if (!firestore || !userToDelete) return;
+    setIsDeleting(true);
     try {
       await deleteDoc(doc(firestore, 'users', userToDelete.id));
       await deleteDoc(doc(firestore, 'admins', userToDelete.id));
@@ -267,7 +269,11 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
       if (selectedUser?.id === userToDelete.id) setSelectedUser(null);
       setUserToDelete(null);
     } catch (e: any) {
+      console.error("Delete error: ", e);
+      toast({ variant: "destructive", title: "エラー", description: "ユーザーの削除に失敗しました。" });
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `users/${userToDelete.id}`, operation: 'delete' }));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -280,8 +286,13 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(val) => { onOpenChange(val); if (!val) { setSelectedUser(null); setUserToDelete(null); } }}>
-        <DialogContent className="max-w-4xl rounded-4xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
+      <Dialog open={open} onOpenChange={(val) => { if (!val && (userToDelete || showConfirmAlert)) return; onOpenChange(val); if (!val) { setSelectedUser(null); setUserToDelete(null); } }}>
+        <DialogContent
+          className="max-w-4xl rounded-4xl p-8 max-h-[90vh] overflow-hidden flex flex-col"
+          onInteractOutside={(e) => {
+            if (userToDelete || showConfirmAlert) e.preventDefault();
+          }}
+        >
           <DialogHeader className="mb-6 shrink-0">
             <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-emerald-950">
               <ShieldCheck className="w-6 h-6 text-emerald-600" />
@@ -364,10 +375,10 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                   <p className="text-[10px] text-amber-800 font-bold leading-relaxed">
                     学習状況のカウントが不正確な場合は、統計情報を再集計してください。
                   </p>
-                  <Button 
-                    onClick={handleRecalculate} 
+                  <Button
+                    onClick={handleRecalculate}
                     disabled={isRecalculating}
-                    variant="outline" 
+                    variant="outline"
                     className="w-full rounded-xl bg-white border-amber-200 text-amber-800 hover:bg-amber-100 font-bold text-xs h-10"
                   >
                     {isRecalculating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-2 h-3.5 w-3.5" />}
@@ -413,10 +424,10 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => toggleAdminStatus(u, isAdminUser)} 
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => toggleAdminStatus(u, isAdminUser)}
                                 className={cn(
                                   "h-8 w-8 rounded-lg transition-all",
                                   isAdminUser ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-slate-300 hover:text-emerald-600 hover:bg-emerald-50"
@@ -425,18 +436,18 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                               >
                                 <ShieldCheck className={cn("w-3.5 h-3.5", isAdminUser && "fill-current")} />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => setSelectedUser(u)} 
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedUser(u)}
                                 className="h-8 px-3 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold text-[10px]"
                               >
                                 <Eye className="w-3.5 h-3.5 mr-1.5" /> 詳細
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => setUserToDelete(u)} 
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setUserToDelete(u)}
                                 className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -462,7 +473,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
                     </div>
                     {admins?.some(a => a.id === selectedUser.id) && <Badge className="bg-emerald-600 text-[9px] font-bold">管理者</Badge>}
                   </div>
-                  
+
                   <ScrollArea className="flex-1">
                     <div className="p-5 space-y-8">
                       <div className="space-y-4">
@@ -572,7 +583,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!userToDelete} onOpenChange={(val) => !val && setUserToDelete(null)}>
+      <AlertDialog open={!!userToDelete} onOpenChange={(val) => { if (isDeleting) return; if (!val) setUserToDelete(null); }}>
         <AlertDialogContent className="rounded-4xl border-2 border-emerald-100 p-8">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-bold text-emerald-950">ユーザーを削除しますか？</AlertDialogTitle>
@@ -582,12 +593,14 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({ open
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8">
             <AlertDialogCancel className="rounded-2xl h-12 px-8 font-bold border-2 border-emerald-200">キャンセル</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDeleteUser} 
+            <Button
+              onClick={confirmDeleteUser}
+              disabled={isDeleting}
               className="rounded-2xl bg-rose-600 hover:bg-rose-700 font-bold h-12 px-8 text-white shadow-lg shadow-rose-200"
             >
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               削除する
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

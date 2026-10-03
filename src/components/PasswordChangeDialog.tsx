@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
@@ -31,7 +31,7 @@ export const PasswordChangeDialog: React.FC<PasswordChangeDialogProps> = ({ open
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         variant: "destructive",
@@ -52,7 +52,7 @@ export const PasswordChangeDialog: React.FC<PasswordChangeDialogProps> = ({ open
 
     setIsLoading(true);
     try {
-      if (auth.currentUser) {
+      if (auth?.currentUser) {
         await updatePassword(auth.currentUser, newPassword);
         toast({
           title: "パスワード変更完了",
@@ -129,17 +129,17 @@ export const PasswordChangeDialog: React.FC<PasswordChangeDialogProps> = ({ open
           </div>
 
           <DialogFooter className="pt-4 flex gap-3 sm:justify-end">
-            <Button 
-              type="button" 
-              variant="ghost" 
-              onClick={() => onOpenChange(false)} 
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
               className="rounded-2xl"
               disabled={isLoading}
             >
               キャンセル
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="rounded-2xl px-8 h-12 font-bold shadow-lg bg-emerald-600 hover:bg-emerald-700"
               disabled={isLoading}
             >

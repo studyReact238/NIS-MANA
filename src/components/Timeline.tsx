@@ -85,7 +85,7 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
           "absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md z-20",
           getActivityColor(activity.type)
         )}>
-          {React.cloneElement(getActivityIcon(activity.type) as React.ReactElement, { className: "w-2.5 h-2.5" })}
+          {React.cloneElement(getActivityIcon(activity.type) as React.ReactElement<any>, { className: "w-2.5 h-2.5" })}
         </div>
       </div>
       
@@ -128,7 +128,7 @@ const TimelineItem = ({ activity, adminDocs }: { activity: any, adminDocs: any[]
               )}>
                 {getDisplayName()}
                 {isUserAdmin && (
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" title="管理者" />
+                  <span title="管理者"><ShieldCheck className="w-4 h-4 text-emerald-600 fill-emerald-600/10 shrink-0" /></span>
                 )}
               </span>
               <span>が</span>

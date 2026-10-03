@@ -3,13 +3,13 @@
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { LearningLink, SortOption, StatusFilter, LinkColor, LinkStatus, RecommendationFilter } from '@/types/link';
-import { useLinks as useLinksData } from '@/firebase'; 
+
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { 
-  collection, 
-  doc, 
-  addDoc, 
-  updateDoc, 
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
   deleteDoc,
   setDoc,
   increment,
@@ -44,7 +44,7 @@ interface LinkContextType {
   selectedIcons: string[];
   toggleIcon: (icon: string) => void;
   clearIcons: () => void;
-  
+
   addLink: (data: any) => void;
   updateLink: (id: string, updates: any) => void;
   deleteLink: (id: string) => void;
@@ -68,7 +68,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const loginLoggedRef = useRef<boolean>(false);
-  
+
   const [isAdminManual, setIsAdminManual] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -78,7 +78,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedColors, setSelectedColors] = useState<LinkColor[]>([]);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [timelineLimit, setTimelineLimit] = useState(10);
-  
+
   const [isInitialized, setIsInitialized] = useState(false);
   const [canFetchActivities, setCanFetchActivities] = useState(false);
 
@@ -117,7 +117,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ログインログの重複防止 (v11)
   useEffect(() => {
     if (!firestore || isUserLoading || !user?.uid || loginLoggedRef.current) return;
-    
+
     const sessionKey = `nisumana_logged_v11_${user.uid}`;
     if (sessionStorage.getItem(sessionKey)) {
       loginLoggedRef.current = true;
@@ -188,7 +188,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const activitiesQuery = useMemoFirebase(() => {
     if (!firestore || !canFetchActivities || !user?.uid) return null;
-    
+
     const activitiesCol = collection(firestore, 'activities');
     if (timelineLimit > 0) {
       return query(activitiesCol, orderBy('timestamp', 'desc'), limit(timelineLimit));
@@ -203,7 +203,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const links = useMemo(() => {
     if (!rawLinks) return [];
     const progressMap = new Map(userProgress?.map(p => [p.id, p.status]) || []);
-    
+
     return rawLinks.map(link => {
       const upvotes = Math.max(0, link.upvoteCount || 0);
       const downvotes = Math.max(0, link.downvoteCount || 0);
@@ -226,17 +226,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addLink = (data: any) => {
     if (!firestore || !user?.uid) return;
     const colRef = collection(firestore, 'learningLinks');
-    const newLink = { 
-      ...data, 
-      createdBy: user.uid, 
-      createdAt: Date.now(), 
+    const newLink = {
+      ...data,
+      createdBy: user.uid,
+      createdAt: Date.now(),
       updatedAt: Date.now(),
       completedCount: 0,
       learningCount: 0,
       upvoteCount: 0,
       downvoteCount: 0
     };
-    
+
     addDoc(colRef, newLink).then((docRef) => {
       logActivity('link_added', docRef.id, data.title);
     }).catch(async (error) => {
@@ -300,10 +300,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const linkRef = doc(firestore, 'learningLinks', id);
     const completionRef = doc(firestore, 'learningLinks', id, 'completions', user.uid);
     const learnerRef = doc(firestore, 'learningLinks', id, 'learners', user.uid);
-    
-    const progressData = { 
-      status: nextStatus, 
-      updatedAt: Date.now() 
+
+    const progressData = {
+      status: nextStatus,
+      updatedAt: Date.now()
     };
 
     setDoc(progressRef, progressData, { merge: true }).catch(async (error) => {
@@ -413,7 +413,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         errorEmitter.emit('permission-error', permissionError);
       });
-      
+
       const updates: any = { [`${type}voteCount`]: increment(1) };
       if (oldVote) { updates[`${oldVote}voteCount`] = increment(-1); }
       updateDoc(linkRef, updates).catch(async (error) => {
@@ -429,7 +429,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const nextUpvotes = (link.upvoteCount || 0) + 1;
         const nextDownvotes = oldVote === 'down' ? (link.downvoteCount || 0) - 1 : (link.downvoteCount || 0);
         const isNowRecommended = nextUpvotes >= (totalUsers * 0.1) && nextUpvotes > nextDownvotes;
-        
+
         if (!wasRecommended && isNowRecommended) {
           logActivity('promotion', id, link.title, now + 1);
         }
@@ -447,7 +447,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const linksSnap = await getDocs(collection(firestore, 'learningLinks'));
       const countsMap = new Map<string, { learning: number, completed: number }>();
       const userEmailsMap = new Map<string, string>();
-      
+
       usersSnap.docs.forEach(d => userEmailsMap.set(d.id, d.data().email));
       linksSnap.docs.forEach(d => countsMap.set(d.id, { learning: 0, completed: 0 }));
 
@@ -498,20 +498,20 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let result = [...links];
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(l => 
-        l.title?.toLowerCase().includes(s) || 
-        (l.description && l.description.toLowerCase().includes(s)) || 
+      result = result.filter(l =>
+        l.title?.toLowerCase().includes(s) ||
+        (l.description && l.description.toLowerCase().includes(s)) ||
         (l.tags || []).some(t => t.toLowerCase().includes(s))
       );
     }
     if (statusFilter !== 'all') result = result.filter(l => l.status === statusFilter);
     if (recommendationFilter === 'recommended') result = result.filter(l => l.isRecommended);
     if (recommendationFilter === 'not-recommended') result = result.filter(l => !l.isRecommended);
-    
+
     if (selectedTags.length > 0) result = result.filter(l => selectedTags.some(t => (l.tags || []).includes(t)));
     if (selectedColors.length > 0) result = result.filter(l => selectedColors.includes(l.color));
     if (selectedIcons.length > 0) result = result.filter(l => selectedIcons.includes(l.icon));
-    
+
     result.sort((a, b) => {
       if (sortBy === 'title-asc') return (a.title || "").localeCompare(b.title || "");
       if (sortBy === 'title-desc') return (b.title || "").localeCompare(a.title || "");
@@ -526,10 +526,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <LinkContext.Provider value={{
-      links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter, 
+      links, isAdmin, isServerAdmin, setIsAdmin: setIsAdminManual, search, setSearch, statusFilter, setStatusFilter,
       recommendationFilter, setRecommendationFilter,
-      sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor, 
-      clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink, 
+      sortBy, setSortBy, selectedTags, toggleTag, clearTags, selectedColors, toggleColor,
+      clearColors, selectedIcons, toggleIcon, clearIcons, addLink, updateLink, deleteLink,
       duplicateLink, updateStatus, voteLink, recalculateAllCounts, filteredLinks, allTags, isLoading: isLinksLoading || isProgressLoading || !canFetchActivities,
       activities: activities || [], timelineLimit, setTimelineLimit, adminDocs: adminDocs || [],
       totalUserCount: totalUsers
