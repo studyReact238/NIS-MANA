@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社内学習プラットフォーム「にすまな」利用マニュアル</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        /* スクリーンショットプレビュー用のカスタムスタイル */
+        .screenshot-frame {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            background-color: #ffffff;
+        }
+        .browser-bar {
+            background-color: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.5rem 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .browser-dot {
+            width: 0.625rem;
+            height: 0.625rem;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+
+    <!-- ヘッダー（緑背景・白フォント） -->
+    <header class="bg-emerald-600 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-white text-emerald-600 font-bold text-xl flex items-center justify-center shadow">
+                    に
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">にすまな 利用マニュアル</h1>
+                    <p class="text-xs text-emerald-100">スキマ時間でちょいアプデ。</p>
+                </div>
+            </div>
+            <span class="bg-emerald-700 text-emerald-100 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-500">
+                更新日：2026/10/10
+            </span>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ（目次付き2カラムレイアウト） -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8">
+
+        <!-- サイドバー：目次（ナビゲーション） -->
+        <aside class="w-full lg:w-64 flex-shrink-0">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 sticky top-24">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-list-ul text-emerald-600"></i> 目次
+                </h2>
+                <nav class="space-y-1 text-sm font-medium">
+                    <a href="#about" class="block px-3 py-2 rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                        「にすまな」とは？
+                    </a>
+                    <a href="#step1" class="block px-3 py-2 rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                        STEP 1. ログイン手順
+                    </a>
+                    <a href="#step2" class="block px-3 py-2 rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                        STEP 2. プロフィール設定
+                    </a>
+                    <a href="#step3" class="block px-3 py-2 rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                        STEP 3. 教材の探しかた
+                    </a>
+                    <a href="#step4" class="block px-3 py-2 rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                        STEP 4. 教材の受講・詳細
+                    </a>
+                    <a href="#step5" class="block px-3 py-2 rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                        STEP 5. 教材の新規投稿
+                    </a>
+                    <a href="#step6" class="block px-3 py-2 rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                        STEP 6. 確認テスト・タイムライン
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- メインエリア -->
+        <main class="flex-1 space-y-8">
+
+            <!-- 概要 -->
+            <section id="about" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-emerald-600"></i> 「にすまな」とは？
+                </h2>
+                <p class="text-slate-600 leading-relaxed mb-6">
+                    「にすまな」は、ネット上に溢れている優れた学習コンテンツ（動画・記事・WEBサイト）を持ち寄り、全社員で共有し合う社内教育プラットフォームです。<br>
+                    自作の教材を用意しなくても、Web上の役立つ情報を手軽にシェアし、スキマ時間でスキルアップを目指します。
+                </p>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-seedling text-emerald-600"></i> 若手社員の活用ポイント
+                        </h3>
+                        <p class="text-sm text-slate-600">先輩や同僚が推薦する信頼できる教材を探し、効率よく知識を身に付ける「学びの場」として活用できます。</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-hand-holding-heart text-emerald-600"></i> ベテラン社員の活用ポイント
+                        </h3>
+                        <p class="text-sm text-slate-600">業務で役に立った参考リンクや解説動画を登録し、ノウハウを社内に還元する「教え合いの場」として活用できます。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 1. ログイン -->
+            <section id="step1" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4 scroll-mt-24">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">STEP 1</span>
+                <h3 class="text-lg font-bold text-slate-800">ログイン手順</h3>
+                <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2">
+                    <li><a href="https://nis-mana--studio-8835729709-6b269.asia-southeast1.hosted.app/" target="_blank"><u><strong class="text-emerald-700">ログイン画面</strong></u></a>を開きます。</li>
+                    <li>「メールアドレス」欄に社内メールアドレスを入力します。</li>
+                    <li>「パスワード」欄にパスワード（初期：nisnis）を入力します。</li>
+                    <li>「ログイン」ボタンを押してログインします。</li>
+                </ol>
+
+                <!-- スクリーンショット：ログイン画面 -->
+                <div class="pt-2">
+                    <p class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1">
+                        <i class="fa-regular fa-image text-emerald-600"></i> 画面イメージ：ログイン画面
+                    </p>
+                    <div class="flex justify-center">
+                        <img src="./img/ログイン.jpg" alt="ログイン画面" title="ログイン画面" width="400">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. プロフィール設定 -->
+            <section id="step2" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4 scroll-mt-24">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">STEP 2</span>
+                <h3 class="text-lg font-bold text-slate-800">プロフィール設定</h3>
+                <p class="text-sm text-slate-600">
+                    画面最上部右側のアイコンをクリックすると、プロフィール設定が行えます。<br>
+                    プロフィール設定では、以下の設定が可能です。
+                </p>
+                <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2">
+                    <li>アイコン画像の設定（500KB以内）</li>
+                    <li>氏名の変更</li>
+                    <li>パスワードの変更</li>
+                </ol>
+                <!-- スクリーンショット：プロフィール設定 -->
+                <div class="pt-2">
+                    <p class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1">
+                        <i class="fa-regular fa-image text-emerald-600"></i> 画面イメージ：プロフィール設定
+                    </p>
+                    <div class="flex justify-center">
+                        <img src="./img/プロフィール設定.jpg" alt="プロフィール設定" title="プロフィール設定" width="400">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. 教材の探しかた -->
+            <section id="step3" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4 scroll-mt-24">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">STEP 3</span>
+                <h3 class="text-lg font-bold text-slate-800">教材（リンク）を探す・絞り込む</h3>
+                <p class="text-sm text-slate-600">「リンク集」タブでは、多彩な条件で教材を絞り込み/ソートできます。</p>
+                
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                        <div class="font-bold text-slate-700 mb-1"><i class="fa-solid fa-magnifying-glass text-emerald-600 mr-1"></i> キーワード検索</div>
+                        <div class="text-xs text-slate-500">タイトルや説明文から検索が可能です。</div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                        <div class="font-bold text-slate-700 mb-1"><i class="fa-solid fa-filter text-emerald-600 mr-1"></i> 進捗・評価で絞り込み</div>
+                        <div class="text-xs text-slate-500">未着手/学習中/受講済み や 推奨/非推奨コンテンツで絞り込めます。</div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                        <div class="font-bold text-slate-700 mb-1"><i class="fa-solid fa-tags text-emerald-600 mr-1"></i> タイプ・タグ絞り込み</div>
+                        <div class="text-xs text-slate-500">動画・記事などの形式アイコンや `#UML` などの技術タグで選択可能です。</div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                        <div class="font-bold text-slate-700 mb-1"><i class="fa-solid fa-sort text-emerald-600 mr-1"></i> 並べ替え</div>
+                        <div class="text-xs text-slate-500">リンクの更新日時やタイトルなどを基準に、並べ替えが可能です。</div>
+                    </div>
+                </div>
+
+                <!-- スクリーンショット：絞り込み/ソート -->
+                <div class="pt-2">
+                    <div class="pt-2">
+                        <p class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1">
+                            <i class="fa-regular fa-image text-emerald-600"></i> 画面イメージ：絞り込み/並べ替え
+                        </p>
+                        <div class="flex justify-center">
+                            <img src="./img/絞り込み.jpg" alt="絞り込み/並べ替え" title="絞り込み/並べ替え" width="400">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. 教材の受講と詳細確認 -->
+            <section id="step4" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4 scroll-mt-24">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">STEP 4</span>
+                <h3 class="text-lg font-bold text-slate-800">教材の確認・学習の開始</h3>
+                <p class="text-sm text-slate-600">
+                    リンク集の中から、興味のあるものを探してください。
+                </p>
+                <!-- スクリーンショット：リンク集の見方 -->
+                <div class="pt-2">
+                    <div class="pt-2">
+                        <p class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1">
+                            <i class="fa-regular fa-image text-emerald-600"></i> 画面イメージ：リンク集の見方
+                        </p>
+                        <div class="flex justify-center">
+                            <img src="./img/リンク集の見方.jpg" alt="リンク集の見方" title="リンク集の見方" width="400">
+                        </div>
+                    </div>
+                </div>
+                <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2">
+                    <li>フィルタリングの結果、表示されているリンクの件数。</li>
+                    <li>リンクの表示切替ボタン。</li>
+                    <li>リンクの推奨／非推奨。一定数の高評価がつくと推奨コンテンツに昇格します。ただし、低評価が多い場合は昇格しません。</li>
+                    <li>リンクのタイプ。</li>
+                    <li>リンクの学習ステータス。（自分で変更します。）</li>
+                    <li>リンクのタイトル。</li>
+                    <li>リンクの説明。</li>
+                    <li>リンクに設定されたタグ。</li>
+                    <li>リンクの学習／評価状況集計。</li>
+                    <li>リンク先に遷移するボタン。</li>
+                </ol>
+                
+                <!-- スクリーンショット：一覧表示時 -->
+                <div class="pt-2">
+                    <div class="pt-2">
+                        <p class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1">
+                            <i class="fa-regular fa-image text-emerald-600"></i> 画面イメージ：一覧表示
+                        </p>
+                        <div class="flex justify-center">
+                            <img src="./img/一覧表示.jpg" alt="一覧表示" title="一覧表示" width="400">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. 教材の新規登録 -->
+            <section id="step5" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4 scroll-mt-24">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">STEP 5</span>
+                <h3 class="text-lg font-bold text-slate-800">新しい教材（リンク）の追加</h3>
+                <p class="text-sm text-slate-600">役に立つWEBサイトや動画を見つけたら、社内に共有しましょう。</p>
+                <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2">
+                    <li>画面上部の <strong class="text-emerald-700">「＋ 新規追加」</strong> ボタンをクリックします。</li>
+                    <li>タイトル、学習サイトのURL、説明・メモを入力します。（あれば確認テストも。）</li>
+                    <li>カテゴリタグを選択または新規追加し、テーマカラーやアイコンを設定します。</li>
+                    <li><strong class="text-emerald-700">「リンクを保存する」</strong> を押すと共有が完了します。</li>
+                </ol>
+
+                <!-- スクリーンショット：新規追加フォーム画面 -->
+                <div class="pt-2">
+                    <p class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1">
+                        <i class="fa-regular fa-image text-emerald-600"></i> 画面イメージ：リンク追加画面
+                    </p>
+                    <div class="flex justify-center">
+                        <img src="./img/リンクの追加.jpg" alt="リンクの追加" title="リンクの追加" width="600">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. 確認テスト・タイムライン -->
+            <section id="step6" class="space-y-4 scroll-mt-24">
+                <h3 class="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-cubes text-emerald-600"></i> その他の機能
+                </h3>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <!-- 確認テスト -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
+                        <h4 class="font-bold text-slate-800 flex items-center gap-2 text-base">
+                            <i class="fa-solid fa-clipboard-check text-emerald-600"></i> 確認テスト
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            受講済み（完了）ステータスになった教材の確認テストをいつでも受けることができます。理解度のチェックにご活用ください。
+                        </p>
+                        <!-- ミニUI画面イメージ -->
+                        <div class="border rounded-lg p-3 bg-slate-50 text-xs space-y-2">
+                            <div class="font-bold text-slate-700">Q. UMLのクラス図が表すものは？</div>
+                            <div class="space-y-1">
+                                <div class="bg-emerald-100 text-emerald-800 p-1.5 rounded border border-emerald-300 font-medium">✓ システムの構造と関係性</div>
+                                <div class="bg-white text-slate-500 p-1.5 rounded border">時系列の処理の流れ</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- タイムライン -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
+                        <h4 class="font-bold text-slate-800 flex items-center gap-2 text-base">
+                            <i class="fa-solid fa-bolt text-emerald-600"></i> タイムライン
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            全社員の最新のログイン履歴や学習状況がリアルタイムで流れます。他のメンバーの学習アクティビティを刺激として活用できます。
+                        </p>
+                        <!-- ミニUI画面イメージ -->
+                        <div class="border rounded-lg p-3 bg-slate-50 text-xs space-y-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-300 flex items-center justify-center font-bold text-[10px]">田</div>
+                                <div class="flex-1">
+                                    <span class="font-bold text-slate-700">田中さん</span> が <span class="text-emerald-700 font-medium">受講完了</span> しました
+                                    <div class="text-[10px] text-slate-400">10分前</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-300 flex items-center justify-center font-bold text-[10px]">佐</div>
+                                <div class="flex-1">
+                                    <span class="font-bold text-slate-700">佐藤さん</span> が新規教材を投稿しました
+                                    <div class="text-[10px] text-slate-400">1時間前</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
+        &copy; 2026 にすまな制作委員会 - 社内マニュアル
+    </footer>
+
+</body>
+</html>
