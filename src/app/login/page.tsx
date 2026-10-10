@@ -126,7 +126,7 @@ export default function LoginPage() {
 
         <div className="flex justify-center">
           <a
-            href="/manual.html"
+            href="https://studyreact238.github.io/NIS-MANA-MANUAL/"
             target="_blank"
             rel="noopener noreferrer"
             className="group inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white/80 px-4 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/70 hover:shadow-md"

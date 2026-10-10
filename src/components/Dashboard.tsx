@@ -172,7 +172,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <a
-              href="/manual.html"
+              href="https://studyreact238.github.io/NIS-MANA-MANUAL/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-2 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50"
