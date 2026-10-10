@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Loader2, Mail, Lock, ArrowRight, BookOpenText, CircleHelp } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -124,16 +124,25 @@ export default function LoginPage() {
           </form>
         </Card>
 
-        <p className="text-center text-xs text-emerald-600/60 font-medium">
+        <div className="flex justify-center">
           <a
             href="/manual.html"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline decoration-emerald-500 underline-offset-4 hover:text-emerald-700"
+            className="group inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white/80 px-4 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/70 hover:shadow-md"
+            aria-label="にすまなマニュアルを新しいタブで開く"
           >
-            にすまなマニュアル
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+              <BookOpenText className="h-4 w-4" />
+            </span>
+            <span className="text-sm font-bold text-emerald-800 group-hover:text-emerald-900">
+              ここにマニュアルがあるよ
+            </span>
+            <CircleHelp className="h-3.5 w-3.5 text-emerald-500 group-hover:text-emerald-700" />
           </a>
-          <span className="mx-1">&copy; 2026 にすまな制作委員会 - All rights reserved.</span>
+        </div>
+        <p className="text-center text-[11px] text-emerald-600/60 font-medium">
+          <span className="mr-1">&copy; 2026 にすまな制作委員会 - All rights reserved.</span>
         </p>
       </div>
     </div>
