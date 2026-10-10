@@ -136,7 +136,7 @@ export default function LoginPage() {
               <BookOpenText className="h-4 w-4" />
             </span>
             <span className="text-sm font-bold text-emerald-800 group-hover:text-emerald-900">
-              ここにマニュアルがあるよ
+              にすまなマニュアルはこちら
             </span>
             <CircleHelp className="h-3.5 w-3.5 text-emerald-500 group-hover:text-emerald-700" />
           </a>
