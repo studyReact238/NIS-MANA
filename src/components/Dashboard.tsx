@@ -34,7 +34,8 @@ import {
   Settings,
   HelpCircle,
   LayoutGrid,
-  List
+  List,
+  BookOpenText
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -169,6 +170,19 @@ export const Dashboard: React.FC = () => {
               </div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-emerald-800 whitespace-nowrap">にすまな</h1>
             </div>
+
+            <a
+              href="/manual.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-2 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50"
+              aria-label="マニュアルを開く"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <BookOpenText className="h-4 w-4" />
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-emerald-800">マニュアル</span>
+            </a>
 
             <div className="flex md:hidden items-center gap-2">
               <DropdownMenu modal={false}>
