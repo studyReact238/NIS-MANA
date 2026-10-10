@@ -125,7 +125,15 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-xs text-emerald-600/60 font-medium">
-          &copy; 2026 にすまな制作委員会 - All rights reserved.
+          <a
+            href="/manual.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-emerald-500 underline-offset-4 hover:text-emerald-700"
+          >
+            にすまなマニュアル
+          </a>
+          <span className="mx-1">&copy; 2026 にすまな制作委員会 - All rights reserved.</span>
         </p>
       </div>
     </div>
